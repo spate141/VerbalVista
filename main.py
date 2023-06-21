@@ -16,7 +16,6 @@ class VerbalVista:
         :param tmp_audio_dir:
         :return:
         """
-
         with st.form('audio_transcribe'):
             st.markdown("#### Upload audio file:")
             uploaded_file = st.file_uploader(
@@ -71,17 +70,44 @@ class VerbalVista:
                     log_info(f"Removing tmp audio files")
                     self.whisper.remove_temp_files(tmp_audio_dir)
 
+    def render_create_index_page(self):
+        with st.form('create_index'):
+            st.markdown("#### Create Index:")
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                pass
+
+    def render_qa_page(self):
+        with st.form('qa'):
+            st.markdown("#### Q & A:")
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                pass
+
 
 def main():
 
+    st.set_page_config(
+        page_title="VerbalVista",
+        page_icon="🤖",
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            'Get Help': 'https://github.com/spate141/VerbalVista',
+            'Report a bug': "https://github.com/spate141/VerbalVista",
+            'About': "### Welcome to VerbalVista!\nBuilt by Snehal Patel."
+        }
+    )
     vv = VerbalVista()
 
     st.sidebar.title("Verbal Vista")
-    page = st.sidebar.selectbox("Select function:", ["Create Index", "Q & A"])
-    if page == "Create Index":
+    page = st.sidebar.selectbox("Select function:", ["Transcribe Audio", "Create Index", "Q & A"])
+    if page == "Transcribe Audio":
         vv.render_audio_transcribe_page()
+    elif page == "Create Index":
+        vv.render_create_index_page()
     elif page == "Q & A":
-        pass
+        vv.render_qa_page()
 
 
 if __name__ == '__main__':
