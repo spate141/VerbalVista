@@ -204,10 +204,18 @@ def main():
             'About': "### Welcome to VerbalVista!\nBuilt by Snehal Patel."
         }
     )
+    st.sidebar.markdown(
+        """
+        <center><a href="https://github.com/spate141/VerbalVista"><img src="https://private-user-images.githubusercontent.com/10580847/248083735-15c326d9-67df-4fb2-b50a-c7684f45bacb.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJrZXkxIiwiZXhwIjoxNjg3NDc2NzQ0LCJuYmYiOjE2ODc0NzY0NDQsInBhdGgiOiIvMTA1ODA4NDcvMjQ4MDgzNzM1LTE1YzMyNmQ5LTY3ZGYtNGZiMi1iNTBhLWM3Njg0ZjQ1YmFjYi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBSVdOSllBWDRDU1ZFSDUzQSUyRjIwMjMwNjIyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDIzMDYyMlQyMzI3MjRaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0yMGUxN2RmZmYxOGQwMGU5YmIyOWM0ZjU4YzNiZTI3YjVjYjI5NmQ0N2MwNzMxYTk5NjMxMzNlM2FjNzcxM2FhJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.YoKvyn4eQsB04ABOge2-iyJ5yTEQqU62eWIM30-empY" width="70%" height="70%"></a></center>
+        </br>
+        """,
+        unsafe_allow_html=True
+    )
     vv = VerbalVista()
-
-    st.sidebar.title("Verbal Vista")
-    page = st.sidebar.selectbox("Select function:", ["Transcribe Audio", "Create Index", "Q & A"])
+    st.sidebar.markdown("<center><h4><b>Select Function</b></h5></center>", unsafe_allow_html=True)
+    page = st.sidebar.selectbox(
+        "Select function:", ["Transcribe Audio", "Create Index", "Q & A"], label_visibility="collapsed"
+    )
     if page == "Transcribe Audio":
         vv.render_audio_transcribe_page()
     elif page == "Create Index":
