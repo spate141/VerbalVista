@@ -1,6 +1,9 @@
 import os
 import time
 import streamlit as st
+from streamlit_extras.colored_header import colored_header
+from streamlit_extras.no_default_selectbox import selectbox
+from streamlit_toggle import st_toggle_switch
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.generate_vector_index import VectorIndex
 from utils.logging_module import log_info, log_debug, log_error
@@ -14,6 +17,7 @@ def load_index(index_path):
     :param index_path:
     :return:
     """
+    log_info(f"Loading index: {index_path}")
     storage_context = StorageContext.from_defaults(persist_dir=index_path)
     index = load_index_from_storage(storage_context)
     query_engine = index.as_query_engine()
@@ -32,8 +36,12 @@ class VerbalVista:
         :param tmp_audio_dir:
         :return:
         """
+        colored_header(
+            label="Transcribe Audio",
+            description="Upload audio and transcribe!",
+            color_name="violet-70",
+        )
         with st.form('audio_transcribe'):
-            st.markdown("#### Upload audio file:")
             uploaded_file = st.file_uploader(
                 "Upload an audio file:", type=['m4a', 'mp3', 'wav'], accept_multiple_files=False,
                 label_visibility="collapsed"
@@ -100,8 +108,12 @@ class VerbalVista:
         :param tmp_indices_dir:
         :return:
         """
+        colored_header(
+            label="Create Index",
+            description="Select transcript, generate index!",
+            color_name="blue-green-70",
+        )
         with st.form('create_index'):
-            st.markdown("#### Create Index:")
             col1, col2, col3 = st.columns([6, 1, 5], gap='small')
             with col1:
                 st.markdown("###### Available Transcripts:")
@@ -149,27 +161,34 @@ class VerbalVista:
         :param tmp_indices_dir:
         :return:
         """
-        st.markdown("#### Q & A:")
-        _, col, _ = st.columns([2, 5, 2])
-        with col:
-            st.markdown("###### Select Index for Q & A:")
-            indices_df = self.vector_index.get_available_indices(tmp_indices_dir=tmp_indices_dir)
-            selected_index_path = st.selectbox(
-                "Select Index:", options=indices_df['Index Name'].to_list(), index=0, label_visibility="collapsed"
-            )
-        with st.spinner('Loading index. Please wait.'):
-            query_engine = load_index(selected_index_path)
-            st.success(f"Index loaded: {selected_index_path}")
+        colored_header(
+            label="Q & A",
+            description="Select index, ask questions!",
+            color_name="red-70",
+        )
+        with st.form('index_selection'):
+            _, col, _ = st.columns([2, 5, 2])
+            with col:
+                st.markdown("###### Select Index for Q & A:")
+                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=tmp_indices_dir)
+                selected_index_path = selectbox(
+                    "Select Index:", options=indices_df['Index Name'].to_list(), no_selection_label="<select index>",
+                    label_visibility="collapsed"
+                )
+                st.markdown("###### Question:")
+                question = st.text_input("Question:", label_visibility="collapsed")
 
-        with st.form('qa'):
-            question = st.text_input("Question:")
-            submitted = st.form_submit_button("Ask!")
-            if submitted:
-                start = time.time()
-                response = query_engine.query(question)
-                total_time = round(time.time() - start, 2)
-                st.write(response.response)
-                st.caption(f"Query processing time: {total_time} sec")
+                # load the index and allow user to ask question at a same time
+                submitted = st.form_submit_button("Ask!", type='primary')
+                if submitted:
+                    start = time.time()
+                    with st.spinner('🤖 thinking...'):
+                        query_engine = load_index(selected_index_path)
+                        response = query_engine.query(question)
+                        total_time = round(time.time() - start, 2)
+                        st.write(response.response)
+                        st.success(f"Query processing time: {total_time} sec")
+
 
 
 def main():
