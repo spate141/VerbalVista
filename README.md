@@ -1,4 +1,6 @@
-# Verbal Vista
+<p align="center">
+  <img align="center" src="https://github.com/spate141/VerbalVista/assets/10580847/73aa6b09-623b-415a-b9bb-7d8451828983" width="40%" height="40%" />
+</p>
 
 ### Start the program:
 ```cmd
