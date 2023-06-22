@@ -7,5 +7,5 @@
   
 ### Available functions:
   - [Transcribe audio](utils/audio_transcribe.py)
-  - Create document index
+  - [Create document index](utils/generate_vector_index.py)
   - Q&A using LLM

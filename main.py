@@ -4,6 +4,20 @@ import streamlit as st
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.generate_vector_index import VectorIndex
 from utils.logging_module import log_info, log_debug, log_error
+from llama_index import StorageContext, load_index_from_storage
+
+
+@st.cache_resource
+def load_index(index_path):
+    """
+    Load LangChain Index.
+    :param index_path:
+    :return:
+    """
+    storage_context = StorageContext.from_defaults(persist_dir=index_path)
+    index = load_index_from_storage(storage_context)
+    query_engine = index.as_query_engine()
+    return query_engine
 
 
 class VerbalVista:
@@ -24,7 +38,12 @@ class VerbalVista:
                 "Upload an audio file:", type=['m4a', 'mp3', 'wav'], accept_multiple_files=False,
                 label_visibility="collapsed"
             )
-
+            st.markdown("###### Available Transcripts:")
+            transcript_df = self.vector_index.get_available_transcripts(tmp_transcript_dir=tmp_transcript_dir)
+            st.dataframe(
+                transcript_df, hide_index=True, use_container_width=False,
+                column_order=['Index Status', 'Transcript Name', 'Creation Date']
+            )
             submitted = st.form_submit_button("Submit")
             if submitted:
                 if uploaded_file is not None:
@@ -71,6 +90,8 @@ class VerbalVista:
                     st.success(f"Audio transcript saved: {tmp_transcript_save_path}")
                     log_info(f"Removing tmp audio files")
                     self.whisper.remove_temp_files(tmp_audio_dir)
+                    time.sleep(2)
+                    st.experimental_rerun()
 
     def render_create_index_page(self, tmp_transcript_dir: str = 'transcripts/', tmp_indices_dir: str = 'indices/'):
         """
@@ -122,13 +143,33 @@ class VerbalVista:
                 time.sleep(2)
                 st.experimental_rerun()
 
-    @staticmethod
-    def render_qa_page():
+    def render_qa_page(self, tmp_indices_dir: str = 'indices/'):
+        """
+
+        :param tmp_indices_dir:
+        :return:
+        """
+        st.markdown("#### Q & A:")
+        _, col, _ = st.columns([2, 5, 2])
+        with col:
+            st.markdown("###### Select Index for Q & A:")
+            indices_df = self.vector_index.get_available_indices(tmp_indices_dir=tmp_indices_dir)
+            selected_index_path = st.selectbox(
+                "Select Index:", options=indices_df['Index Name'].to_list(), index=0, label_visibility="collapsed"
+            )
+        with st.spinner('Loading index. Please wait.'):
+            query_engine = load_index(selected_index_path)
+            st.success(f"Index loaded: {selected_index_path}")
+
         with st.form('qa'):
-            st.markdown("#### Q & A:")
-            submitted = st.form_submit_button("Submit")
+            question = st.text_input("Question:")
+            submitted = st.form_submit_button("Ask!")
             if submitted:
-                pass
+                start = time.time()
+                response = query_engine.query(question)
+                total_time = round(time.time() - start, 2)
+                st.write(response.response)
+                st.caption(f"Query processing time: {total_time} sec")
 
 
 def main():
