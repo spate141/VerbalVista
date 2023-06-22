@@ -162,3 +162,22 @@ class WhisperAudioTranscribe:
         formatted_time = "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
         return formatted_time
 
+    @staticmethod
+    def write_transcript_to_file(
+            uploaded_file_name: str = None, tmp_transcript_dir: str = None, full_audio_transcript: str = None
+    ):
+        """
+        Save the transcript to a folder
+        :param uploaded_file_name:
+        :param tmp_transcript_dir:
+        :param full_audio_transcript:
+        :return:
+        """
+        transcript_file_name = os.path.splitext(uploaded_file_name)[0] + '.txt'
+        transcript_file_dir = os.path.join(tmp_transcript_dir, os.path.splitext(uploaded_file_name)[0])
+        if not os.path.exists(transcript_file_dir):
+            os.makedirs(transcript_file_dir)
+        tmp_transcript_save_path = os.path.join(transcript_file_dir, transcript_file_name)
+        with open(tmp_transcript_save_path, 'w') as f:
+            f.write(full_audio_transcript)
+        return tmp_transcript_save_path

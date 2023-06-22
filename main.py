@@ -2,6 +2,7 @@ import os
 import time
 import streamlit as st
 from utils.audio_transcribe import WhisperAudioTranscribe
+from utils.generate_vector_index import VectorIndex
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -9,6 +10,7 @@ class VerbalVista:
 
     def __init__(self):
         self.whisper = WhisperAudioTranscribe()
+        self.vector_index = VectorIndex()
 
     def render_audio_transcribe_page(self, tmp_transcript_dir: str = 'transcripts/', tmp_audio_dir: str = 'tmp_dir/'):
         """
@@ -59,25 +61,69 @@ class VerbalVista:
                             )
                         full_audio_transcript = ' '.join(full_audio_transcript)
 
-                    # Save transcript
+                    # Write transcript to a file
                     st.markdown("#### Transcript snippet:")
                     st.caption(full_audio_transcript[:110] + '...')
-                    transcript_file_name = os.path.splitext(uploaded_file.name)[0] + '.txt'
-                    tmp_transcript_save_path = os.path.join(tmp_transcript_dir, transcript_file_name)
-                    with open(tmp_transcript_save_path, 'w') as f:
-                        f.write(full_audio_transcript)
+                    tmp_transcript_save_path = self.whisper.write_transcript_to_file(
+                        uploaded_file_name=uploaded_file.name, tmp_transcript_dir=tmp_transcript_dir,
+                        full_audio_transcript=full_audio_transcript
+                    )
                     st.success(f"Audio transcript saved: {tmp_transcript_save_path}")
                     log_info(f"Removing tmp audio files")
                     self.whisper.remove_temp_files(tmp_audio_dir)
 
-    def render_create_index_page(self):
+    def render_create_index_page(self, tmp_transcript_dir: str = 'transcripts/', tmp_indices_dir: str = 'indices/'):
+        """
+
+        :param tmp_transcript_dir:
+        :param tmp_indices_dir:
+        :return:
+        """
         with st.form('create_index'):
             st.markdown("#### Create Index:")
-            submitted = st.form_submit_button("Submit")
-            if submitted:
-                pass
+            col1, col2, col3 = st.columns([6, 1, 5], gap='small')
+            with col1:
+                st.markdown("###### Available Transcripts:")
+                transcript_df = self.vector_index.get_available_transcripts(tmp_transcript_dir=tmp_transcript_dir)
+                selected_transcripts_df = st.data_editor(transcript_df, hide_index=True, use_container_width=True)
+            with col3:
+                st.markdown("###### Available Indices:")
+                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=tmp_indices_dir)
+                st.dataframe(indices_df, hide_index=True)
 
-    def render_qa_page(self):
+            st.markdown("###### LangChain PromptHelper Parameters:")
+            cols = st.columns(4)
+            with cols[0]:
+                context_window = st.number_input("context_window:", value=3900)
+            with cols[1]:
+                num_outputs = st.number_input("num_outputs:", value=512)
+            with cols[2]:
+                chunk_overlap_ratio = st.number_input("chunk_overlap_ratio:", value=0.1)
+            with cols[3]:
+                chunk_size_limit = st.number_input("chunk_size_limit:", value=600)
+
+            submitted = st.form_submit_button("Create Index")
+            if submitted:
+                _, c, _ = st.columns([2, 5, 2])
+                with c:
+                    with st.spinner('Indexing transcript. Please wait.'):
+                        transcript_dirs = selected_transcripts_df[selected_transcripts_df['Create Index']][
+                            'Transcript Name'].to_list()
+                        for transcript_dir_to_index in transcript_dirs:
+                            file_name = os.path.splitext(os.path.basename(transcript_dir_to_index))[0]
+                            self.vector_index.index_document(
+                                transcript_directory=transcript_dir_to_index,
+                                index_directory=os.path.join(tmp_indices_dir, file_name),
+                                context_window=context_window, num_outputs=num_outputs,
+                                chunk_overlap_ratio=chunk_overlap_ratio,
+                                chunk_size_limit=chunk_size_limit
+                            )
+                    st.success(f"Transcript index {file_name} saved! Refreshing page now.")
+                time.sleep(2)
+                st.experimental_rerun()
+
+    @staticmethod
+    def render_qa_page():
         with st.form('qa'):
             st.markdown("#### Q & A:")
             submitted = st.form_submit_button("Submit")
