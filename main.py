@@ -228,7 +228,7 @@ def main():
     )
     st.sidebar.markdown(
         """
-        <center><a href="https://github.com/spate141/VerbalVista"><img src="" width="70%" height="70%"></a></center>
+        <center><a href="https://github.com/spate141/VerbalVista"><img src="https://raw.githubusercontent.com/spate141/VerbalVista/cdaf36151796f08c0f66e0c58899a27e15400092/docs/verbal-vista-blue-transparent.png?token=GHSAT0AAAAAACABPGI3OL3JH7O6SVOOVJZEZEXTBCQ" width="70%" height="70%"></a></center>
         </br>
         """,
         unsafe_allow_html=True

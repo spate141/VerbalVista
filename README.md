@@ -1,5 +1,5 @@
 <p align="center">
-  <img align="center" src="" width="40%" height="40%" />
+  <img align="center" src="https://raw.githubusercontent.com/spate141/VerbalVista/cdaf36151796f08c0f66e0c58899a27e15400092/docs/verbal-vista-blue-transparent.png?token=GHSAT0AAAAAACABPGI3OL3JH7O6SVOOVJZEZEXTBCQ" width="40%" height="40%" />
 </p>
 
 ### Set the key:
