@@ -1,5 +1,6 @@
 import os
 import time
+from PIL import Image
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
@@ -227,7 +228,7 @@ def main():
     )
     st.sidebar.markdown(
         """
-        <center><a href="https://github.com/spate141/VerbalVista"><img src="https://github-production-user-asset-6210df.s3.amazonaws.com/10580847/248083735-15c326d9-67df-4fb2-b50a-c7684f45bacb.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20230623%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230623T043013Z&X-Amz-Expires=300&X-Amz-Signature=935eb36a4695ea2b21e7f93e8958de3058fcda1f355b4498ab6a5e2dd2f1d7cc&X-Amz-SignedHeaders=host&actor_id=10580847&key_id=0&repo_id=656493437" width="70%" height="70%"></a></center>
+        <center><a href="https://github.com/spate141/VerbalVista"><img src="" width="70%" height="70%"></a></center>
         </br>
         """,
         unsafe_allow_html=True
