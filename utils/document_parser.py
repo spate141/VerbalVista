@@ -1,9 +1,11 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
 from typing import Any, Dict, List
+from bs4 import BeautifulSoup
 from pypdf import PdfReader
 import streamlit as st
 from io import BytesIO
+import requests
 import docx2txt
 import re
 import os
@@ -105,3 +107,17 @@ def write_text_to_file(uploaded_file_name: str = None, tmp_document_dir: str = N
     with open(tmp_document_save_path, 'w') as f:
         f.write(full_document)
     return tmp_document_save_path
+
+
+def extract_text_from_url(url):
+    """
+
+    :param url:
+    :return:
+    """
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    text = soup.get_text()
+    text = text.replace('\n', ' ')
+    cleaned_text = ' '.join(text.split())
+    return cleaned_text

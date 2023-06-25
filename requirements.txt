@@ -7,3 +7,4 @@ llama-index==0.6.31
 streamlit_extras~=0.2.7
 docx2txt~=0.8
 pypdf~=3.11.0
+wordcloud~=1.9.2
