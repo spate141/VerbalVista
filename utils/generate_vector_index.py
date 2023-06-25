@@ -1,9 +1,25 @@
 import os
 import time
 import pandas as pd
-from datetime import datetime
+import streamlit as st
 from langchain.chat_models import ChatOpenAI
+from llama_index import StorageContext, load_index_from_storage
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, LLMPredictor, PromptHelper
+from .logging_module import log_info
+
+
+@st.cache_resource
+def load_index(index_path):
+    """
+    Load LangChain Index.
+    :param index_path:
+    :return:
+    """
+    log_info(f"Loading index: {index_path}")
+    storage_context = StorageContext.from_defaults(persist_dir=index_path)
+    index = load_index_from_storage(storage_context)
+    query_engine = index.as_query_engine()
+    return query_engine
 
 
 class VectorIndex:
@@ -29,29 +45,29 @@ class VectorIndex:
         return df
 
     @staticmethod
-    def get_available_transcripts(tmp_transcript_dir: str = 'transcripts/', tmp_indices_dir: str = 'indices/'):
+    def get_available_documents(tmp_document_dir: str = 'documents/', tmp_indices_dir: str = 'indices/'):
         """
 
-        :param tmp_transcript_dir:
+        :param tmp_document_dir:
         :param tmp_indices_dir:
         :return:
         """
         transcripts_data = []
-        transcripts_subdirs = next(os.walk(tmp_transcript_dir))[1]
+        transcripts_subdirs = next(os.walk(tmp_document_dir))[1]
         indices_subdirs = next(os.walk(tmp_indices_dir))[1]
         for transcript in transcripts_subdirs:
-            transcript_path = os.path.join(tmp_transcript_dir, transcript)
+            transcript_path = os.path.join(tmp_document_dir, transcript)
             creation_date = time.ctime(os.stat(transcript_path).st_ctime)
             if transcript in indices_subdirs:
                 transcripts_data.append((False, '✅', transcript_path, creation_date))
             else:
                 transcripts_data.append((False, '❓', transcript_path, creation_date))
-        df = pd.DataFrame(transcripts_data, columns=['Create Index', 'Index Status', 'Transcript Name', 'Creation Date'])
+        df = pd.DataFrame(transcripts_data, columns=['Create Index', 'Index Status', 'Document Name', 'Creation Date'])
         return df
 
     @staticmethod
     def index_document(
-            transcript_directory: str = None, index_directory: str = None, context_window: int = 3900,
+            document_directory: str = None, index_directory: str = None, context_window: int = 3900,
             num_outputs: int = 512, chunk_overlap_ratio: float = 0.1, chunk_size_limit: int = 600
     ):
         """
@@ -68,7 +84,7 @@ class VectorIndex:
         5. Persists the index to storage using the storage_context.persist() function.
 
         The persisted index can be later queried without re-indexing.
-        :param transcript_directory:
+        :param document_directory:
         :param index_directory:
         :param context_window:
         :param num_outputs:
@@ -81,7 +97,7 @@ class VectorIndex:
         llm_predictor = LLMPredictor(
             llm=ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo", max_tokens=num_outputs)
         )
-        documents = SimpleDirectoryReader(transcript_directory).load_data()
+        documents = SimpleDirectoryReader(document_directory).load_data()
         index = VectorStoreIndex.from_documents(
             documents,
             llm_predictor=llm_predictor,
