@@ -1,5 +1,5 @@
 <p align="center">
-  <img align="center" src="https://raw.githubusercontent.com/spate141/VerbalVista/cdaf36151796f08c0f66e0c58899a27e15400092/docs/verbal-vista-blue-transparent.png?token=GHSAT0AAAAAACABPGI3OL3JH7O6SVOOVJZEZEXTBCQ" width="40%" height="40%" />
+  <img align="center" src="https://private-user-images.githubusercontent.com/10580847/248083735-15c326d9-67df-4fb2-b50a-c7684f45bacb.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJrZXkxIiwiZXhwIjoxNjg3NjU3Mzg5LCJuYmYiOjE2ODc2NTcwODksInBhdGgiOiIvMTA1ODA4NDcvMjQ4MDgzNzM1LTE1YzMyNmQ5LTY3ZGYtNGZiMi1iNTBhLWM3Njg0ZjQ1YmFjYi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBSVdOSllBWDRDU1ZFSDUzQSUyRjIwMjMwNjI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDIzMDYyNVQwMTM4MDlaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kMDMyZjdkMTZiOGI0OGJmYzdkYjZjMDhlODBkMWUwMWRiOTNiNmIxMDUxY2ViZDM2N2RlYWM4MGUwZDA2ZmM2JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.KthQSYZkyfPbB4RXavtg1Q7XMqCGEhZrNo0qHX5rIAY" width="40%" height="40%" />
 </p>
 
 ### Set the key:
