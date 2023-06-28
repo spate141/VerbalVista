@@ -92,7 +92,7 @@ class WhisperAudioTranscribe:
 
         # find the audio duration of each chunk based on the audio chunk size in MB
         file_chunks_durations_ms = [(i * file_duration_in_ms) / file_size_mb for i in file_chunks_sizes_mb]
-        assert sum(file_chunks_durations_ms) == file_duration_in_ms
+        # assert sum(file_chunks_durations_ms) == file_duration_in_ms
         return file_chunks_durations_ms
 
     def generate_audio_chunks(

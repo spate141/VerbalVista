@@ -1,5 +1,6 @@
 import os
 import time
+import pandas as pd
 import streamlit as st
 from streamlit_chat import message
 from streamlit_extras.colored_header import colored_header
@@ -32,7 +33,7 @@ class VerbalVista:
         )
         with st.form('docs_processing'):
 
-            col1, _, col2 = st.columns([8, 0.5, 8])
+            col1, col2, col3 = st.columns([8, 8, 8])
             with col1:
                 st.markdown("<h6>Process local files:</h6>", unsafe_allow_html=True)
                 uploaded_file = st.file_uploader(
@@ -42,18 +43,23 @@ class VerbalVista:
             with col2:
                 st.markdown("<h6>Extract text from URL:</h6>", unsafe_allow_html=True)
                 url = st.text_input("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
+                url = None if len(url) == 0 else url
+            with col3:
+                st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
+                text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
 
-            _, col, _ = st.columns([2, 20, 2])
+            _, col, _ = st.columns([10, 40, 10])
             with col:
                 st.markdown("</br><center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
                 documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
                 st.dataframe(
-                    documents_df, hide_index=True, use_container_width=True,
+                    documents_df, hide_index=True, use_container_width=False,
                     column_order=['Index Status', 'Document Name', 'Creation Date']
                 )
             submitted = st.form_submit_button("Submit")
             if submitted:
-
                 if uploaded_file is not None:
                     if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav')):
                         with st.spinner('Processing audio. Please wait.'):
@@ -106,9 +112,12 @@ class VerbalVista:
 
                     uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
 
-                else:
+                elif url:
                     full_document = extract_text_from_url(url)
                     uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
+                elif text is not None:
+                    full_document = text
+                    uploaded_file_name = text[:20].replace("/", "-").replace('.', '-')
 
                 # Write document to a file
                 st.markdown("#### Document snippet:")
@@ -119,26 +128,30 @@ class VerbalVista:
                     full_document=full_document
                 )
                 st.success(f"Document saved: {tmp_document_save_path}")
-                time.sleep(2)
-                st.experimental_rerun()
+                # time.sleep(2)
+                # st.experimental_rerun()
 
-    def render_create_index_page(self):
+    def render_manage_index_page(self):
         """
         """
         colored_header(
-            label="Create Index",
-            description="Select document, generate index!",
+            label="Manage Index",
+            description="Manage documents indices.",
             color_name="blue-green-70",
         )
-        with st.form('create_index'):
+        with st.form('manage_index'):
             col1, col2, col3 = st.columns([6, 0.1, 5], gap='small')
             with col1:
                 st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
                 documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
                 selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
             with col3:
                 st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
                 indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+                indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
+                indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
                 st.dataframe(indices_df, hide_index=True)
 
             st.markdown(
@@ -182,44 +195,58 @@ class VerbalVista:
             description="Select index, ask questions!",
             color_name="red-70",
         )
-        with st.form('index_selection'):
-            _, col, _ = st.columns([2, 5, 2])
-            with col:
-                st.markdown("<center><h6><u>Select Index for Q & A</u></h6></center>", unsafe_allow_html=True)
-                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
-                selected_index_path = selectbox(
-                    "Select Index:", options=indices_df['Index Name'].to_list(), no_selection_label="<select index>",
-                    label_visibility="collapsed"
-                )
-                st.markdown("<center><h6><u>Enter Query</u></h6></center>", unsafe_allow_html=True)
-                question = st.text_input("Question:", label_visibility="collapsed")
+        st.markdown("<center><h6><u>Select Index for Q & A</u></h6></center>", unsafe_allow_html=True)
+        indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+        selected_index_path = selectbox(
+            "Select Index:", options=indices_df['Index Name'].to_list(), no_selection_label="<select index>",
+            label_visibility="collapsed"
+        )
 
-                _, col, _ = st.columns([100, 25, 100])
-                with col:
-                    # load the index and allow user to ask question at a same time
-                    submitted = st.form_submit_button("Ask!", type='primary')
+        if selected_index_path is None:
+            st.error("Error: Select index first!")
+        else:
+            st.info(f"Selected index: {selected_index_path}")
 
-                if submitted:
+            # Initialize chat history
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
+
+            with st.spinner('thinking...'):
+
+                # Display chat messages from history on app rerun
+                for message in st.session_state.messages:
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
+                # React to user input
+                if prompt := st.chat_input(f"Start asking questions to '{selected_index_path[:25]}...' index!"):
+                    # Display user message in chat message container
+                    st.chat_message("user", avatar="https://i.ibb.co/9qhwtvZ/man.png").markdown(prompt)
+                    # Add user message to chat history
+                    st.session_state.messages.append({"role": "user", "content": prompt})
+                    # Define QA mechanism here
                     start = time.time()
-                    if selected_index_path is None:
-                        st.error("Error: Select index first!")
-                    else:
-                        st.info(f"Selected index: {selected_index_path}")
-                        with st.spinner('🤖 thinking...'):
-                            query_engine = load_index(selected_index_path)
-                            with get_openai_callback() as cb:
-                                response = query_engine.query(question)
-                            total_time = round(time.time() - start, 2)
-                            st.write(response.response)
-                            query_meta = f"""
-                            - Total Tokens Used: {cb.total_tokens}
-                              - Prompt Tokens: {cb.prompt_tokens}
-                              - Completion Tokens: {cb.completion_tokens}
-                            - Successful Requests: {cb.successful_requests}
-                            - Total Cost (USD): ${round(cb.total_cost, 4)}
-                            - Total Time (Seconds): {total_time}
-                            """
-                            st.success(query_meta)
+                    query_engine = load_index(selected_index_path)
+                    with get_openai_callback() as cb:
+                        response = query_engine.query(prompt)
+                    total_time = round(time.time() - start, 2)
+                    query_meta = f"""
+                    ```markdown
+                    - Total Tokens Used: {cb.total_tokens}
+                      - Prompt Tokens: {cb.prompt_tokens}
+                      - Completion Tokens: {cb.completion_tokens}
+                    - Successful Requests: {cb.successful_requests}
+                    - Total Cost (USD): ${round(cb.total_cost, 4)}
+                    - Total Time (Seconds): {total_time}
+                    ```
+                    """
+                    log_info({"request_tokens": cb.total_tokens, "request_cost": round(cb.total_cost, 4)})
+                    # Display assistant response in chat message container
+                    with st.chat_message("assistant", avatar="https://i.ibb.co/N7SwF3X/ai.png"):
+                        st.markdown(response)
+                        st.markdown(query_meta)
+                    # Add assistant response to chat history
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
     def render_document_explore_page(self):
         """
@@ -233,6 +260,8 @@ class VerbalVista:
             st.markdown("<center><h6><u>Select Document</u></h6></center>", unsafe_allow_html=True)
             documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
             documents_df = documents_df.rename(columns={'Create Index': 'Select Document'})
+            documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+            documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
             selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
             submitted = st.form_submit_button("Explore!", type="primary")
             if submitted:
@@ -272,7 +301,7 @@ def main():
     st.sidebar.markdown(
         f"""
         <center>
-        <a href="https://github.com/spate141/VerbalVista"><img src="https://private-user-images.githubusercontent.com/10580847/248083735-15c326d9-67df-4fb2-b50a-c7684f45bacb.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJrZXkxIiwiZXhwIjoxNjg3NjU3Mzg5LCJuYmYiOjE2ODc2NTcwODksInBhdGgiOiIvMTA1ODA4NDcvMjQ4MDgzNzM1LTE1YzMyNmQ5LTY3ZGYtNGZiMi1iNTBhLWM3Njg0ZjQ1YmFjYi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBSVdOSllBWDRDU1ZFSDUzQSUyRjIwMjMwNjI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDIzMDYyNVQwMTM4MDlaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kMDMyZjdkMTZiOGI0OGJmYzdkYjZjMDhlODBkMWUwMWRiOTNiNmIxMDUxY2ViZDM2N2RlYWM4MGUwZDA2ZmM2JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.KthQSYZkyfPbB4RXavtg1Q7XMqCGEhZrNo0qHX5rIAY" width="70%" height="70%"></a>
+        <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="70%" height="70%"></a>
         </br>
         </br>
         <h5>Version: {VERSION}</h5>
@@ -285,7 +314,7 @@ def main():
         "Select function:", [
             "Media Processing",
             "Explore Document",
-            "Create Index",
+            "Manage Index",
             "Q & A"
         ], label_visibility="collapsed"
     )
@@ -297,8 +326,8 @@ def main():
     vv = VerbalVista(tmp_document_dir=tmp_document_dir, tmp_indices_dir=tmp_indices_dir, tmp_audio_dir=tmp_audio_dir)
     if page == "Media Processing":
         vv.render_media_processing_page()
-    elif page == "Create Index":
-        vv.render_create_index_page()
+    elif page == "Manage Index":
+        vv.render_manage_index_page()
     elif page == "Q & A":
         vv.render_qa_page()
     elif page == "Explore Document":
