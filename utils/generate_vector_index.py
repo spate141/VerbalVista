@@ -68,10 +68,11 @@ class VectorIndex:
     @staticmethod
     def index_document(
             document_directory: str = None, index_directory: str = None, context_window: int = 3900,
-            num_outputs: int = 512, chunk_overlap_ratio: float = 0.1, chunk_size_limit: int = 600
+            num_outputs: int = 512, chunk_overlap_ratio: float = 0.1, chunk_size_limit: int = 600,
+            temperature: float = 0.7, model_name: str = "gpt-3.5-turbo"
     ):
         """
-        Indexes the documents in the specified folder using the GPTVectorStoreIndex.
+        Indexes the documents in the specified folder using the VectorStoreIndex.
 
         Description:
         The function performs the following steps:
@@ -90,12 +91,14 @@ class VectorIndex:
         :param num_outputs:
         :param chunk_overlap_ratio:
         :param chunk_size_limit:
+        :param temperature:
+        :param model_name:
         """
         prompt_helper = PromptHelper(
             context_window, num_outputs, chunk_overlap_ratio, chunk_size_limit=chunk_size_limit
         )
         llm_predictor = LLMPredictor(
-            llm=ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo", max_tokens=num_outputs)
+            llm=ChatOpenAI(temperature=temperature, model_name=model_name, max_tokens=num_outputs)
         )
         documents = SimpleDirectoryReader(document_directory).load_data()
         index = VectorStoreIndex.from_documents(

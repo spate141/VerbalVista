@@ -33,7 +33,7 @@ class VerbalVista:
         )
         with st.form('docs_processing'):
 
-            col1, col2, col3 = st.columns([8, 8, 8])
+            col1, col2, col3 = st.columns([14, 8, 8])
             with col1:
                 st.markdown("<h6>Process local files:</h6>", unsafe_allow_html=True)
                 uploaded_file = st.file_uploader(
@@ -42,22 +42,22 @@ class VerbalVista:
                 )
             with col2:
                 st.markdown("<h6>Extract text from URL:</h6>", unsafe_allow_html=True)
-                url = st.text_input("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
+                url = st.text_area("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
                 url = None if len(url) == 0 else url
             with col3:
                 st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
                 text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
 
-            _, col, _ = st.columns([10, 40, 10])
-            with col:
-                st.markdown("</br><center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-                documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
-                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-                st.dataframe(
-                    documents_df, hide_index=True, use_container_width=False,
-                    column_order=['Index Status', 'Document Name', 'Creation Date']
-                )
+            # _, col, _ = st.columns([10, 40, 10])
+            # with col:
+            #     st.markdown("</br><center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
+            #     documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+            #     documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+            #     documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
+            #     st.dataframe(
+            #         documents_df, hide_index=True, use_container_width=False,
+            #         column_order=['Index Status', 'Document Name', 'Creation Date']
+            #     )
             submitted = st.form_submit_button("Submit")
             if submitted:
                 if uploaded_file is not None:
@@ -140,32 +140,40 @@ class VerbalVista:
             color_name="blue-green-70",
         )
         with st.form('manage_index'):
-            col1, col2, col3 = st.columns([6, 0.1, 5], gap='small')
-            with col1:
-                st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-                documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
-                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-                selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
-            with col3:
-                st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
-                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
-                indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
-                indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
-                st.dataframe(indices_df, hide_index=True)
-
             st.markdown(
                 "<center><h6><u>Modify LangChain PromptHelper Parameters</u></h6></center>", unsafe_allow_html=True
             )
-            cols = st.columns(4)
+            cols = st.columns(3)
+            with cols[0]:
+                model_name = st.selectbox("model_name:", options=[
+                    "gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"
+                ], index=0)
+            with cols[1]:
+                temperature = st.number_input("temperature:", value=0.7)
+            with cols[2]:
+                chunk_size_limit = st.number_input("chunk_size_limit:", value=600)
+            st.markdown("</br>", unsafe_allow_html=True)
+            cols = st.columns(3)
             with cols[0]:
                 context_window = st.number_input("context_window:", value=3900)
             with cols[1]:
                 num_outputs = st.number_input("num_outputs:", value=512)
             with cols[2]:
                 chunk_overlap_ratio = st.number_input("chunk_overlap_ratio:", value=0.1)
-            with cols[3]:
-                chunk_size_limit = st.number_input("chunk_size_limit:", value=600)
+            st.markdown("</br>", unsafe_allow_html=True)
+            cols = st.columns([6, 0.1, 5], gap='small')
+            with cols[0]:
+                st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
+                documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
+                selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
+            with cols[2]:
+                st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
+                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+                indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
+                indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
+                st.dataframe(indices_df, hide_index=True)
 
             submitted = st.form_submit_button("Create Index")
             if submitted:
@@ -181,11 +189,39 @@ class VerbalVista:
                                 index_directory=os.path.join(self.tmp_indices_dir, file_name),
                                 context_window=context_window, num_outputs=num_outputs,
                                 chunk_overlap_ratio=chunk_overlap_ratio,
-                                chunk_size_limit=chunk_size_limit
+                                chunk_size_limit=chunk_size_limit,
+                                temperature=temperature,
+                                model_name=model_name
                             )
                     st.success(f"Document index {file_name} saved! Refreshing page now.")
                 time.sleep(2)
                 st.experimental_rerun()
+
+    @staticmethod
+    def get_answer(prompt=None, selected_index_path=None):
+        """
+
+        :param prompt:
+        :param selected_index_path:
+        :return:
+        """
+        start = time.time()
+        query_engine = load_index(selected_index_path)
+        with get_openai_callback() as cb:
+            response = query_engine.query(prompt)
+        total_time = round(time.time() - start, 2)
+        response_meta = f"""
+        ```markdown
+        - Total Tokens Used: {cb.total_tokens}
+          - Prompt Tokens: {cb.prompt_tokens}
+          - Completion Tokens: {cb.completion_tokens}
+        - Successful Requests: {cb.successful_requests}
+        - Total Cost (USD): ${round(cb.total_cost, 4)}
+        - Total Time (Seconds): {total_time}
+        ```
+        """
+        log_info({"request_tokens": cb.total_tokens, "request_cost": round(cb.total_cost, 4)})
+        return response, response_meta
 
     def render_qa_page(self):
         """
@@ -208,45 +244,41 @@ class VerbalVista:
             st.info(f"Selected index: {selected_index_path}")
 
             # Initialize chat history
-            if "messages" not in st.session_state:
-                st.session_state.messages = []
+            if selected_index_path not in st.session_state:
+                st.session_state[selected_index_path] = {'messages': []}
 
             with st.spinner('thinking...'):
 
                 # Display chat messages from history on app rerun
-                for message in st.session_state.messages:
-                    with st.chat_message(message["role"]):
-                        st.markdown(message["content"])
+                for message_item in st.session_state[selected_index_path]['messages']:
+                    with st.chat_message(message_item["role"]):
+                        st.markdown(message_item["content"])
 
                 # React to user input
                 if prompt := st.chat_input(f"Start asking questions to '{selected_index_path[:25]}...' index!"):
-                    # Display user message in chat message container
-                    st.chat_message("user", avatar="https://i.ibb.co/9qhwtvZ/man.png").markdown(prompt)
+
                     # Add user message to chat history
-                    st.session_state.messages.append({"role": "user", "content": prompt})
+                    st.session_state[selected_index_path]['messages'].append({"role": "user", "content": prompt})
+
+                    # Display user message in chat message container
+                    with st.chat_message("user", avatar="https://i.ibb.co/9qhwtvZ/man.png"):
+                        st.markdown(prompt)
+
                     # Define QA mechanism here
-                    start = time.time()
-                    query_engine = load_index(selected_index_path)
-                    with get_openai_callback() as cb:
-                        response = query_engine.query(prompt)
-                    total_time = round(time.time() - start, 2)
-                    query_meta = f"""
-                    ```markdown
-                    - Total Tokens Used: {cb.total_tokens}
-                      - Prompt Tokens: {cb.prompt_tokens}
-                      - Completion Tokens: {cb.completion_tokens}
-                    - Successful Requests: {cb.successful_requests}
-                    - Total Cost (USD): ${round(cb.total_cost, 4)}
-                    - Total Time (Seconds): {total_time}
-                    ```
-                    """
-                    log_info({"request_tokens": cb.total_tokens, "request_cost": round(cb.total_cost, 4)})
+                    response, response_meta = self.get_answer(
+                        prompt=prompt, selected_index_path=selected_index_path
+                    )
+
                     # Display assistant response in chat message container
                     with st.chat_message("assistant", avatar="https://i.ibb.co/N7SwF3X/ai.png"):
-                        st.markdown(response)
-                        st.markdown(query_meta)
+                        message_placeholder = st.empty()
+                        message_placeholder.markdown(response)
+                        st.markdown(response_meta)
+
                     # Add assistant response to chat history
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+                    st.session_state[selected_index_path]['messages'].append({"role": "assistant", "content": response})
+
+                    log_debug(st.session_state)
 
     def render_document_explore_page(self):
         """

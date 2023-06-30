@@ -12,6 +12,15 @@ import os
 
 
 @st.cache_data
+def parse_csv(file: BytesIO) -> str:
+    """
+    Parse csv file and return content as text.
+    :param file:
+    :return:
+    """
+
+
+@st.cache_data
 def parse_docx(file: BytesIO) -> str:
     """
     Parse word file and return content as string of text.
