@@ -17,10 +17,25 @@ class VerbalVista:
     def __init__(self, tmp_document_dir: str = None, tmp_audio_dir: str = None, tmp_indices_dir: str = None, tmp_chat_history_dir: str = None):
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = MyIndex()
+
+        _ = [self.create_directory(d) for d in [tmp_document_dir, tmp_indices_dir, tmp_audio_dir, tmp_chat_history_dir]]
         self.tmp_document_dir = tmp_document_dir
         self.tmp_indices_dir = tmp_indices_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.tmp_chat_history_dir = tmp_chat_history_dir
+
+    @staticmethod
+    def create_directory(directory_path):
+        """
+
+        :param directory_path:
+        :return:
+        """
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+            log_info(f"Directory '{directory_path}' created successfully.")
+        else:
+            log_info(f"Directory '{directory_path}' already exists.")
 
     def render_media_processing_page(self):
         """
