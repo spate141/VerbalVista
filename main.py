@@ -62,20 +62,14 @@ class VerbalVista:
             with col3:
                 st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
                 text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
+                text = None if len(text) == 0 else text
 
-            # _, col, _ = st.columns([10, 40, 10])
-            # with col:
-            #     st.markdown("</br><center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-            #     documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
-            #     documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-            #     documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-            #     st.dataframe(
-            #         documents_df, hide_index=True, use_container_width=False,
-            #         column_order=['Index Status', 'Document Name', 'Creation Date']
-            #     )
             submitted = st.form_submit_button("Submit")
             if submitted:
+                full_document = ''
+
                 if uploaded_file is not None:
+                    log_debug('Processing uploaded file!')
                     if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav')):
                         with st.spinner('Processing audio. Please wait.'):
                             process_audio_bar = st.progress(0, text="Processing...")
@@ -127,24 +121,34 @@ class VerbalVista:
 
                     uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
 
-                elif url:
+                elif url is not None:
+                    log_debug('Processing URL!')
                     full_document = extract_text_from_url(url)
                     uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
+
                 elif text is not None:
+                    log_debug('Processing Text!')
                     full_document = text
                     uploaded_file_name = text[:20].replace("/", "-").replace('.', '-')
 
-                # Write document to a file
-                st.markdown("#### Document snippet:")
-                st.caption(full_document[:110] + '...')
-                tmp_document_save_path = write_text_to_file(
-                    uploaded_file_name=uploaded_file_name,
-                    tmp_document_dir=self.tmp_document_dir,
-                    full_document=full_document
-                )
-                st.success(f"Document saved: {tmp_document_save_path}")
-                # time.sleep(2)
-                # st.experimental_rerun()
+                else:
+                    st.error("You have to either upload a file, URL or enter some text!")
+                    return
+
+                if len(full_document) == 0:
+                    st.error("No content available! Try something else.")
+                    return
+
+                else:
+                    # Write document to a file
+                    st.markdown("#### Document snippet:")
+                    st.caption(full_document[:110] + '...')
+                    tmp_document_save_path = write_text_to_file(
+                        uploaded_file_name=uploaded_file_name,
+                        tmp_document_dir=self.tmp_document_dir,
+                        full_document=full_document
+                    )
+                    st.success(f"Document saved: {tmp_document_save_path}")
 
     def render_manage_index_page(self):
         """
