@@ -18,6 +18,7 @@ def parse_csv(file: BytesIO) -> str:
     :param file:
     :return:
     """
+    pass
 
 
 @st.cache_data

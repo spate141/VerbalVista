@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from llama_index import StorageContext, load_index_from_storage
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, LLMPredictor, PromptHelper
 from .logging_module import log_info
@@ -22,7 +23,7 @@ def load_index(index_path):
     return query_engine
 
 
-class VectorIndex:
+class MyIndex:
 
     def __init__(self):
         pass
@@ -107,3 +108,29 @@ class VectorIndex:
             prompt_helper=prompt_helper
         )
         index.storage_context.persist(persist_dir=index_directory)
+
+    @staticmethod
+    def generate_answer(prompt=None, selected_index_path=None):
+        """
+
+        :param prompt:
+        :param selected_index_path:
+        :return:
+        """
+        start = time.time()
+        query_engine = load_index(selected_index_path)
+        with get_openai_callback() as cb:
+            response = query_engine.query(prompt)
+        total_time = round(time.time() - start, 2)
+        response_meta = f"""
+            ```markdown
+            
+            - Total Tokens: {cb.total_tokens}
+                - Prompt: {cb.prompt_tokens} + Response: {cb.completion_tokens}
+            - Total Cost (USD): ${round(cb.total_cost, 4)}
+            - Total Time (Seconds): {total_time}
+            
+            ```
+            """
+        log_info({"request_tokens": cb.total_tokens, "request_cost": round(cb.total_cost, 4)})
+        return response, response_meta

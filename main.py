@@ -1,26 +1,26 @@
 import os
 import time
+import pickle
 import pandas as pd
 import streamlit as st
-from streamlit_chat import message
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
 from utils.audio_transcribe import WhisperAudioTranscribe
-from utils.generate_vector_index import VectorIndex, load_index
+from utils.indexing_util import MyIndex
 from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, write_text_to_file, extract_text_from_url
 from utils.generate_wordcloud import generate_wordcloud
-from langchain.callbacks import get_openai_callback
 
 
 class VerbalVista:
 
-    def __init__(self, tmp_document_dir: str = None, tmp_audio_dir: str = None, tmp_indices_dir: str = None):
+    def __init__(self, tmp_document_dir: str = None, tmp_audio_dir: str = None, tmp_indices_dir: str = None, tmp_chat_history_dir: str = None):
         self.whisper = WhisperAudioTranscribe()
-        self.vector_index = VectorIndex()
+        self.indexing_util = MyIndex()
         self.tmp_document_dir = tmp_document_dir
         self.tmp_indices_dir = tmp_indices_dir
         self.tmp_audio_dir = tmp_audio_dir
+        self.tmp_chat_history_dir = tmp_chat_history_dir
 
     def render_media_processing_page(self):
         """
@@ -153,6 +153,7 @@ class VerbalVista:
             with cols[2]:
                 chunk_size_limit = st.number_input("chunk_size_limit:", value=600)
             st.markdown("</br>", unsafe_allow_html=True)
+
             cols = st.columns(3)
             with cols[0]:
                 context_window = st.number_input("context_window:", value=3900)
@@ -161,16 +162,17 @@ class VerbalVista:
             with cols[2]:
                 chunk_overlap_ratio = st.number_input("chunk_overlap_ratio:", value=0.1)
             st.markdown("</br>", unsafe_allow_html=True)
+
             cols = st.columns([6, 0.1, 5], gap='small')
             with cols[0]:
                 st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-                documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+                documents_df = self.indexing_util.get_available_documents(tmp_document_dir=self.tmp_document_dir)
                 documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
                 documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
                 selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
             with cols[2]:
                 st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
-                indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+                indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
                 indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
                 indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
                 st.dataframe(indices_df, hide_index=True)
@@ -184,7 +186,7 @@ class VerbalVista:
                             'Document Name'].to_list()
                         for doc_dir_to_index in document_dirs:
                             file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
-                            self.vector_index.index_document(
+                            self.indexing_util.index_document(
                                 document_directory=doc_dir_to_index,
                                 index_directory=os.path.join(self.tmp_indices_dir, file_name),
                                 context_window=context_window, num_outputs=num_outputs,
@@ -197,32 +199,6 @@ class VerbalVista:
                 time.sleep(2)
                 st.experimental_rerun()
 
-    @staticmethod
-    def get_answer(prompt=None, selected_index_path=None):
-        """
-
-        :param prompt:
-        :param selected_index_path:
-        :return:
-        """
-        start = time.time()
-        query_engine = load_index(selected_index_path)
-        with get_openai_callback() as cb:
-            response = query_engine.query(prompt)
-        total_time = round(time.time() - start, 2)
-        response_meta = f"""
-        ```markdown
-        - Total Tokens Used: {cb.total_tokens}
-          - Prompt Tokens: {cb.prompt_tokens}
-          - Completion Tokens: {cb.completion_tokens}
-        - Successful Requests: {cb.successful_requests}
-        - Total Cost (USD): ${round(cb.total_cost, 4)}
-        - Total Time (Seconds): {total_time}
-        ```
-        """
-        log_info({"request_tokens": cb.total_tokens, "request_cost": round(cb.total_cost, 4)})
-        return response, response_meta
-
     def render_qa_page(self):
         """
         """
@@ -232,20 +208,30 @@ class VerbalVista:
             color_name="red-70",
         )
         st.markdown("<center><h6><u>Select Index for Q & A</u></h6></center>", unsafe_allow_html=True)
-        indices_df = self.vector_index.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+        indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
         selected_index_path = selectbox(
-            "Select Index:", options=indices_df['Index Name'].to_list(), no_selection_label="<select index>",
-            label_visibility="collapsed"
+            "Select Index:", options=indices_df['Index Name'].to_list(),
+            no_selection_label="<select index>", label_visibility="collapsed"
         )
 
         if selected_index_path is None:
             st.error("Error: Select index first!")
         else:
             st.info(f"Selected index: {selected_index_path}")
+            chat_history_filepath = os.path.join(
+                self.tmp_chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
+            )
 
             # Initialize chat history
             if selected_index_path not in st.session_state:
-                st.session_state[selected_index_path] = {'messages': []}
+
+                # check if chat history is available locally, if yes; load the chat history
+                if os.path.exists(chat_history_filepath):
+                    log_debug(f"Loading chat history from local file: {chat_history_filepath}")
+                    with open(chat_history_filepath, 'rb') as f:
+                        st.session_state[selected_index_path] = pickle.load(f)
+                else:
+                    st.session_state[selected_index_path] = {'messages': []}
 
             with st.spinner('thinking...'):
 
@@ -258,27 +244,44 @@ class VerbalVista:
                 if prompt := st.chat_input(f"Start asking questions to '{selected_index_path[:25]}...' index!"):
 
                     # Add user message to chat history
-                    st.session_state[selected_index_path]['messages'].append({"role": "user", "content": prompt})
+                    st.session_state[selected_index_path]['messages'].append({
+                        "role": "user", "content": prompt
+                    })
 
                     # Display user message in chat message container
-                    with st.chat_message("user", avatar="https://i.ibb.co/9qhwtvZ/man.png"):
+                    with st.chat_message("user"):
                         st.markdown(prompt)
 
-                    # Define QA mechanism here
-                    response, response_meta = self.get_answer(
+                    # Define Q/A mechanism here
+                    response, response_meta = self.indexing_util.generate_answer(
                         prompt=prompt, selected_index_path=selected_index_path
                     )
 
                     # Display assistant response in chat message container
-                    with st.chat_message("assistant", avatar="https://i.ibb.co/N7SwF3X/ai.png"):
+                    with st.chat_message("assistant"):
                         message_placeholder = st.empty()
-                        message_placeholder.markdown(response)
-                        st.markdown(response_meta)
+                        full_response = ""
+
+                        # Simulate stream of response with milliseconds delay
+                        for chunk in response.response.split():
+                            full_response += chunk + " "
+                            time.sleep(0.03)
+
+                            # Add a blinking cursor to simulate typing
+                            message_placeholder.markdown(full_response + "▌")
+
+                        # Display full message at the end with other stuff you want to show like `response_meta`.
+                        message_placeholder.markdown(full_response)
+                        st.info(response_meta)
 
                     # Add assistant response to chat history
-                    st.session_state[selected_index_path]['messages'].append({"role": "assistant", "content": response})
-
-                    log_debug(st.session_state)
+                    st.session_state[selected_index_path]['messages'].append({
+                        "role": "assistant", "content": response
+                    })
+                    # Save conversation to local file
+                    log_debug(f"Saving chat history to local file: {chat_history_filepath}")
+                    with open(chat_history_filepath, 'wb') as f:
+                        pickle.dump(st.session_state[selected_index_path], f)
 
     def render_document_explore_page(self):
         """
@@ -290,7 +293,7 @@ class VerbalVista:
         )
         with st.form('explore_document'):
             st.markdown("<center><h6><u>Select Document</u></h6></center>", unsafe_allow_html=True)
-            documents_df = self.vector_index.get_available_documents(tmp_document_dir=self.tmp_document_dir)
+            documents_df = self.indexing_util.get_available_documents(tmp_document_dir=self.tmp_document_dir)
             documents_df = documents_df.rename(columns={'Create Index': 'Select Document'})
             documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
             documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
@@ -306,10 +309,7 @@ class VerbalVista:
                     filepath = os.path.join(selected_doc_dir_path, filename)
                     with open(filepath, 'r') as f:
                         text = f.read()
-                        data.append({
-                            "filename": filename,
-                            "text": text
-                        })
+                        data.append({"filename": filename, "text": text})
                 with st.expander("Word Clouds"):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
@@ -354,8 +354,12 @@ def main():
     tmp_document_dir = 'documents/'
     tmp_audio_dir = 'tmp_audio_dir/'
     tmp_indices_dir = 'indices/'
+    tmp_chat_history_dir = 'chat_history/'
 
-    vv = VerbalVista(tmp_document_dir=tmp_document_dir, tmp_indices_dir=tmp_indices_dir, tmp_audio_dir=tmp_audio_dir)
+    vv = VerbalVista(
+        tmp_document_dir=tmp_document_dir, tmp_indices_dir=tmp_indices_dir,
+        tmp_audio_dir=tmp_audio_dir, tmp_chat_history_dir=tmp_chat_history_dir
+    )
     if page == "Media Processing":
         vv.render_media_processing_page()
     elif page == "Manage Index":
