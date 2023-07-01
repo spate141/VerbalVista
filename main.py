@@ -318,7 +318,7 @@ class VerbalVista:
 
 
 def main():
-    VERSION = 0.1
+    VERSION = 0.2
     st.set_page_config(
         page_title="VerbalVista",
         page_icon="🤖",
