@@ -6,7 +6,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
 from llama_index import StorageContext, load_index_from_storage
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, LLMPredictor, PromptHelper
-from .logging_module import log_info
+from .logging_module import log_info, log_error
 
 
 @st.cache_resource
@@ -29,42 +29,68 @@ class MyIndex:
         pass
 
     @staticmethod
-    def get_available_indices(tmp_indices_dir: str = 'indices/'):
+    def get_available_indices(indices_dir: str = 'indices/'):
         """
 
-        :param tmp_indices_dir:
+        :param indices_dir:
         :return:
         """
         indices_data = []
-        all_indices_dirs = os.listdir(tmp_indices_dir)
+        all_indices_dirs = os.listdir(indices_dir)
         all_indices_dirs = [i for i in all_indices_dirs if not i.startswith('.')]
         for index_dir in all_indices_dirs:
-            index_dir_path = os.path.join(tmp_indices_dir, index_dir)
+            index_dir_path = os.path.join(indices_dir, index_dir)
             creation_date = time.ctime(os.stat(index_dir_path).st_ctime)
             indices_data.append((index_dir_path, creation_date))
         df = pd.DataFrame(indices_data, columns=['Index Name', 'Creation Date'])
         return df
 
     @staticmethod
-    def get_available_documents(tmp_document_dir: str = 'documents/', tmp_indices_dir: str = 'indices/'):
+    def get_available_documents(document_dir: str = 'documents/', indices_dir: str = 'indices/'):
         """
 
-        :param tmp_document_dir:
-        :param tmp_indices_dir:
+        :param document_dir:
+        :param indices_dir:
         :return:
         """
         transcripts_data = []
-        transcripts_subdirs = next(os.walk(tmp_document_dir))[1]
-        indices_subdirs = next(os.walk(tmp_indices_dir))[1]
+        transcripts_subdirs = next(os.walk(document_dir))[1]
+        indices_subdirs = next(os.walk(indices_dir))[1]
         for transcript in transcripts_subdirs:
-            transcript_path = os.path.join(tmp_document_dir, transcript)
+            transcript_path = os.path.join(document_dir, transcript)
             creation_date = time.ctime(os.stat(transcript_path).st_ctime)
             if transcript in indices_subdirs:
                 transcripts_data.append((False, '✅', transcript_path, creation_date))
             else:
                 transcripts_data.append((False, '❓', transcript_path, creation_date))
-        df = pd.DataFrame(transcripts_data, columns=['Create Index', 'Index Status', 'Document Name', 'Creation Date'])
+        df = pd.DataFrame(
+            transcripts_data,
+            columns=['Select Index', 'Index Status', 'Document Name', 'Creation Date']
+        )
         return df
+
+    @staticmethod
+    def delete_document(index_directory: str = None):
+        """
+
+        :param index_directory:
+        :return:
+        """
+        try:
+            # Remove all files and subdirectories within the directory
+            for root, dirs, files in os.walk(index_directory, topdown=False):
+                for name in files:
+                    file_path = os.path.join(root, name)
+                    os.remove(file_path)
+                for name in dirs:
+                    dir_path = os.path.join(root, name)
+                    os.rmdir(dir_path)
+
+            # Remove the top-level directory itself
+            os.rmdir(index_directory)
+            log_info(f"Directory '{index_directory}' deleted successfully.")
+        except OSError as e:
+            log_error(f"Error: {e.strerror}")
 
     @staticmethod
     def index_document(
@@ -96,7 +122,8 @@ class MyIndex:
         :param model_name:
         """
         prompt_helper = PromptHelper(
-            context_window, num_outputs, chunk_overlap_ratio, chunk_size_limit=chunk_size_limit
+            context_window=context_window, num_output=num_outputs, chunk_overlap_ratio=chunk_overlap_ratio,
+            chunk_size_limit=chunk_size_limit
         )
         llm_predictor = LLMPredictor(
             llm=ChatOpenAI(temperature=temperature, model_name=model_name, max_tokens=num_outputs)

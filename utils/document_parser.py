@@ -1,4 +1,5 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import SeleniumURLLoader
 from langchain.docstore.document import Document
 from typing import Any, Dict, List
 from bs4 import BeautifulSoup
@@ -101,16 +102,16 @@ def text_to_docs(text: str | List[str]) -> List[Document]:
     return doc_chunks
 
 
-def write_text_to_file(uploaded_file_name: str = None, tmp_document_dir: str = None, full_document: str = None):
+def write_text_to_file(uploaded_file_name: str = None, document_dir: str = None, full_document: str = None):
     """
     Save the text to a file in a folder.
     :param uploaded_file_name:
-    :param tmp_document_dir:
+    :param document_dir:
     :param full_document:
     :return:
     """
     transcript_file_name = os.path.splitext(uploaded_file_name)[0] + '.txt'
-    transcript_file_dir = os.path.join(tmp_document_dir, os.path.splitext(uploaded_file_name)[0])
+    transcript_file_dir = os.path.join(document_dir, os.path.splitext(uploaded_file_name)[0])
     if not os.path.exists(transcript_file_dir):
         os.makedirs(transcript_file_dir)
     tmp_document_save_path = os.path.join(transcript_file_dir, transcript_file_name)
@@ -125,9 +126,12 @@ def extract_text_from_url(url):
     :param url:
     :return:
     """
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.get_text()
-    text = text.replace('\n', ' ')
-    cleaned_text = ' '.join(text.split())
-    return cleaned_text
+    # response = requests.get(url)
+    # soup = BeautifulSoup(response.text, 'html.parser')
+    # text = soup.get_text()
+    loader = SeleniumURLLoader(urls=[url])
+    data = loader.load()[0]
+    text = data.page_content
+    # text = text.replace('\n', ' ')
+    # cleaned_text = ' '.join(text.split())
+    return text

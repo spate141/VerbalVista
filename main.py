@@ -14,15 +14,15 @@ from utils.generate_wordcloud import generate_wordcloud
 
 class VerbalVista:
 
-    def __init__(self, tmp_document_dir: str = None, tmp_audio_dir: str = None, tmp_indices_dir: str = None, tmp_chat_history_dir: str = None):
+    def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None):
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = MyIndex()
 
-        _ = [self.create_directory(d) for d in [tmp_document_dir, tmp_indices_dir, tmp_audio_dir, tmp_chat_history_dir]]
-        self.tmp_document_dir = tmp_document_dir
-        self.tmp_indices_dir = tmp_indices_dir
+        _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
+        self.document_dir = document_dir
+        self.indices_dir = indices_dir
         self.tmp_audio_dir = tmp_audio_dir
-        self.tmp_chat_history_dir = tmp_chat_history_dir
+        self.chat_history_dir = chat_history_dir
 
     @staticmethod
     def create_directory(directory_path):
@@ -34,8 +34,6 @@ class VerbalVista:
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)
             log_info(f"Directory '{directory_path}' created successfully.")
-        else:
-            log_info(f"Directory '{directory_path}' already exists.")
 
     def render_media_processing_page(self):
         """
@@ -145,7 +143,7 @@ class VerbalVista:
                     st.caption(full_document[:110] + '...')
                     tmp_document_save_path = write_text_to_file(
                         uploaded_file_name=uploaded_file_name,
-                        tmp_document_dir=self.tmp_document_dir,
+                        document_dir=self.document_dir,
                         full_document=full_document
                     )
                     st.success(f"Document saved: {tmp_document_save_path}")
@@ -158,9 +156,16 @@ class VerbalVista:
             description="Manage documents indices.",
             color_name="blue-green-70",
         )
-        with st.form('manage_index'):
+
+
+        st.markdown("<h6><u>Select Mode:</u></h6>", unsafe_allow_html=True)
+        mode = st.selectbox("mode", ["Create", "Delete"], index=0, label_visibility="collapsed")
+        mode_label = None
+
+        if mode == "Create":
+            mode_label = 'Creating'
             st.markdown(
-                "<center><h6><u>Modify LangChain PromptHelper Parameters</u></h6></center>", unsafe_allow_html=True
+                "<h6><u>LangChain PromptHelper Parameters:</u></h6>", unsafe_allow_html=True
             )
             cols = st.columns(3)
             with cols[0]:
@@ -182,41 +187,56 @@ class VerbalVista:
                 chunk_overlap_ratio = st.number_input("chunk_overlap_ratio:", value=0.1)
             st.markdown("</br>", unsafe_allow_html=True)
 
-            cols = st.columns([6, 0.1, 5], gap='small')
-            with cols[0]:
-                st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-                documents_df = self.indexing_util.get_available_documents(tmp_document_dir=self.tmp_document_dir)
-                documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-                documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-                selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
-            with cols[2]:
-                st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
-                indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
-                indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
-                indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
-                st.dataframe(indices_df, hide_index=True)
+        elif mode == "Delete":
+            mode_label = 'Deleting'
+            pass
 
-            submitted = st.form_submit_button("Create Index")
-            if submitted:
-                _, c, _ = st.columns([2, 5, 2])
-                with c:
-                    with st.spinner('Indexing document. Please wait.'):
-                        document_dirs = selected_documents_df[selected_documents_df['Create Index']][
-                            'Document Name'].to_list()
-                        for doc_dir_to_index in document_dirs:
-                            file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
+        cols = st.columns([2, 10, 2], gap='small')
+        with cols[1]:
+            st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
+            documents_df = self.indexing_util.get_available_documents(
+                document_dir=self.document_dir, indices_dir=self.indices_dir
+            )
+            documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+            documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
+            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
+
+        # cols = st.columns([10, 20, 10], gap='small')
+        # with cols[1]:
+        #     st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
+        #     indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+        #     indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
+        #     indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
+        #     st.dataframe(indices_df, hide_index=True, use_container_width=False)
+
+        submit = st.button("Submit", type="primary")
+        if submit:
+            _, c, _ = st.columns([2, 5, 2])
+            with c:
+                with st.spinner(f'{mode_label} document. Please wait.'):
+                    document_dirs = selected_documents_df[selected_documents_df['Select Index']][
+                        'Document Name'].to_list()
+                    for doc_dir_to_index in document_dirs:
+                        file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
+                        if mode == 'Create':
                             self.indexing_util.index_document(
                                 document_directory=doc_dir_to_index,
-                                index_directory=os.path.join(self.tmp_indices_dir, file_name),
+                                index_directory=os.path.join(self.indices_dir, file_name),
                                 context_window=context_window, num_outputs=num_outputs,
                                 chunk_overlap_ratio=chunk_overlap_ratio,
                                 chunk_size_limit=chunk_size_limit,
                                 temperature=temperature,
                                 model_name=model_name
                             )
-                    st.success(f"Document index {file_name} saved! Refreshing page now.")
-                time.sleep(2)
-                st.experimental_rerun()
+                            st.success(f"Document index {file_name} saved! Refreshing page now.")
+                        elif mode == 'Delete':
+                            self.indexing_util.delete_document(
+                                index_directory=os.path.join(self.indices_dir, file_name)
+                            )
+                            st.error(f"Document index {file_name} deleted! Refreshing page now.")
+
+            time.sleep(2)
+            st.experimental_rerun()
 
     def render_qa_page(self):
         """
@@ -226,8 +246,7 @@ class VerbalVista:
             description="Select index, ask questions!",
             color_name="red-70",
         )
-        st.markdown("<center><h6><u>Select Index for Q & A</u></h6></center>", unsafe_allow_html=True)
-        indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
+        indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
         selected_index_path = selectbox(
             "Select Index:", options=indices_df['Index Name'].to_list(),
             no_selection_label="<select index>", label_visibility="collapsed"
@@ -235,10 +254,11 @@ class VerbalVista:
 
         if selected_index_path is None:
             st.error("Error: Select index first!")
+            return
         else:
             st.info(f"Selected index: {selected_index_path}")
             chat_history_filepath = os.path.join(
-                self.tmp_chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
+                self.chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
             )
 
             # Initialize chat history
@@ -312,8 +332,10 @@ class VerbalVista:
         )
         with st.form('explore_document'):
             st.markdown("<center><h6><u>Select Document</u></h6></center>", unsafe_allow_html=True)
-            documents_df = self.indexing_util.get_available_documents(tmp_document_dir=self.tmp_document_dir)
-            documents_df = documents_df.rename(columns={'Create Index': 'Select Document'})
+            documents_df = self.indexing_util.get_available_documents(
+                document_dir=self.document_dir, indices_dir=self.indices_dir
+            )
+            documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})
             documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
             documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
             selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
@@ -360,6 +382,7 @@ def main():
         """,
         unsafe_allow_html=True
     )
+    openai_api_key = st.sidebar.text_input("OpenAI API Key:", key="chatbot_api_key", type="password")
     st.sidebar.markdown("<center><h4><b>Select Function</b></h5></center>", unsafe_allow_html=True)
     page = st.sidebar.selectbox(
         "Select function:", [
@@ -370,14 +393,27 @@ def main():
         ], label_visibility="collapsed"
     )
 
-    tmp_document_dir = 'documents/'
+    document_dir = 'documents/'
     tmp_audio_dir = 'tmp_audio_dir/'
-    tmp_indices_dir = 'indices/'
-    tmp_chat_history_dir = 'chat_history/'
+    indices_dir = 'indices/'
+    chat_history_dir = 'chat_history/'
+
+    if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
+        # if both env variable and explicit key is not set
+        st.error("OpenAI API key not found!")
+        log_error("No OpenAI key found!")
+    elif not os.environ.get("OPENAI_API_KEY", None) and openai_api_key:
+        # if env variable is not set but user provide explicit key
+        os.environ['OPENAI_API_KEY'] = openai_api_key
+        log_info(f"No OpenAI key found in ENV, User provided key.")
+    elif os.environ.get("OPENAI_API_KEY", None) and openai_api_key:
+        # if both env variable and explicit keys are provided
+        os.environ['OPENAI_API_KEY'] = openai_api_key
+        log_info(f"OpenAI key found in ENV & User provided key.")
 
     vv = VerbalVista(
-        tmp_document_dir=tmp_document_dir, tmp_indices_dir=tmp_indices_dir,
-        tmp_audio_dir=tmp_audio_dir, tmp_chat_history_dir=tmp_chat_history_dir
+        document_dir=document_dir, indices_dir=indices_dir,
+        tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir
     )
     if page == "Media Processing":
         vv.render_media_processing_page()
