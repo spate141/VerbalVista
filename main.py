@@ -382,7 +382,10 @@ def main():
         """,
         unsafe_allow_html=True
     )
-    openai_api_key = st.sidebar.text_input("OpenAI API Key:", key="chatbot_api_key", type="password")
+    st.sidebar.markdown("<center><h4><b>OpenAI API Key</b></h5></center>", unsafe_allow_html=True)
+    openai_api_key = st.sidebar.text_input(
+        "OpenAI API Key:", key="chatbot_api_key", type="password", label_visibility="collapsed"
+    )
     st.sidebar.markdown("<center><h4><b>Select Function</b></h5></center>", unsafe_allow_html=True)
     page = st.sidebar.selectbox(
         "Select function:", [
