@@ -1,15 +1,16 @@
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import SeleniumURLLoader
-from langchain.docstore.document import Document
-from typing import Any, Dict, List
-from bs4 import BeautifulSoup
-from pypdf import PdfReader
-import streamlit as st
-from io import BytesIO
-import requests
-import docx2txt
 import re
 import os
+import docx2txt
+import streamlit as st
+from io import BytesIO
+from typing import List
+from pypdf import PdfReader
+from langchain.docstore.document import Document
+from langchain.document_loaders import SeleniumURLLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from .logging_module import log_info, log_error, log_debug
 
 
 @st.cache_data
@@ -126,12 +127,7 @@ def extract_text_from_url(url):
     :param url:
     :return:
     """
-    # response = requests.get(url)
-    # soup = BeautifulSoup(response.text, 'html.parser')
-    # text = soup.get_text()
-    loader = SeleniumURLLoader(urls=[url])
+    loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
     data = loader.load()[0]
     text = data.page_content
-    # text = text.replace('\n', ' ')
-    # cleaned_text = ' '.join(text.split())
     return text
