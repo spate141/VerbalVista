@@ -7,6 +7,7 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.indexing_util import MyIndex
+from utils.ask_util import AskUtil
 from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, write_text_to_file, extract_text_from_url
 from utils.generate_wordcloud import generate_wordcloud
@@ -17,6 +18,7 @@ class VerbalVista:
     def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None):
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = MyIndex()
+        self.ask_util = AskUtil()
 
         _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
         self.document_dir = document_dir
@@ -33,7 +35,7 @@ class VerbalVista:
         """
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)
-            log_info(f"Directory '{directory_path}' created successfully.")
+            log_debug(f"Directory '{directory_path}' created successfully.")
 
     def render_media_processing_page(self):
         """
@@ -102,7 +104,7 @@ class VerbalVista:
                                 )
                             full_document = ' '.join(full_document)
 
-                        log_info(f"Removing tmp audio files")
+                        log_debug(f"Removing tmp audio files")
                         self.whisper.remove_temp_files(self.tmp_audio_dir)
 
                     elif uploaded_file.name.endswith(".pdf"):
@@ -157,7 +159,6 @@ class VerbalVista:
             color_name="blue-green-70",
         )
 
-
         st.markdown("<h6><u>Select Mode:</u></h6>", unsafe_allow_html=True)
         mode = st.selectbox("mode", ["Create", "Delete"], index=0, label_visibility="collapsed")
         mode_label = None
@@ -167,24 +168,13 @@ class VerbalVista:
             st.markdown(
                 "<h6><u>LangChain PromptHelper Parameters:</u></h6>", unsafe_allow_html=True
             )
-            cols = st.columns(3)
+            cols = st.columns(2)
             with cols[0]:
-                model_name = st.selectbox("model_name:", options=[
-                    "gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"
+                embedding_model = st.selectbox("embedding_model:", options=[
+                    "text-embedding-ada-002"
                 ], index=0)
             with cols[1]:
-                temperature = st.number_input("temperature:", value=0.7)
-            with cols[2]:
-                chunk_size_limit = st.number_input("chunk_size_limit:", value=600)
-            st.markdown("</br>", unsafe_allow_html=True)
-
-            cols = st.columns(3)
-            with cols[0]:
-                context_window = st.number_input("context_window:", value=3900)
-            with cols[1]:
-                num_outputs = st.number_input("num_outputs:", value=512)
-            with cols[2]:
-                chunk_overlap_ratio = st.number_input("chunk_overlap_ratio:", value=0.1)
+                chunk_size = st.number_input("chunk_size:", value=600)
             st.markdown("</br>", unsafe_allow_html=True)
 
         elif mode == "Delete":
@@ -201,14 +191,6 @@ class VerbalVista:
             documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
             selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
 
-        # cols = st.columns([10, 20, 10], gap='small')
-        # with cols[1]:
-        #     st.markdown("<center><h6><u>Available Indices</u></h6></center>", unsafe_allow_html=True)
-        #     indices_df = self.indexing_util.get_available_indices(tmp_indices_dir=self.tmp_indices_dir)
-        #     indices_df['Creation Date'] = pd.to_datetime(indices_df['Creation Date'])
-        #     indices_df = indices_df.sort_values(by='Creation Date', ascending=False)
-        #     st.dataframe(indices_df, hide_index=True, use_container_width=False)
-
         submit = st.button("Submit", type="primary")
         if submit:
             _, c, _ = st.columns([2, 5, 2])
@@ -222,11 +204,8 @@ class VerbalVista:
                             self.indexing_util.index_document(
                                 document_directory=doc_dir_to_index,
                                 index_directory=os.path.join(self.indices_dir, file_name),
-                                context_window=context_window, num_outputs=num_outputs,
-                                chunk_overlap_ratio=chunk_overlap_ratio,
-                                chunk_size_limit=chunk_size_limit,
-                                temperature=temperature,
-                                model_name=model_name
+                                chunk_size=chunk_size,
+                                embedding_model=embedding_model
                             )
                             st.success(f"Document index {file_name} saved! Refreshing page now.")
                         elif mode == 'Delete':
@@ -256,12 +235,21 @@ class VerbalVista:
             st.error("Error: Select index first!")
             return
         else:
+            cols = st.columns(3)
+            with cols[0]:
+                temperature = st.number_input("temperature", 0.5)
+            with cols[1]:
+                max_tokens = st.number_input("max_tokens", 512)
+            with cols[2]:
+                model_name = st.selectbox("model_name", ["gpt-3.5-turbo"], index=0)
+
             st.info(f"Selected index: {selected_index_path}")
             chat_history_filepath = os.path.join(
                 self.chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
             )
 
             # Initialize chat history
+            _chat_history = []
             if selected_index_path not in st.session_state:
 
                 # check if chat history is available locally, if yes; load the chat history
@@ -292,9 +280,16 @@ class VerbalVista:
                         st.markdown(prompt)
 
                     # Define Q/A mechanism here
-                    response, response_meta = self.indexing_util.generate_answer(
-                        prompt=prompt, selected_index_path=selected_index_path
+                    qa_chain = self.ask_util.prepare_qa_chain(
+                        index_directory=selected_index_path,
+                        temperature=temperature,
+                        model_name=model_name,
+                        max_tokens=max_tokens
                     )
+                    answer, answer_meta, chat_history = self.ask_util.ask_question(
+                        question=prompt, qa_chain=qa_chain, chat_history=_chat_history
+                    )
+                    _chat_history.extend(chat_history)
 
                     # Display assistant response in chat message container
                     with st.chat_message("assistant"):
@@ -302,7 +297,7 @@ class VerbalVista:
                         full_response = ""
 
                         # Simulate stream of response with milliseconds delay
-                        for chunk in response.response.split():
+                        for chunk in answer.split():
                             full_response += chunk + " "
                             time.sleep(0.03)
 
@@ -311,11 +306,11 @@ class VerbalVista:
 
                         # Display full message at the end with other stuff you want to show like `response_meta`.
                         message_placeholder.markdown(full_response)
-                        st.info(response_meta)
+                        st.info(answer_meta)
 
                     # Add assistant response to chat history
                     st.session_state[selected_index_path]['messages'].append({
-                        "role": "assistant", "content": response
+                        "role": "assistant", "content": answer
                     })
                     # Save conversation to local file
                     log_debug(f"Saving chat history to local file: {chat_history_filepath}")
@@ -359,7 +354,7 @@ class VerbalVista:
 
 
 def main():
-    VERSION = 0.2
+    VERSION = 0.3
     st.set_page_config(
         page_title="VerbalVista",
         page_icon="🤖",
@@ -396,10 +391,10 @@ def main():
         ], label_visibility="collapsed"
     )
 
-    document_dir = 'documents/'
-    tmp_audio_dir = 'tmp_audio_dir/'
-    indices_dir = 'indices/'
-    chat_history_dir = 'chat_history/'
+    document_dir = 'data/documents/'
+    tmp_audio_dir = 'data/tmp_audio_dir/'
+    indices_dir = 'data/indices/'
+    chat_history_dir = 'data/chat_history/'
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set

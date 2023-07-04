@@ -3,7 +3,6 @@ pydub~=0.25.1
 pandas
 langchain~=0.0.209
 streamlit~=1.24.0
-llama-index==0.6.31
 streamlit_extras~=0.2.7
 docx2txt~=0.8
 pypdf~=3.11.0
@@ -12,3 +11,4 @@ selenium~=4.10.0
 unstructured~=0.7.12
 seleniumbase~=4.15.7
 webdriver-manager~=3.8.6
+faiss-cpu~=1.7.4

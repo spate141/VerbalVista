@@ -23,7 +23,7 @@ class WhisperAudioTranscribe:
         # load audio
         extension = os.path.splitext(filepath)[-1][1:]
         audio = AudioSegment.from_file(filepath, format=extension)
-        log_info(f"Audio file read into memory: {filepath}")
+        log_debug(f"Audio file read into memory: {filepath}")
 
         # get the original audio file size in MB and duration in ms
         file_size_mb = (float(mediainfo(filepath)['size']) / 1024) / 1024
