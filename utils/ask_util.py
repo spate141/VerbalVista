@@ -23,10 +23,7 @@ class AskUtil:
             vectorstore = pickle.load(f)
         return vectorstore
 
-    def prepare_qa_chain(
-            self, index_directory: str = None, temperature: float = 0.5,
-            model_name: str = "gpt-3.5-turbo", max_tokens: int = 512
-    ):
+    def prepare_qa_chain(self, index_directory: str = None, temperature: float = 0.5, model_name: str = "gpt-3.5-turbo", max_tokens: int = 512):
         """
 
         """
@@ -39,10 +36,7 @@ class AskUtil:
         return qa_chain
 
     @staticmethod
-    def ask_question(
-            question: str = None, qa_chain: BaseConversationalRetrievalChain = None,
-            chat_history: List[Tuple] = None
-    ):
+    def ask_question(question: str = None, qa_chain: BaseConversationalRetrievalChain = None, chat_history: List[Tuple] = None):
         """
 
         """

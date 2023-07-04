@@ -9,7 +9,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from .logging_module import log_info, log_error
 
 
-class MyIndex:
+class IndexUtil:
 
     def __init__(self):
         pass

@@ -6,7 +6,7 @@ import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
 from utils.audio_transcribe import WhisperAudioTranscribe
-from utils.indexing_util import MyIndex
+from utils.indexing_util import IndexUtil
 from utils.ask_util import AskUtil
 from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, write_text_to_file, extract_text_from_url
@@ -17,7 +17,7 @@ class VerbalVista:
 
     def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None):
         self.whisper = WhisperAudioTranscribe()
-        self.indexing_util = MyIndex()
+        self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
 
         _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
@@ -217,7 +217,7 @@ class VerbalVista:
             time.sleep(2)
             st.experimental_rerun()
 
-    def render_qa_page(self):
+    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None):
         """
         """
         colored_header(
@@ -225,25 +225,19 @@ class VerbalVista:
             description="Select index, ask questions!",
             color_name="red-70",
         )
-        indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
-        selected_index_path = selectbox(
-            "Select Index:", options=indices_df['Index Name'].to_list(),
-            no_selection_label="<select index>", label_visibility="collapsed"
-        )
+        st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
+        with st.container():
+            indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
+            selected_index_path = selectbox(
+                "Select Index:", options=indices_df['Index Name'].to_list(),
+                no_selection_label="<select index>", label_visibility="collapsed"
+            )
 
-        if selected_index_path is None:
-            st.error("Error: Select index first!")
-            return
-        else:
-            cols = st.columns(3)
-            with cols[0]:
-                temperature = st.number_input("temperature", 0.5)
-            with cols[1]:
-                max_tokens = st.number_input("max_tokens", 512)
-            with cols[2]:
-                model_name = st.selectbox("model_name", ["gpt-3.5-turbo"], index=0)
+            if selected_index_path is None:
+                st.error("Select index first!")
+                return
 
-            st.info(f"Selected index: {selected_index_path}")
+        if selected_index_path is not None:
             chat_history_filepath = os.path.join(
                 self.chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
             )
@@ -354,7 +348,7 @@ class VerbalVista:
 
 
 def main():
-    VERSION = 0.3
+    app_version = "0.0.3"
     st.set_page_config(
         page_title="VerbalVista",
         page_icon="🤖",
@@ -372,7 +366,7 @@ def main():
         <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="70%" height="70%"></a>
         </br>
         </br>
-        <h5>Version: {VERSION}</h5>
+        <h5>Version: {app_version}</h5>
         </center>
         """,
         unsafe_allow_html=True
@@ -418,7 +412,10 @@ def main():
     elif page == "Manage Index":
         vv.render_manage_index_page()
     elif page == "Q & A":
-        vv.render_qa_page()
+        temperature = st.sidebar.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
+        max_tokens = st.sidebar.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
+        model_name = st.sidebar.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k"], index=0)
+        vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name)
     elif page == "Explore Document":
         vv.render_document_explore_page()
 
