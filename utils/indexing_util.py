@@ -95,7 +95,9 @@ class MyIndex:
         raw_documents = loader.load()
 
         # Split text
-        text_splitter = RecursiveCharacterTextSplitter()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=20, length_function=len
+        )
         documents = text_splitter.split_documents(raw_documents)
 
         # Load Data to vectorstore
