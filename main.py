@@ -174,14 +174,14 @@ class VerbalVista:
             color_name="blue-green-70",
         )
 
-        st.markdown("<h6><u>Select Mode:</u></h6>", unsafe_allow_html=True)
+        st.markdown("<h6>Select Mode:</h6>", unsafe_allow_html=True)
         mode = st.selectbox("mode", ["Create", "Delete"], index=0, label_visibility="collapsed")
         mode_label = None
 
         if mode == "Create":
             mode_label = 'Creating'
             st.markdown(
-                "<h6><u>LangChain PromptHelper Parameters:</u></h6>", unsafe_allow_html=True
+                "<h6>LangChain PromptHelper Parameters:</h6>", unsafe_allow_html=True
             )
             cols = st.columns(2)
             with cols[0]:
@@ -196,15 +196,13 @@ class VerbalVista:
             mode_label = 'Deleting'
             pass
 
-        cols = st.columns([2, 10, 2], gap='small')
-        with cols[1]:
-            st.markdown("<center><h6><u>Available Documents</u></h6></center>", unsafe_allow_html=True)
-            documents_df = self.indexing_util.get_available_documents(
-                document_dir=self.document_dir, indices_dir=self.indices_dir
-            )
-            documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-            documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
+        st.markdown("<h6>Available Documents:</h6>", unsafe_allow_html=True)
+        documents_df = self.indexing_util.get_available_documents(
+            document_dir=self.document_dir, indices_dir=self.indices_dir
+        )
+        documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+        documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
+        selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
 
         submit = st.button("Submit", type="primary")
         if submit:
@@ -338,14 +336,14 @@ class VerbalVista:
             color_name="blue-green-70",
         )
         with st.form('explore_document'):
-            st.markdown("<center><h6><u>Select Document</u></h6></center>", unsafe_allow_html=True)
+            st.markdown("<h6>Select Document:</h6>", unsafe_allow_html=True)
             documents_df = self.indexing_util.get_available_documents(
                 document_dir=self.document_dir, indices_dir=self.indices_dir
             )
             documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})
             documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
             documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=False)
+            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
             submitted = st.form_submit_button("Explore!", type="primary")
             if submitted:
                 selected_docs_dir_paths = selected_documents_df[
