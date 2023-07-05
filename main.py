@@ -225,7 +225,10 @@ class VerbalVista:
                             st.success(f"Document index {file_name} saved! Refreshing page now.")
                         elif mode == 'Delete':
                             self.indexing_util.delete_document(
-                                index_directory=os.path.join(self.indices_dir, file_name)
+                                selected_directory=os.path.join(self.indices_dir, file_name)
+                            )
+                            self.indexing_util.delete_document(
+                                selected_directory=os.path.join(self.document_dir, file_name)
                             )
                             st.error(f"Document index {file_name} deleted! Refreshing page now.")
 

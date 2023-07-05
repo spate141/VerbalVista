@@ -56,15 +56,15 @@ class IndexUtil:
         return df
 
     @staticmethod
-    def delete_document(index_directory: str = None):
+    def delete_document(selected_directory: str = None):
         """
 
-        :param index_directory:
+        :param selected_directory:
         :return:
         """
         try:
             # Remove all files and subdirectories within the directory
-            for root, dirs, files in os.walk(index_directory, topdown=False):
+            for root, dirs, files in os.walk(selected_directory, topdown=False):
                 for name in files:
                     file_path = os.path.join(root, name)
                     os.remove(file_path)
@@ -73,8 +73,8 @@ class IndexUtil:
                     os.rmdir(dir_path)
 
             # Remove the top-level directory itself
-            os.rmdir(index_directory)
-            log_info(f"Directory '{index_directory}' deleted successfully.")
+            os.rmdir(selected_directory)
+            log_info(f"Directory '{selected_directory}' deleted successfully.")
         except OSError as e:
             log_error(f"Error: {e.strerror}")
 
