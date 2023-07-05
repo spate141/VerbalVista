@@ -52,7 +52,7 @@ class VerbalVista:
     def render_media_processing_page(self):
         """
         """
-        supported_formats = ['m4a', 'mp3', 'wav', 'docx', 'pdf', 'txt', 'eml']
+        supported_formats = ['m4a', 'mp3', 'wav', 'webm', 'mp4', 'mpg', 'mpeg', 'docx', 'pdf', 'txt', 'eml']
         colored_header(
             label="Process Media",
             description=f"Process audio, text, documents and emails.",
@@ -80,7 +80,7 @@ class VerbalVista:
 
                 if uploaded_file is not None:
                     log_debug('Processing uploaded file!')
-                    if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav')):
+                    if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
                         with st.spinner('Processing audio. Please wait.'):
                             process_audio_bar = st.progress(0, text="Processing...")
                             # Save the uploaded file to the specified directory
@@ -384,6 +384,7 @@ def main():
         </br>
         <h5>Version: {app_version}</h5>
         </center>
+        <i class="fa-regular fa-v fa-flip"></i>
         """,
         unsafe_allow_html=True
     )
