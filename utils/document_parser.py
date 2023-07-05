@@ -1,29 +1,17 @@
 import re
 import os
+import tempfile
 import docx2txt
-import streamlit as st
 from io import BytesIO
 from typing import List
 from pypdf import PdfReader
 from langchain.docstore.document import Document
 from langchain.document_loaders import SeleniumURLLoader
+from langchain.document_loaders import UnstructuredEmailLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from .logging_module import log_info, log_error, log_debug
+from .logging_module import log_debug
 
 
-@st.cache_data
-def parse_csv(file: BytesIO) -> str:
-    """
-    Parse csv file and return content as text.
-    :param file:
-    :return:
-    """
-    pass
-
-
-@st.cache_data
 def parse_docx(file: BytesIO) -> str:
     """
     Parse word file and return content as string of text.
@@ -36,7 +24,6 @@ def parse_docx(file: BytesIO) -> str:
     return text
 
 
-@st.cache_data
 def parse_pdf(file: BytesIO) -> str:
     """
     Parse pdf file and return content as string of text.
@@ -58,7 +45,6 @@ def parse_pdf(file: BytesIO) -> str:
     return output
 
 
-@st.cache_data
 def parse_txt(file: BytesIO) -> str:
     """
     Parse text file and return content as string of text.
@@ -71,7 +57,6 @@ def parse_txt(file: BytesIO) -> str:
     return text
 
 
-@st.cache_data
 def text_to_docs(text: str | List[str]) -> List[Document]:
     """
     Converts a string or list of strings to a list of Documents with metadata.
@@ -103,7 +88,43 @@ def text_to_docs(text: str | List[str]) -> List[Document]:
     return doc_chunks
 
 
-def write_text_to_file(uploaded_file_name: str = None, document_dir: str = None, full_document: str = None):
+def parse_url(url):
+    """
+
+    :param url:
+    :return:
+    """
+    loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
+    data = loader.load()[0]
+    text = data.page_content
+    return text
+
+
+def parse_email(file: BytesIO):
+    """
+
+    :param file:
+    """
+    # Save the file to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.eml') as temp_file:
+        temp_filename = temp_file.name
+        log_debug(f"tmp email files saved at: {temp_filename}")
+        temp_file.write(file.getvalue())
+
+    loader = UnstructuredEmailLoader(file_path=temp_filename)
+    raw_documents = loader.load()
+    texts = []
+    for i in raw_documents:
+        texts.append(i.page_content)
+    text = ' '.join(texts)
+
+    # Remove the temporary file
+    os.remove(temp_filename)
+    log_debug(f"tmp email files removed from: {temp_filename}")
+    return text
+
+
+def write_data_to_file(uploaded_file_name: str = None, document_dir: str = None, full_document: str = None):
     """
     Save the text to a file in a folder.
     :param uploaded_file_name:
@@ -120,14 +141,3 @@ def write_text_to_file(uploaded_file_name: str = None, document_dir: str = None,
         f.write(full_document)
     return tmp_document_save_path
 
-
-def extract_text_from_url(url):
-    """
-
-    :param url:
-    :return:
-    """
-    loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
-    data = loader.load()[0]
-    text = data.page_content
-    return text

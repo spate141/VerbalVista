@@ -84,7 +84,8 @@ class IndexUtil:
             embedding_model: str = "text-embedding-ada-002"
     ):
         """
-
+        This function accepts a document_directory which contain files in plain text format and
+        create an index and save that index into index_directory.
         :param document_directory:
         :param index_directory:
         :param chunk_size:
@@ -95,15 +96,11 @@ class IndexUtil:
         raw_documents = loader.load()
 
         # Split text
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=20, length_function=len
-        )
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=20, length_function=len)
         documents = text_splitter.split_documents(raw_documents)
 
         # Load Data to vectorstore
-        embeddings = OpenAIEmbeddings(
-            model=embedding_model, chunk_size=chunk_size
-        )
+        embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
         vectorstore = FAISS.from_documents(documents, embeddings)
 
         # Save vectorstore

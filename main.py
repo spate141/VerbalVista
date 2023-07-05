@@ -9,7 +9,7 @@ from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.indexing_util import IndexUtil
 from utils.ask_util import AskUtil
 from utils.logging_module import log_info, log_debug, log_error
-from utils.document_parser import parse_docx, parse_pdf, parse_txt, write_text_to_file, extract_text_from_url
+from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, write_data_to_file, parse_url
 from utils.generate_wordcloud import generate_wordcloud
 
 
@@ -37,34 +37,44 @@ class VerbalVista:
             os.makedirs(directory_path)
             log_debug(f"Directory '{directory_path}' created successfully.")
 
+    @staticmethod
+    def remove_temp_files(directory):
+        """
+
+        :param directory:
+        :return:
+        """
+        for file_name in os.listdir(directory):
+            file_path = os.path.join(directory, file_name)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
     def render_media_processing_page(self):
         """
         """
-        supported_formats = ['m4a', 'mp3', 'wav', 'docx', 'pdf', 'txt']
+        supported_formats = ['m4a', 'mp3', 'wav', 'docx', 'pdf', 'txt', 'eml']
         colored_header(
             label="Process Media",
-            description=f"Supported formats: {supported_formats}",
+            description=f"Process audio, text, documents and emails.",
             color_name="violet-70",
         )
         with st.form('docs_processing'):
 
-            col1, col2, col3 = st.columns([14, 8, 8])
-            with col1:
-                st.markdown("<h6>Process local files:</h6>", unsafe_allow_html=True)
-                uploaded_file = st.file_uploader(
-                    "Upload file:", type=supported_formats, accept_multiple_files=False,
-                    label_visibility="collapsed"
-                )
-            with col2:
-                st.markdown("<h6>Extract text from URL:</h6>", unsafe_allow_html=True)
-                url = st.text_area("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
-                url = None if len(url) == 0 else url
-            with col3:
-                st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
-                text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
-                text = None if len(text) == 0 else text
+            st.markdown(f"<h6>Process file:</h6>", unsafe_allow_html=True)
+            uploaded_file = st.file_uploader(
+                "Upload file:", type=supported_formats, accept_multiple_files=False,
+                label_visibility="collapsed"
+            )
 
-            submitted = st.form_submit_button("Submit")
+            st.markdown("<h6>Extract text from URL:</h6>", unsafe_allow_html=True)
+            url = st.text_input("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
+            url = None if len(url) == 0 else url
+
+            st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
+            text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
+            text = None if len(text) == 0 else text
+
+            submitted = st.form_submit_button("Process", type="primary")
             if submitted:
                 full_document = ''
 
@@ -105,7 +115,7 @@ class VerbalVista:
                             full_document = ' '.join(full_document)
 
                         log_debug(f"Removing tmp audio files")
-                        self.whisper.remove_temp_files(self.tmp_audio_dir)
+                        self.remove_temp_files(self.tmp_audio_dir)
 
                     elif uploaded_file.name.endswith(".pdf"):
                         with st.spinner('Processing pdf file. Please wait.'):
@@ -119,11 +129,16 @@ class VerbalVista:
                         with st.spinner('Processing text file. Please wait.'):
                             full_document = parse_txt(uploaded_file)
 
+                    elif uploaded_file.name.endswith(".eml"):
+                        # Save the uploaded file to the specified directory
+                        with st.spinner('Processing email file. Please wait.'):
+                            full_document = parse_email(uploaded_file)
+
                     uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
 
                 elif url is not None:
                     log_debug('Processing URL!')
-                    full_document = extract_text_from_url(url)
+                    full_document = parse_url(url)
                     uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
 
                 elif text is not None:
@@ -143,7 +158,7 @@ class VerbalVista:
                     # Write document to a file
                     st.markdown("#### Document snippet:")
                     st.caption(full_document[:110] + '...')
-                    tmp_document_save_path = write_text_to_file(
+                    tmp_document_save_path = write_data_to_file(
                         uploaded_file_name=uploaded_file_name,
                         document_dir=self.document_dir,
                         full_document=full_document

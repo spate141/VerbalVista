@@ -49,18 +49,6 @@ class WhisperAudioTranscribe:
         return file_path
 
     @staticmethod
-    def remove_temp_files(directory):
-        """
-
-        :param directory:
-        :return:
-        """
-        for file_name in os.listdir(directory):
-            file_path = os.path.join(directory, file_name)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-
-    @staticmethod
     def split_sizes_into_chunks(actual_size: float = None, max_size: int = None) -> list:
         """
         Given an actual_size in MB; this function will return list of MBs that are <= max_size
