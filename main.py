@@ -356,6 +356,10 @@ class VerbalVista:
                     with open(filepath, 'r') as f:
                         text = f.read()
                         data.append({"filename": filename, "text": text})
+                with st.expander("Text"):
+                    for doc in data:
+                        st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
+                        st.markdown(f"<p>{doc['text']}</p>", unsafe_allow_html=True)
                 with st.expander("Word Clouds"):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
@@ -429,9 +433,10 @@ def main():
     elif page == "Manage Index":
         vv.render_manage_index_page()
     elif page == "Q & A":
-        temperature = st.sidebar.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
-        max_tokens = st.sidebar.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-        model_name = st.sidebar.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k"], index=0)
+        with st.sidebar:
+            temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
+            max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
+            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"], index=0)
         vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name)
     elif page == "Explore Document":
         vv.render_document_explore_page()
