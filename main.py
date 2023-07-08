@@ -1,5 +1,6 @@
 import os
 import time
+import spacy
 import pickle
 import pandas as pd
 import streamlit as st
@@ -8,6 +9,7 @@ from streamlit_extras.no_default_selectbox import selectbox
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.indexing_util import IndexUtil
 from utils.ask_util import AskUtil
+from spacy_streamlit import visualize_parser, visualize_ner, visualize_tokens, visualize_spans
 from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, write_data_to_file, parse_url
 from utils.generate_wordcloud import generate_wordcloud
@@ -25,6 +27,8 @@ class VerbalVista:
         self.indices_dir = indices_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.chat_history_dir = chat_history_dir
+        self.nlp = spacy.load("en_core_web_sm")
+        self.ner_labels = self.nlp.get_pipe("ner").labels
 
     @staticmethod
     def create_directory(directory_path):
@@ -356,15 +360,19 @@ class VerbalVista:
                     with open(filepath, 'r') as f:
                         text = f.read()
                         data.append({"filename": filename, "text": text})
-                with st.expander("Text"):
+
+                with st.expander("Text", expanded=False):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
                         st.markdown(f"<p>{doc['text']}</p>", unsafe_allow_html=True)
-                with st.expander("Word Clouds"):
+                with st.expander("Word Clouds", expanded=False):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
                         plt = generate_wordcloud(text=doc['text'], background_color='black', colormap='Pastel1')
                         st.pyplot(plt)
+
+                doc = self.nlp(' '.join(text.split()))
+                visualize_ner(doc, labels=self.ner_labels, show_table=False)
 
 
 def main():
