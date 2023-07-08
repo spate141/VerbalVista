@@ -364,15 +364,16 @@ class VerbalVista:
                 with st.expander("Text", expanded=False):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
-                        st.markdown(f"<p>{doc['text']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p>{' '.join(doc['text'].split())}</p>", unsafe_allow_html=True)
                 with st.expander("Word Clouds", expanded=False):
                     for doc in data:
                         st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
                         plt = generate_wordcloud(text=doc['text'], background_color='black', colormap='Pastel1')
                         st.pyplot(plt)
 
-                doc = self.nlp(' '.join(text.split()))
-                visualize_ner(doc, labels=self.ner_labels, show_table=False)
+                for index, doc in enumerate(data):
+                    doc = self.nlp(' '.join(doc['text'].split()))
+                    visualize_ner(doc, labels=self.ner_labels, show_table=False, key=f"doc_{index}")
 
 
 def main():
