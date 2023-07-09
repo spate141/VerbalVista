@@ -1,4 +1,5 @@
 openai~=0.27.8
+tiktoken~=0.4.0
 pydub~=0.25.1
 pandas
 langchain~=0.0.209
