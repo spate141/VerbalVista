@@ -5,7 +5,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import streamlit as st
-from TTS.api import TTS
+# from TTS.api import TTS
 from spacy_streamlit import visualize_ner
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
@@ -24,8 +24,8 @@ class VerbalVista:
         self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
 
-        model_name = 'tts_models/en/ljspeech/tacotron2-DDC'
-        self.tts = TTS(model_name=model_name, progress_bar=True, gpu=False)
+        # model_name = 'tts_models/en/ljspeech/tacotron2-DDC'
+        # self.tts = TTS(model_name=model_name, progress_bar=True, gpu=False)
 
         _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
         self.document_dir = document_dir
@@ -296,7 +296,7 @@ class VerbalVista:
         )
         st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
         with st.container():
-            enable_audio = st.checkbox("Enable TTS")
+            # enable_audio = st.checkbox("Enable TTS")
             indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
             selected_index_path = selectbox(
                 "Select Index:", options=indices_df['Index Name'].to_list(),
@@ -371,11 +371,11 @@ class VerbalVista:
                         # Display full message at the end with other stuff you want to show like `response_meta`.
                         message_placeholder.markdown(full_response)
                         st.info(answer_meta)
-                        if enable_audio:
-                            wav = self.tts.tts(full_response)
-                            wav_array = np.array(wav)
-                            sample_rate = 22500
-                            st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
+                        # if enable_audio:
+                        #     wav = self.tts.tts(full_response)
+                        #     wav_array = np.array(wav)
+                        #     sample_rate = 22500
+                        #     st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
                     # Add assistant response to chat history
                     st.session_state[selected_index_path]['messages'].append({
@@ -390,14 +390,14 @@ class VerbalVista:
         """
 
         """
-        with st.form("process_text"):
-            text = st.text_area("Enter text:")
-            submit = st.form_submit_button('Process')
-            if submit:
-                wav = self.tts.tts(text)
-                wav_array = np.array(wav)
-                sample_rate = 22500
-                st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
+        # with st.form("process_text"):
+        #     text = st.text_area("Enter text:")
+        #     submit = st.form_submit_button('Process')
+        #     if submit:
+        #         wav = self.tts.tts(text)
+        #         wav_array = np.array(wav)
+        #         sample_rate = 22500
+        #         st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
 
 def main():
