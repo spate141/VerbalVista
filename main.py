@@ -3,16 +3,18 @@ import time
 import spacy
 import pickle
 import pandas as pd
+import numpy as np
 import streamlit as st
+from TTS.api import TTS
+from spacy_streamlit import visualize_ner
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
-from utils.audio_transcribe import WhisperAudioTranscribe
-from utils.indexing_util import IndexUtil
 from utils.ask_util import AskUtil
-from spacy_streamlit import visualize_parser, visualize_ner, visualize_tokens, visualize_spans
-from utils.logging_module import log_info, log_debug, log_error
-from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, write_data_to_file, parse_url
+from utils.indexing_util import IndexUtil
 from utils.generate_wordcloud import generate_wordcloud
+from utils.audio_transcribe import WhisperAudioTranscribe
+from utils.logging_module import log_info, log_debug, log_error
+from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
 
 class VerbalVista:
@@ -21,6 +23,9 @@ class VerbalVista:
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
+
+        model_name = 'tts_models/en/ljspeech/tacotron2-DDC'
+        self.tts = TTS(model_name=model_name, progress_bar=True, gpu=False)
 
         _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
         self.document_dir = document_dir
@@ -237,6 +242,50 @@ class VerbalVista:
             time.sleep(2)
             st.experimental_rerun()
 
+    def render_document_explore_page(self):
+        """
+        """
+        colored_header(
+            label="Explore Document",
+            description="Select document, generate index!",
+            color_name="blue-green-70",
+        )
+        with st.form('explore_document'):
+            st.markdown("<h6>Select Document:</h6>", unsafe_allow_html=True)
+            documents_df = self.indexing_util.get_available_documents(
+                document_dir=self.document_dir, indices_dir=self.indices_dir
+            )
+            documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})
+            documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
+            documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
+            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
+            submitted = st.form_submit_button("Explore!", type="primary")
+            if submitted:
+                selected_docs_dir_paths = selected_documents_df[
+                    selected_documents_df['Select Document']
+                ]['Document Name'].to_list()
+                data = []
+                for selected_doc_dir_path in selected_docs_dir_paths:
+                    filename = selected_doc_dir_path.split('/')[-1] + '.txt'
+                    filepath = os.path.join(selected_doc_dir_path, filename)
+                    with open(filepath, 'r') as f:
+                        text = f.read()
+                        data.append({"filename": filename, "text": text})
+
+                with st.expander("Text", expanded=False):
+                    for doc in data:
+                        st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
+                        st.markdown(f"<p>{' '.join(doc['text'].split())}</p>", unsafe_allow_html=True)
+                with st.expander("Word Clouds", expanded=False):
+                    for doc in data:
+                        st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
+                        plt = generate_wordcloud(text=doc['text'], background_color='black', colormap='Pastel1')
+                        st.pyplot(plt)
+
+                for index, doc in enumerate(data):
+                    doc = self.nlp(' '.join(doc['text'].split()))
+                    visualize_ner(doc, labels=self.ner_labels, show_table=False, key=f"doc_{index}")
+
     def render_qa_page(self, temperature=None, max_tokens=None, model_name=None):
         """
         """
@@ -247,6 +296,7 @@ class VerbalVista:
         )
         st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
         with st.container():
+            enable_audio = st.checkbox("Enable TTS")
             indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
             selected_index_path = selectbox(
                 "Select Index:", options=indices_df['Index Name'].to_list(),
@@ -321,6 +371,11 @@ class VerbalVista:
                         # Display full message at the end with other stuff you want to show like `response_meta`.
                         message_placeholder.markdown(full_response)
                         st.info(answer_meta)
+                        if enable_audio:
+                            wav = self.tts.tts(full_response)
+                            wav_array = np.array(wav)
+                            sample_rate = 22500
+                            st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
                     # Add assistant response to chat history
                     st.session_state[selected_index_path]['messages'].append({
@@ -331,49 +386,18 @@ class VerbalVista:
                     with open(chat_history_filepath, 'wb') as f:
                         pickle.dump(st.session_state[selected_index_path], f)
 
-    def render_document_explore_page(self):
+    def render_test_page(self):
         """
+
         """
-        colored_header(
-            label="Explore Document",
-            description="Select document, generate index!",
-            color_name="blue-green-70",
-        )
-        with st.form('explore_document'):
-            st.markdown("<h6>Select Document:</h6>", unsafe_allow_html=True)
-            documents_df = self.indexing_util.get_available_documents(
-                document_dir=self.document_dir, indices_dir=self.indices_dir
-            )
-            documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})
-            documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
-            documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
-            submitted = st.form_submit_button("Explore!", type="primary")
-            if submitted:
-                selected_docs_dir_paths = selected_documents_df[
-                    selected_documents_df['Select Document']
-                ]['Document Name'].to_list()
-                data = []
-                for selected_doc_dir_path in selected_docs_dir_paths:
-                    filename = selected_doc_dir_path.split('/')[-1] + '.txt'
-                    filepath = os.path.join(selected_doc_dir_path, filename)
-                    with open(filepath, 'r') as f:
-                        text = f.read()
-                        data.append({"filename": filename, "text": text})
-
-                with st.expander("Text", expanded=False):
-                    for doc in data:
-                        st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
-                        st.markdown(f"<p>{' '.join(doc['text'].split())}</p>", unsafe_allow_html=True)
-                with st.expander("Word Clouds", expanded=False):
-                    for doc in data:
-                        st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
-                        plt = generate_wordcloud(text=doc['text'], background_color='black', colormap='Pastel1')
-                        st.pyplot(plt)
-
-                for index, doc in enumerate(data):
-                    doc = self.nlp(' '.join(doc['text'].split()))
-                    visualize_ner(doc, labels=self.ner_labels, show_table=False, key=f"doc_{index}")
+        with st.form("process_text"):
+            text = st.text_area("Enter text:")
+            submit = st.form_submit_button('Process')
+            if submit:
+                wav = self.tts.tts(text)
+                wav_array = np.array(wav)
+                sample_rate = 22500
+                st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
 
 def main():
@@ -411,7 +435,8 @@ def main():
             "Media Processing",
             "Explore Document",
             "Manage Index",
-            "Q & A"
+            "Q & A",
+            "test"
         ], label_visibility="collapsed"
     )
 
@@ -449,6 +474,8 @@ def main():
         vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name)
     elif page == "Explore Document":
         vv.render_document_explore_page()
+    elif page == 'test':
+        vv.render_test_page()
 
 
 if __name__ == '__main__':
