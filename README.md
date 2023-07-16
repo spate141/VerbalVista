@@ -15,6 +15,36 @@
   
 ### Available functions:
   - Media processing
-  - Create document index
+  - Explore documents
+  - Manage index
   - Q&A using LLM
 
+### Screenshots:
+
+<details>
+<summary>Media processing</summary>
+
+![Screenshot 2023-07-16 at 4.31.08 PM.png](docs/Screenshot%202023-07-16%20at%204.31.08%20PM.png)
+
+</details>
+
+<details>
+<summary>Explore documents</summary>
+
+![Screenshot 2023-07-16 at 4.31.44 PM.png](docs/Screenshot%202023-07-16%20at%204.31.44%20PM.png)
+
+</details>
+
+<details>
+<summary>Manage index</summary>
+
+![Screenshot 2023-07-16 at 4.31.51 PM.png](docs/Screenshot%202023-07-16%20at%204.31.51%20PM.png)
+
+</details>
+
+<details>
+<summary>Question/Answering</summary>
+
+![Screenshot 2023-07-16 at 4.35.12 PM.png](docs/Screenshot%202023-07-16%20at%204.35.12%20PM.png)
+
+</details>
