@@ -61,11 +61,12 @@ class VerbalVista:
 
     def render_media_processing_page(self):
         """
+        This function will extract plain text from variety of media including video, audio, pdf and lots more.
         """
         supported_formats = ['m4a', 'mp3', 'wav', 'webm', 'mp4', 'mpg', 'mpeg', 'docx', 'pdf', 'txt', 'eml']
         colored_header(
             label="Process Media",
-            description=f"Process audio, text, documents and emails.",
+            description=f"Process audio/video, document and email and parse plaintext!",
             color_name="violet-70",
         )
         with st.form('docs_processing'):
@@ -177,6 +178,7 @@ class VerbalVista:
 
     def render_manage_index_page(self):
         """
+        This function will allow user to convert plain text into vector index or remove already created index.
         """
         colored_header(
             label="Manage Index",
@@ -211,7 +213,7 @@ class VerbalVista:
         )
         documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
         documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-        selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
+        selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True, height=300)
 
         submit = st.button("Submit", type="primary")
         if submit:
@@ -223,13 +225,14 @@ class VerbalVista:
                     for doc_dir_to_index in document_dirs:
                         file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
                         if mode == 'Create':
-                            self.indexing_util.index_document(
+                            indexing_meta = self.indexing_util.index_document(
                                 document_directory=doc_dir_to_index,
                                 index_directory=os.path.join(self.indices_dir, file_name),
                                 chunk_size=chunk_size,
                                 embedding_model=embedding_model
                             )
                             st.success(f"Document index {file_name} saved! Refreshing page now.")
+                            st.info(indexing_meta)
                         elif mode == 'Delete':
                             self.indexing_util.delete_document(
                                 selected_directory=os.path.join(self.indices_dir, file_name)
@@ -244,6 +247,7 @@ class VerbalVista:
 
     def render_document_explore_page(self):
         """
+        This function will allow user to explore plain text to better understand the data.
         """
         colored_header(
             label="Explore Document",
@@ -258,7 +262,7 @@ class VerbalVista:
             documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})
             documents_df['Creation Date'] = pd.to_datetime(documents_df['Creation Date'])
             documents_df = documents_df.sort_values(by='Creation Date', ascending=False)
-            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True)
+            selected_documents_df = st.data_editor(documents_df, hide_index=True, use_container_width=True, height=300)
             submitted = st.form_submit_button("Explore!", type="primary")
             if submitted:
                 selected_docs_dir_paths = selected_documents_df[
@@ -288,8 +292,8 @@ class VerbalVista:
 
     def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None):
         """
+        This function allow user to do conversation with the data.
         """
-
         def _gen_summary(t):
             keywords = ["summarize", "summary"]
             for keyword in keywords:
@@ -318,9 +322,10 @@ class VerbalVista:
                 return
 
         if selected_index_path is not None:
-            chat_history_filepath = os.path.join(
-                self.chat_history_dir, f"{os.path.basename(selected_index_path)}.pickle"
-            )
+            total_qa_cost = 0
+            chat_dir_path = os.path.join(self.chat_history_dir, os.path.basename(selected_index_path))
+            self.create_directory(chat_dir_path)
+            chat_history_filepath = os.path.join(chat_dir_path, f"{os.path.basename(selected_index_path)}.pickle")
 
             # Initialize chat history
             _chat_history = []
@@ -332,98 +337,113 @@ class VerbalVista:
                     with open(chat_history_filepath, 'rb') as f:
                         st.session_state[selected_index_path] = pickle.load(f)
                 else:
-                    st.session_state[selected_index_path] = {'messages': []}
+                    st.session_state[selected_index_path] = {'messages': [], 'cost': []}
 
-            with st.spinner('thinking...'):
+            # Display chat messages from history on app rerun
+            for message_item, cost_item in zip(
+                    st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['cost']
+            ):
+                with st.chat_message(message_item["role"], avatar=icons[message_item["role"]]):
+                    st.markdown(message_item["content"])
+                    if cost_item:
+                        st.info(cost_item)
 
-                # Display chat messages from history on app rerun
-                for message_item in st.session_state[selected_index_path]['messages']:
-                    with st.chat_message(message_item["role"], avatar=icons[message_item["role"]]):
-                        st.markdown(message_item["content"])
-
+            get_summary = st.button("Get Summary")
+            if get_summary:
+                # React to summarize button
+                prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
+                prompt = "Generate summary"
+            else:
                 # React to user input
-                if prompt := st.chat_input(f"Start asking questions to '{selected_index_path[:25]}...' index!"):
+                prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
 
-                    # Add user message to chat history
-                    st.session_state[selected_index_path]['messages'].append({
-                        "role": "user", "content": prompt
-                    })
+            if prompt:
 
-                    # Display user message in chat message container
-                    with st.chat_message("user", avatar=icons["user"]):
-                        st.markdown(prompt)
+                # Add user message to chat history
+                st.session_state[selected_index_path]['messages'].append({
+                    "role": "user", "content": prompt
+                })
+                st.session_state[selected_index_path]['cost'].append(None)
 
-                    # Define summarization mechanism here
-                    summarization_chain = self.summary_util.initialize_summarization_chain(
-                        temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
+                # Display user message in chat message container
+                with st.chat_message("user", avatar=icons["user"]):
+                    st.markdown(prompt)
+
+                # Define summarization mechanism here
+                summarization_chain = self.summary_util.initialize_summarization_chain(
+                    temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
+                )
+
+                # Define Q/A mechanism here
+                qa_chain = self.ask_util.prepare_qa_chain(
+                    index_directory=selected_index_path,
+                    temperature=temperature,
+                    model_name=model_name,
+                    max_tokens=max_tokens
+                )
+                if _gen_summary(prompt) or get_summary:
+                    # If the prompt is asking to summarize
+                    log_info("Summarization")
+                    doc_filepath = os.path.join(
+                        self.document_dir, os.path.basename(selected_index_path),
+                        f"{os.path.basename(selected_index_path)}.txt"
                     )
-
-                    # Define Q/A mechanism here
-                    qa_chain = self.ask_util.prepare_qa_chain(
-                        index_directory=selected_index_path,
-                        temperature=temperature,
-                        model_name=model_name,
-                        max_tokens=max_tokens
+                    with open(doc_filepath, 'r') as f:
+                        text = f.read()
+                    answer, answer_meta, chat_history = self.summary_util.summarize(
+                        chain=summarization_chain, text=text, question=prompt,
+                        chat_history=_chat_history
                     )
-                    if _gen_summary(prompt):
-                        # If the prompt is asking to summarize
-                        log_info("Summarization")
-                        doc_filepath = os.path.join(
-                            self.document_dir, os.path.basename(selected_index_path),
-                            f"{os.path.basename(selected_index_path)}.txt"
-                        )
-                        with open(doc_filepath, 'r') as f:
-                            text = f.read()
-                        answer, answer_meta, chat_history = self.summary_util.summarize(
-                            chain=summarization_chain, text=text, question=prompt,
-                            chat_history=_chat_history
-                        )
-                        # Display assistant response in chat message container
-                        with st.chat_message("assistant", avatar=icons["assistant"]):
-                            st.markdown(answer)
-                            st.info(answer_meta)
-                    else:
-                        # Other Q/A questions
-                        log_info("QA")
-                        answer, answer_meta, chat_history = self.ask_util.ask_question(
-                            question=prompt, qa_chain=qa_chain, chat_history=_chat_history
-                        )
-                        # Display assistant response in chat message container
-                        with st.chat_message("assistant", avatar=icons["assistant"]):
-                            message_placeholder = st.empty()
-                            full_response = ""
+                    total_qa_cost += answer_meta.total_cost
+                    # Display assistant response in chat message container
+                    with st.chat_message("assistant", avatar=icons["assistant"]):
+                        st.markdown(answer)
+                        st.info(answer_meta)
+                else:
+                    # Other Q/A questions
+                    log_info("QA")
+                    answer, answer_meta, chat_history = self.ask_util.ask_question(
+                        question=prompt, qa_chain=qa_chain, chat_history=_chat_history
+                    )
+                    total_qa_cost += answer_meta.total_cost
+                    # Display assistant response in chat message container
+                    with st.chat_message("assistant", avatar=icons["assistant"]):
+                        message_placeholder = st.empty()
+                        full_response = ""
 
-                            # Simulate stream of response with milliseconds delay
-                            for chunk in answer.split():
-                                full_response += chunk + " "
-                                time.sleep(0.03)
+                        # Simulate stream of response with milliseconds delay
+                        for chunk in answer.split():
+                            full_response += chunk + " "
+                            time.sleep(0.03)
 
-                                # Add a blinking cursor to simulate typing
-                                message_placeholder.markdown(full_response + "▌")
+                            # Add a blinking cursor to simulate typing
+                            message_placeholder.markdown(full_response + "▌")
 
-                            # Display full message at the end with other stuff you want to show like `response_meta`.
-                            message_placeholder.markdown(full_response)
-                            st.info(answer_meta)
-                            # if enable_audio:
-                            #     wav = self.tts.tts(full_response)
-                            #     wav_array = np.array(wav)
-                            #     sample_rate = 22500
-                            #     st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
+                        # Display full message at the end with other stuff you want to show like `response_meta`.
+                        message_placeholder.markdown(full_response)
+                        st.info(answer_meta)
+                        # if enable_audio:
+                        #     wav = self.tts.tts(full_response)
+                        #     wav_array = np.array(wav)
+                        #     sample_rate = 22500
+                        #     st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
-                    _chat_history.extend(chat_history)
+                _chat_history.extend(chat_history)
 
-                    # Add assistant response to chat history
-                    st.session_state[selected_index_path]['messages'].append({
-                        "role": "assistant", "content": answer
-                    })
-                    # Save conversation to local file
-                    log_debug(f"Saving chat history to local file: {chat_history_filepath}")
-                    with open(chat_history_filepath, 'wb') as f:
-                        pickle.dump(st.session_state[selected_index_path], f)
+                # Add assistant response to chat history
+                st.session_state[selected_index_path]['messages'].append({
+                    "role": "assistant", "content": answer
+                })
+                st.session_state[selected_index_path]['cost'].append(answer_meta)
+
+                # Save conversation to local file
+                log_debug(f"Saving chat history to local file: {chat_history_filepath}")
+                with open(chat_history_filepath, 'wb') as f:
+                    pickle.dump(st.session_state[selected_index_path], f)
 
     def render_test_page(self):
         """
-
+        TEST PAGE
         """
         # with st.form("process_text"):
         #     text = st.text_area("Enter text:")

@@ -5,6 +5,7 @@ import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import DirectoryLoader
 from langchain.vectorstores.faiss import FAISS
+from langchain.callbacks import get_openai_callback
 from langchain.embeddings import OpenAIEmbeddings
 from .logging_module import log_info, log_error
 
@@ -100,12 +101,15 @@ class IndexUtil:
         documents = text_splitter.split_documents(raw_documents)
 
         # Load Data to vectorstore
-        embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
-        vectorstore = FAISS.from_documents(documents, embeddings)
+        with get_openai_callback() as cb:
+            embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
+            vectorstore = FAISS.from_documents(documents, embeddings)
 
         # Save vectorstore
         if not os.path.exists(index_directory):
             os.makedirs(index_directory)
 
-        with open(os.path.join(index_directory, 'vectorstore.pkl'), "wb") as f:
-            pickle.dump(vectorstore, f)
+        # with open(os.path.join(index_directory, 'vectorstore.pkl'), "wb") as f:
+        #     pickle.dump(vectorstore, f)
+        vectorstore.save_local(index_directory)
+        return cb
