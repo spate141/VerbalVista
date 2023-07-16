@@ -11,6 +11,7 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
 from utils.ask_util import AskUtil
 from utils.indexing_util import IndexUtil
+from utils.summary_util import SummaryUtil
 from utils.generate_wordcloud import generate_wordcloud
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.logging_module import log_info, log_debug, log_error
@@ -23,6 +24,7 @@ class VerbalVista:
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
+        self.summary_util = SummaryUtil()
 
         # model_name = 'tts_models/en/ljspeech/tacotron2-DDC'
         # self.tts = TTS(model_name=model_name, progress_bar=True, gpu=False)
@@ -189,16 +191,18 @@ class VerbalVista:
 
         if mode == "Create":
             mode_label = 'Creating'
-            st.markdown(
-                "<h6>LangChain PromptHelper Parameters:</h6>", unsafe_allow_html=True
-            )
+            # st.markdown(
+            #     "<h6>LangChain PromptHelper Parameters:</h6>", unsafe_allow_html=True
+            # )
             cols = st.columns(2)
             with cols[0]:
+                st.markdown("<h6>Select Embedding Model:</h6>", unsafe_allow_html=True)
                 embedding_model = st.selectbox("embedding_model:", options=[
                     "text-embedding-ada-002"
-                ], index=0)
+                ], index=0, label_visibility="collapsed")
             with cols[1]:
-                chunk_size = st.number_input("chunk_size:", value=600)
+                st.markdown("<h6>Chunk Size:</h6>", unsafe_allow_html=True)
+                chunk_size = st.number_input("chunk_size:", value=600, label_visibility="collapsed")
             st.markdown("</br>", unsafe_allow_html=True)
 
         elif mode == "Delete":
@@ -286,9 +290,17 @@ class VerbalVista:
                     doc = self.nlp(' '.join(doc['text'].split()))
                     visualize_ner(doc, labels=self.ner_labels, show_table=False, key=f"doc_{index}")
 
-    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None):
+    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None):
         """
         """
+
+        def _gen_summary(t):
+            keywords = ["summarize", "summary"]
+            for keyword in keywords:
+                if keyword in t.lower():
+                    return True
+            return False
+
         colored_header(
             label="Q & A",
             description="Select index, ask questions!",
@@ -343,6 +355,11 @@ class VerbalVista:
                     with st.chat_message("user"):
                         st.markdown(prompt)
 
+                    # Define summarization mechanism here
+                    summarization_chain = self.summary_util.initialize_summarization_chain(
+                        temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
+                    )
+
                     # Define Q/A mechanism here
                     qa_chain = self.ask_util.prepare_qa_chain(
                         index_directory=selected_index_path,
@@ -350,32 +367,52 @@ class VerbalVista:
                         model_name=model_name,
                         max_tokens=max_tokens
                     )
-                    answer, answer_meta, chat_history = self.ask_util.ask_question(
-                        question=prompt, qa_chain=qa_chain, chat_history=_chat_history
-                    )
+                    if _gen_summary(prompt):
+                        # If the prompt is asking to summarize
+                        log_info("Summarization")
+                        doc_filepath = os.path.join(
+                            self.document_dir, os.path.basename(selected_index_path),
+                            f"{os.path.basename(selected_index_path)}.txt"
+                        )
+                        with open(doc_filepath, 'r') as f:
+                            text = f.read()
+                        answer, answer_meta, chat_history = self.summary_util.summarize(
+                            chain=summarization_chain, text=text, question=prompt,
+                            chat_history=_chat_history
+                        )
+                        # Display assistant response in chat message container
+                        with st.chat_message("assistant"):
+                            st.markdown(answer)
+                            st.info(answer_meta)
+                    else:
+                        # Other Q/A questions
+                        log_info("QA")
+                        answer, answer_meta, chat_history = self.ask_util.ask_question(
+                            question=prompt, qa_chain=qa_chain, chat_history=_chat_history
+                        )
+                        # Display assistant response in chat message container
+                        with st.chat_message("assistant"):
+                            message_placeholder = st.empty()
+                            full_response = ""
+
+                            # Simulate stream of response with milliseconds delay
+                            for chunk in answer.split():
+                                full_response += chunk + " "
+                                time.sleep(0.03)
+
+                                # Add a blinking cursor to simulate typing
+                                message_placeholder.markdown(full_response + "▌")
+
+                            # Display full message at the end with other stuff you want to show like `response_meta`.
+                            message_placeholder.markdown(full_response)
+                            st.info(answer_meta)
+                            # if enable_audio:
+                            #     wav = self.tts.tts(full_response)
+                            #     wav_array = np.array(wav)
+                            #     sample_rate = 22500
+                            #     st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
+
                     _chat_history.extend(chat_history)
-
-                    # Display assistant response in chat message container
-                    with st.chat_message("assistant"):
-                        message_placeholder = st.empty()
-                        full_response = ""
-
-                        # Simulate stream of response with milliseconds delay
-                        for chunk in answer.split():
-                            full_response += chunk + " "
-                            time.sleep(0.03)
-
-                            # Add a blinking cursor to simulate typing
-                            message_placeholder.markdown(full_response + "▌")
-
-                        # Display full message at the end with other stuff you want to show like `response_meta`.
-                        message_placeholder.markdown(full_response)
-                        st.info(answer_meta)
-                        # if enable_audio:
-                        #     wav = self.tts.tts(full_response)
-                        #     wav_array = np.array(wav)
-                        #     sample_rate = 22500
-                        #     st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
 
                     # Add assistant response to chat history
                     st.session_state[selected_index_path]['messages'].append({
@@ -471,7 +508,8 @@ def main():
             temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
             model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"], index=0)
-        vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name)
+            summ_chain_type = st.selectbox("Chain type", index=1, options=["stuff", "map_reduce", "refine"])
+        vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=summ_chain_type)
     elif page == "Explore Document":
         vv.render_document_explore_page()
     elif page == 'test':

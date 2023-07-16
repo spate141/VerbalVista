@@ -54,4 +54,4 @@ class AskUtil:
         """
         answer = result["answer"]
         chat_history.append((question, answer))
-        return answer, answer_meta, chat_history
+        return answer, cb, chat_history
