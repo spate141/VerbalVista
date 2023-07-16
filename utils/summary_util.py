@@ -48,12 +48,12 @@ class SummaryUtil:
         BULLET POINT SUMMARY:
         """
         combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=["text"])
-        chain = load_summarize_chain(
+        summarization_chain = load_summarize_chain(
             llm, chain_type=chain_type, verbose=verbose,
             map_prompt=map_prompt_template,
             combine_prompt=combine_prompt_template
         )
-        return chain
+        return summarization_chain
 
     def summarize(self, chain=None, text=None, question=None, chat_history=None):
         """

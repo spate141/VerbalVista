@@ -44,14 +44,6 @@ class AskUtil:
         with get_openai_callback() as cb:
             result = qa_chain({"question": question, "chat_history": chat_history})
         total_time = round(time.time() - start, 2)
-        answer_meta = f"""
-        ```markdown
-        - Total Tokens: {cb.total_tokens}
-            - Prompt: {cb.prompt_tokens} + Response: {cb.completion_tokens}
-        - Total Cost (USD): ${round(cb.total_cost, 4)}
-        - Total Time (Seconds): {total_time}
-        ```
-        """
         answer = result["answer"]
         chat_history.append((question, answer))
         return answer, cb, chat_history

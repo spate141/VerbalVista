@@ -3,7 +3,6 @@ import time
 import spacy
 import pickle
 import pandas as pd
-import numpy as np
 import streamlit as st
 # from TTS.api import TTS
 from spacy_streamlit import visualize_ner
@@ -191,9 +190,6 @@ class VerbalVista:
 
         if mode == "Create":
             mode_label = 'Creating'
-            # st.markdown(
-            #     "<h6>LangChain PromptHelper Parameters:</h6>", unsafe_allow_html=True
-            # )
             cols = st.columns(2)
             with cols[0]:
                 st.markdown("<h6>Select Embedding Model:</h6>", unsafe_allow_html=True)
@@ -301,6 +297,8 @@ class VerbalVista:
                     return True
             return False
 
+        icons = {"user": "docs/user.png", "assistant": "docs/robot.png"}
+
         colored_header(
             label="Q & A",
             description="Select index, ask questions!",
@@ -340,7 +338,7 @@ class VerbalVista:
 
                 # Display chat messages from history on app rerun
                 for message_item in st.session_state[selected_index_path]['messages']:
-                    with st.chat_message(message_item["role"]):
+                    with st.chat_message(message_item["role"], avatar=icons[message_item["role"]]):
                         st.markdown(message_item["content"])
 
                 # React to user input
@@ -352,7 +350,7 @@ class VerbalVista:
                     })
 
                     # Display user message in chat message container
-                    with st.chat_message("user"):
+                    with st.chat_message("user", avatar=icons["user"]):
                         st.markdown(prompt)
 
                     # Define summarization mechanism here
@@ -381,7 +379,7 @@ class VerbalVista:
                             chat_history=_chat_history
                         )
                         # Display assistant response in chat message container
-                        with st.chat_message("assistant"):
+                        with st.chat_message("assistant", avatar=icons["assistant"]):
                             st.markdown(answer)
                             st.info(answer_meta)
                     else:
@@ -391,7 +389,7 @@ class VerbalVista:
                             question=prompt, qa_chain=qa_chain, chat_history=_chat_history
                         )
                         # Display assistant response in chat message container
-                        with st.chat_message("assistant"):
+                        with st.chat_message("assistant", avatar=icons["assistant"]):
                             message_placeholder = st.empty()
                             full_response = ""
 
