@@ -438,7 +438,7 @@ class VerbalVista:
 
 
 def main():
-    app_version = "0.0.3"
+    app_version = "0.0.4"
     st.set_page_config(
         page_title="VerbalVista",
         page_icon="🤖",
