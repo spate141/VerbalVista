@@ -347,6 +347,8 @@ class VerbalVista:
                     st.markdown(message_item["content"])
                     if cost_item:
                         st.info(cost_item)
+                        total_qa_cost += cost_item.total_cost
+                        # st.info(total_qa_cost)
 
             get_summary = st.button("Get Summary")
             if get_summary:
@@ -399,6 +401,7 @@ class VerbalVista:
                     with st.chat_message("assistant", avatar=icons["assistant"]):
                         st.markdown(answer)
                         st.info(answer_meta)
+                        # st.info(total_qa_cost)
                 else:
                     # Other Q/A questions
                     log_info("QA")
@@ -422,6 +425,7 @@ class VerbalVista:
                         # Display full message at the end with other stuff you want to show like `response_meta`.
                         message_placeholder.markdown(full_response)
                         st.info(answer_meta)
+                        # st.info(total_qa_cost)
                         # if enable_audio:
                         #     wav = self.tts.tts(full_response)
                         #     wav_array = np.array(wav)
