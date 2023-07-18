@@ -1,6 +1,6 @@
 import os
 import time
-import pickle
+import glob
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import DirectoryLoader
@@ -29,7 +29,7 @@ class IndexUtil:
             index_dir_path = os.path.join(indices_dir, index_dir)
             creation_date = time.ctime(os.stat(index_dir_path).st_ctime)
             indices_data.append((index_dir_path, creation_date))
-        df = pd.DataFrame(indices_data, columns=['Index Name', 'Creation Date'])
+        df = pd.DataFrame(indices_data, columns=['Index Path', 'Creation Date'])
         return df
 
     @staticmethod
@@ -40,19 +40,25 @@ class IndexUtil:
         :param indices_dir:
         :return:
         """
-        transcripts_data = []
-        transcripts_subdirs = next(os.walk(document_dir))[1]
+        documents_data = []
+        documents_subdirs = next(os.walk(document_dir))[1]
         indices_subdirs = next(os.walk(indices_dir))[1]
-        for transcript in transcripts_subdirs:
-            transcript_path = os.path.join(document_dir, transcript)
-            creation_date = time.ctime(os.stat(transcript_path).st_ctime)
-            if transcript in indices_subdirs:
-                transcripts_data.append((False, '✅', transcript_path, creation_date))
+        for doc_sub_dir in documents_subdirs:
+            document_path = os.path.join(document_dir, doc_sub_dir)
+            creation_date = time.ctime(os.stat(document_path).st_ctime)
+            try:
+                doc_meta_data_path = glob.glob(f"{document_path}/*.meta.txt")[0]
+                doc_meta_data = open(doc_meta_data_path, 'r').read()
+                doc_meta_data = ' '.join(doc_meta_data.split())
+            except IndexError:
+                doc_meta_data = None
+            if doc_sub_dir in indices_subdirs:
+                documents_data.append((False, '✅', doc_meta_data, document_path, creation_date))
             else:
-                transcripts_data.append((False, '❓', transcript_path, creation_date))
+                documents_data.append((False, '❓', doc_meta_data, document_path, creation_date))
         df = pd.DataFrame(
-            transcripts_data,
-            columns=['Select Index', 'Index Status', 'Document Name', 'Creation Date']
+            documents_data,
+            columns=['Select Index', 'Index Status', 'Document Meta', 'Document Name', 'Creation Date']
         )
         return df
 
@@ -93,11 +99,21 @@ class IndexUtil:
         :param embedding_model:
         """
         # Load Data
-        loader = DirectoryLoader(document_directory)
-        raw_documents = loader.load()
+        data_loader = DirectoryLoader(document_directory, glob="**/*.data.txt")
+        meta_loader = DirectoryLoader(document_directory, glob="**/*.meta.txt")
+
+        raw_documents = data_loader.load()
+        try:
+            raw_meta = meta_loader.load()[0].page_content
+        except IndexError:
+            log_error(f"Meta file not found for: {document_directory}")
+            raw_meta = None
 
         # Split text
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=20, length_function=len)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=20, length_function=len,
+            separators=["\n\n", "\n", "(?<=\. )", " ", ""]
+        )
         documents = text_splitter.split_documents(raw_documents)
 
         # Load Data to vectorstore
@@ -105,11 +121,16 @@ class IndexUtil:
             embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
             vectorstore = FAISS.from_documents(documents, embeddings)
 
-        # Save vectorstore
         if not os.path.exists(index_directory):
             os.makedirs(index_directory)
 
-        # with open(os.path.join(index_directory, 'vectorstore.pkl'), "wb") as f:
-        #     pickle.dump(vectorstore, f)
-        vectorstore.save_local(index_directory)
+        # Save vectorstore
+        faiss_index_path = os.path.join(index_directory, 'faiss')
+        vectorstore.save_local(faiss_index_path)
+
+        # Save document meta
+        doc_meta_path = os.path.join(index_directory, "doc.meta.txt")
+        with open(doc_meta_path, 'w') as f:
+            f.write(raw_meta)
+
         return cb

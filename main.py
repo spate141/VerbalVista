@@ -71,6 +71,9 @@ class VerbalVista:
         )
         with st.form('docs_processing'):
 
+            st.markdown(f"<h6>Data description: (optional)</h6>", unsafe_allow_html=True)
+            document_desc = st.text_input("desc", placeholder="Enter data description", label_visibility="collapsed")
+
             st.markdown(f"<h6>Process file:</h6>", unsafe_allow_html=True)
             uploaded_file = st.file_uploader(
                 "Upload file:", type=supported_formats, accept_multiple_files=False,
@@ -172,7 +175,8 @@ class VerbalVista:
                     tmp_document_save_path = write_data_to_file(
                         uploaded_file_name=uploaded_file_name,
                         document_dir=self.document_dir,
-                        full_document=full_document
+                        full_document=full_document,
+                        document_desc=document_desc
                     )
                     st.success(f"Document saved: {tmp_document_save_path}")
 
@@ -220,8 +224,9 @@ class VerbalVista:
             _, c, _ = st.columns([2, 5, 2])
             with c:
                 with st.spinner(f'{mode_label} document. Please wait.'):
-                    document_dirs = selected_documents_df[selected_documents_df['Select Index']][
-                        'Document Name'].to_list()
+                    document_dirs = selected_documents_df[
+                        selected_documents_df['Select Index']
+                    ]['Document Name'].to_list()
                     for doc_dir_to_index in document_dirs:
                         file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
                         if mode == 'Create':
@@ -313,7 +318,7 @@ class VerbalVista:
             # enable_audio = st.checkbox("Enable TTS")
             indices_df = self.indexing_util.get_available_indices(indices_dir=self.indices_dir)
             selected_index_path = selectbox(
-                "Select Index:", options=indices_df['Index Name'].to_list(),
+                "Select Index:", options=indices_df['Index Path'].to_list(),
                 no_selection_label="<select index>", label_visibility="collapsed"
             )
 
@@ -322,7 +327,23 @@ class VerbalVista:
                 return
 
         if selected_index_path is not None:
-            total_qa_cost = 0
+
+            # Initialize Q/A Chain
+            qa_chain = self.ask_util.prepare_qa_chain(
+                index_directory=selected_index_path,
+                temperature=temperature,
+                model_name=model_name,
+                max_tokens=max_tokens
+            )
+            # Initialize summarization Chain
+            summarization_chain = self.summary_util.initialize_summarization_chain(
+                temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
+            )
+
+            index_meta = os.path.join(selected_index_path, 'doc.meta.txt')
+            index_meta_txt = open(index_meta, 'r').read()
+            index_meta_txt = ' '.join(index_meta_txt.split())
+            st.success(f"Description: {index_meta_txt}")
             chat_dir_path = os.path.join(self.chat_history_dir, os.path.basename(selected_index_path))
             self.create_directory(chat_dir_path)
             chat_history_filepath = os.path.join(chat_dir_path, f"{os.path.basename(selected_index_path)}.pickle")
@@ -347,14 +368,19 @@ class VerbalVista:
                     st.markdown(message_item["content"])
                     if cost_item:
                         st.info(cost_item)
-                        total_qa_cost += cost_item.total_cost
                         # st.info(total_qa_cost)
-
-            get_summary = st.button("Get Summary")
+            cols = st.columns(10)
+            with cols[0]:
+                get_one_point_summary = st.button("Highlight", type="primary")
+            with cols[1]:
+                get_summary = st.button("Summary", type="primary")
             if get_summary:
                 # React to summarize button
                 prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
                 prompt = "Generate summary"
+            elif get_one_point_summary:
+                prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
+                prompt = "Describe this document in a single bullet point."
             else:
                 # React to user input
                 prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
@@ -371,24 +397,12 @@ class VerbalVista:
                 with st.chat_message("user", avatar=icons["user"]):
                     st.markdown(prompt)
 
-                # Define summarization mechanism here
-                summarization_chain = self.summary_util.initialize_summarization_chain(
-                    temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
-                )
-
-                # Define Q/A mechanism here
-                qa_chain = self.ask_util.prepare_qa_chain(
-                    index_directory=selected_index_path,
-                    temperature=temperature,
-                    model_name=model_name,
-                    max_tokens=max_tokens
-                )
                 if _gen_summary(prompt) or get_summary:
                     # If the prompt is asking to summarize
                     log_info("Summarization")
                     doc_filepath = os.path.join(
                         self.document_dir, os.path.basename(selected_index_path),
-                        f"{os.path.basename(selected_index_path)}.txt"
+                        f"{os.path.basename(selected_index_path)}.data.txt"
                     )
                     with open(doc_filepath, 'r') as f:
                         text = f.read()
@@ -396,7 +410,6 @@ class VerbalVista:
                         chain=summarization_chain, text=text, question=prompt,
                         chat_history=_chat_history
                     )
-                    total_qa_cost += answer_meta.total_cost
                     # Display assistant response in chat message container
                     with st.chat_message("assistant", avatar=icons["assistant"]):
                         st.markdown(answer)
@@ -408,7 +421,6 @@ class VerbalVista:
                     answer, answer_meta, chat_history = self.ask_util.ask_question(
                         question=prompt, qa_chain=qa_chain, chat_history=_chat_history
                     )
-                    total_qa_cost += answer_meta.total_cost
                     # Display assistant response in chat message container
                     with st.chat_message("assistant", avatar=icons["assistant"]):
                         message_placeholder = st.empty()

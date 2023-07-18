@@ -63,5 +63,8 @@ class SummaryUtil:
         with get_openai_callback() as cb:
             summary = chain.run(docs)
         chat_history.append((question, summary))
-        return summary, cb, chat_history
+        answer_meta = f"""Total tokens: {cb.total_tokens} (Prompt: {cb.prompt_tokens} + Completion: {cb.completion_tokens})
+        Total requests: {cb.successful_requests}
+        Total cost (USD): {round(cb.total_cost, 6)}"""
+        return summary, answer_meta, chat_history
 

@@ -37,8 +37,10 @@ class AskUtil:
 
         """
         log_debug(f"Preparing QA chain for: {index_directory}")
+
         # get document vectors
-        vectorstore = self.load_vectors(index_directory=index_directory)
+        faiss_index_path = os.path.join(index_directory, 'faiss')
+        vectorstore = self.load_vectors(index_directory=faiss_index_path)
 
         # get q/a chain
         llm = ChatOpenAI(temperature=temperature, model_name=model_name, max_tokens=max_tokens)
@@ -56,4 +58,7 @@ class AskUtil:
         total_time = round(time.time() - start, 2)
         answer = result["answer"]
         chat_history.append((question, answer))
-        return answer, cb, chat_history
+        answer_meta = f"""Total tokens: {cb.total_tokens} (Prompt: {cb.prompt_tokens} + Completion: {cb.completion_tokens})
+        Total requests: {cb.successful_requests}
+        Total cost (USD): {round(cb.total_cost, 6)}"""
+        return answer, answer_meta, chat_history
