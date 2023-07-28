@@ -30,6 +30,8 @@ class IndexUtil:
             creation_date = time.ctime(os.stat(index_dir_path).st_ctime)
             indices_data.append((index_dir_path, creation_date))
         df = pd.DataFrame(indices_data, columns=['Index Path', 'Creation Date'])
+        df['Creation Date'] = pd.to_datetime(df['Creation Date'])
+        df = df.sort_values(by='Creation Date', ascending=False)
         return df
 
     @staticmethod

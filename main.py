@@ -3,6 +3,7 @@ import time
 import spacy
 import pickle
 import pandas as pd
+from PIL import Image
 import streamlit as st
 # from TTS.api import TTS
 from spacy_streamlit import visualize_ner
@@ -91,10 +92,11 @@ class VerbalVista:
             submitted = st.form_submit_button("Process", type="primary")
             if submitted:
                 full_document = ''
-
+                msg = st.toast('Processing data...')
                 if uploaded_file is not None:
                     log_debug('Processing uploaded file!')
                     if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
+                        msg.toast(f'Processing audio/video data...')
                         with st.spinner('Processing audio. Please wait.'):
                             process_audio_bar = st.progress(0, text="Processing...")
                             # Save the uploaded file to the specified directory
@@ -132,30 +134,35 @@ class VerbalVista:
                         self.remove_temp_files(self.tmp_audio_dir)
 
                     elif uploaded_file.name.endswith(".pdf"):
+                        msg.toast(f'Processing PDF data...')
                         with st.spinner('Processing pdf file. Please wait.'):
                             full_document = parse_pdf(uploaded_file)
 
                     elif uploaded_file.name.endswith(".docx"):
+                        msg.toast(f'Processing DOCX data...')
                         with st.spinner('Processing word file. Please wait.'):
                             full_document = parse_docx(uploaded_file)
 
                     elif uploaded_file.name.endswith(".txt"):
+                        msg.toast(f'Processing TXT data...')
                         with st.spinner('Processing text file. Please wait.'):
                             full_document = parse_txt(uploaded_file)
 
                     elif uploaded_file.name.endswith(".eml"):
-                        # Save the uploaded file to the specified directory
+                        msg.toast(f'Processing EMAIL data...')
                         with st.spinner('Processing email file. Please wait.'):
                             full_document = parse_email(uploaded_file)
 
                     uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
 
                 elif url is not None:
+                    msg.toast(f'Processing URL data...')
                     log_debug('Processing URL!')
                     full_document = parse_url(url)
                     uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
 
                 elif text is not None:
+                    msg.toast(f'Processing TEXT data...')
                     log_debug('Processing Text!')
                     full_document = text
                     uploaded_file_name = text[:20].replace("/", "-").replace('.', '-')
@@ -275,7 +282,7 @@ class VerbalVista:
                 ]['Document Name'].to_list()
                 data = []
                 for selected_doc_dir_path in selected_docs_dir_paths:
-                    filename = selected_doc_dir_path.split('/')[-1] + '.txt'
+                    filename = selected_doc_dir_path.split('/')[-1] + '.data.txt'
                     filepath = os.path.join(selected_doc_dir_path, filename)
                     with open(filepath, 'r') as f:
                         text = f.read()
@@ -369,11 +376,13 @@ class VerbalVista:
                     if cost_item:
                         st.info(cost_item)
                         # st.info(total_qa_cost)
-            cols = st.columns(10)
+            cols = st.columns(8)
             with cols[0]:
                 get_one_point_summary = st.button("Highlight", type="primary")
             with cols[1]:
                 get_summary = st.button("Summary", type="primary")
+            # with cols[2]:
+            #     get_action_items = st.button("Action Items", type="primary")
             if get_summary:
                 # React to summarize button
                 prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
@@ -381,6 +390,9 @@ class VerbalVista:
             elif get_one_point_summary:
                 prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
                 prompt = "Describe this document in a single bullet point."
+            # elif get_action_items:
+            #     prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
+            #     prompt = "You are an AI expert in analyzing conversations and extracting action items. Please review the text and identify any tasks, assignments, or actions that were agreed upon or mentioned as needing to be done. These could be tasks assigned to specific individuals, or general actions that the group has decided to take. Please list these action items clearly and concisely."
             else:
                 # React to user input
                 prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
@@ -472,10 +484,11 @@ class VerbalVista:
 
 
 def main():
+    page_icon = Image.open('docs/logo-white.png')
     app_version = "0.0.4"
     st.set_page_config(
         page_title="VerbalVista",
-        page_icon="🤖",
+        page_icon=page_icon,
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
