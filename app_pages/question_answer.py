@@ -7,17 +7,6 @@ from streamlit_extras.no_default_selectbox import selectbox
 from utils.logging_module import log_info, log_debug, log_error
 
 
-def create_directory(directory_path):
-    """
-
-    :param directory_path:
-    :return:
-    """
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-        log_debug(f"Directory '{directory_path}' created successfully.")
-
-
 def render_qa_page(
         temperature=None, max_tokens=None, model_name=None, chain_type=None,
         ask_util=None, indexing_util=None, summary_util=None,
@@ -73,7 +62,9 @@ def render_qa_page(
         index_meta_txt = ' '.join(index_meta_txt.split())
         st.success(f"Description: {index_meta_txt}")
         chat_dir_path = os.path.join(chat_history_dir, os.path.basename(selected_index_path))
-        create_directory(chat_dir_path)
+        if not os.path.exists(chat_dir_path):
+            os.makedirs(chat_dir_path)
+            log_debug(f"Directory '{chat_dir_path}' created successfully.")
         chat_history_filepath = os.path.join(chat_dir_path, f"{os.path.basename(selected_index_path)}.pickle")
 
         # Initialize chat history
