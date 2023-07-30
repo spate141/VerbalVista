@@ -20,25 +20,19 @@ class VerbalVista:
         self.ask_util = AskUtil()
         self.summary_util = SummaryUtil()
 
+        # Create relevant directories
+        for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]:
+            if not os.path.exists(directory_path):
+                os.makedirs(directory_path)
+                log_debug(f"Directory '{directory_path}' created successfully.")
+
         # Initialize common variables, models
-        _ = [self.create_directory(d) for d in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]]
         self.document_dir = document_dir
         self.indices_dir = indices_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.chat_history_dir = chat_history_dir
         self.nlp = spacy.load("en_core_web_sm")
         self.ner_labels = self.nlp.get_pipe("ner").labels
-
-    @staticmethod
-    def create_directory(directory_path):
-        """
-
-        :param directory_path:
-        :return:
-        """
-        if not os.path.exists(directory_path):
-            os.makedirs(directory_path)
-            log_debug(f"Directory '{directory_path}' created successfully.")
 
     def render_media_processing_page(self):
 
