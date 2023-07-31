@@ -6,17 +6,6 @@ from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
 
-def remove_temp_files(directory):
-    """
-    :param directory:
-    :return:
-    """
-    for file_name in os.listdir(directory):
-        file_path = os.path.join(directory, file_name)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-
-
 def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_model=None):
     """
     This function will extract plain text from variety of media including video, audio, pdf and lots more.
@@ -87,8 +76,12 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                             )
                         full_document = ' '.join(full_document)
 
+                    # Remove tmp audio files
                     log_debug(f"Removing tmp audio files")
-                    remove_temp_files(tmp_audio_dir)
+                    for file_name in os.listdir(tmp_audio_dir):
+                        file_path = os.path.join(tmp_audio_dir, file_name)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
 
                 elif uploaded_file.name.endswith(".pdf"):
                     msg.toast(f'Processing PDF data...')

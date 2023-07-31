@@ -4,6 +4,7 @@ import pickle
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
+from streamlit_extras.customize_running import center_running
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -106,7 +107,18 @@ def render_qa_page(
             prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
 
         if prompt:
-
+            center_css = """
+            <style>
+            div[class*="StatusWidget"]{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 50%;
+            }
+            </style>
+            """
+            st.markdown(center_css, unsafe_allow_html=True)
             # Add user message to chat history
             st.session_state[selected_index_path]['messages'].append({
                 "role": "user", "content": prompt
