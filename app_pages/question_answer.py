@@ -112,7 +112,7 @@ def render_qa_page(
             div[class*="StatusWidget"]{
                 position: fixed;
                 top: 50%;
-                left: 50%;
+                left: 60%;
                 transform: translate(-50%, -50%);
                 width: 50%;
             }

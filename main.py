@@ -75,18 +75,12 @@ class VerbalVista:
             chat_history_dir=self.chat_history_dir
         )
 
-    def render_test_page(self):
+    @staticmethod
+    def render_tell_me_about_page():
         """
         TEST PAGE
         """
-        # with st.form("process_text"):
-        #     text = st.text_area("Enter text:")
-        #     submit = st.form_submit_button('Process')
-        #     if submit:
-        #         wav = self.tts.tts(text)
-        #         wav_array = np.array(wav)
-        #         sample_rate = 22500
-        #         st.audio(wav_array, format='audio/wav', sample_rate=sample_rate)
+        render_tell_me_about_page()
 
 
 def main():
@@ -126,7 +120,7 @@ def main():
             "Explore Document",
             "Manage Index",
             "Q & A",
-            "test"
+            "Tell Me About"
         ], label_visibility="collapsed"
     )
 
@@ -165,8 +159,8 @@ def main():
         vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=summ_chain_type)
     elif page == "Explore Document":
         vv.render_document_explore_page()
-    elif page == 'test':
-        vv.render_test_page()
+    elif page == 'Tell Me About':
+        vv.render_tell_me_about_page()
 
 
 if __name__ == '__main__':
