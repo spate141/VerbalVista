@@ -88,13 +88,17 @@ def text_to_docs(text: str | List[str]) -> List[Document]:
     return doc_chunks
 
 
-def parse_url(url):
+def parse_url(url, return_data=False):
     """
 
     :param url:
+    :param return_data:
     :return:
     """
     loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
+    if return_data:
+        data = loader.load()
+        return data
     data = loader.load()[0]
     text = data.page_content
     return text
