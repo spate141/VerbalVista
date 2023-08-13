@@ -85,7 +85,7 @@ class VerbalVista:
 
 def main():
     page_icon = Image.open('docs/logo-white.png')
-    app_version = "0.0.5"
+    app_version = "0.0.6"
     st.set_page_config(
         page_title="VerbalVista",
         page_icon=page_icon,
