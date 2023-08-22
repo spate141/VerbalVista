@@ -23,7 +23,7 @@ class VerbalVista:
         self.google_serper_util = GoogleSerperUtil()
 
         # Create relevant directories
-        for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]:
+        for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir, search_history_dir]:
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
                 log_debug(f"Directory '{directory_path}' created successfully.")
