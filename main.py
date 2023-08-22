@@ -6,19 +6,21 @@ from app_pages import *
 from utils.ask_util import AskUtil
 from utils.indexing_util import IndexUtil
 from utils.summary_util import SummaryUtil
+from utils.google_serper_util import GoogleSerperUtil
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.logging_module import log_info, log_debug, log_error
 
 
 class VerbalVista:
 
-    def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None):
+    def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None, search_history_dir: str = None):
 
         # Initialize all necessary classes
         self.whisper = WhisperAudioTranscribe()
         self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
         self.summary_util = SummaryUtil()
+        self.google_serper_util = GoogleSerperUtil()
 
         # Create relevant directories
         for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir]:
@@ -31,6 +33,7 @@ class VerbalVista:
         self.indices_dir = indices_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.chat_history_dir = chat_history_dir
+        self.search_history_dir = search_history_dir
         self.nlp = spacy.load("en_core_web_sm")
         self.ner_labels = self.nlp.get_pipe("ner").labels
 
@@ -75,12 +78,15 @@ class VerbalVista:
             chat_history_dir=self.chat_history_dir
         )
 
-    @staticmethod
-    def render_tell_me_about_page():
+    def render_tell_me_about_page(self):
         """
-        TEST PAGE
+        Tell me more about page.
         """
-        render_tell_me_about_page()
+        render_tell_me_about_page(
+            google_serper_util=self.google_serper_util,
+            summary_util=self.summary_util,
+            search_history_dir=self.search_history_dir
+        )
 
 
 def main():
@@ -128,6 +134,7 @@ def main():
     tmp_audio_dir = 'data/tmp_audio_dir/'
     indices_dir = 'data/indices/'
     chat_history_dir = 'data/chat_history/'
+    search_history_dir = 'data/search_history/'
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set
@@ -144,7 +151,8 @@ def main():
 
     vv = VerbalVista(
         document_dir=document_dir, indices_dir=indices_dir,
-        tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir
+        tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
+        search_history_dir=search_history_dir
     )
     if page == "Media Processing":
         vv.render_media_processing_page()

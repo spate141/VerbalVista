@@ -1,14 +1,13 @@
 from langchain.llms import OpenAI
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.agents import AgentType, load_tools, initialize_agent
-from utils.summary_util import SummaryUtil
 from utils.document_parser import parse_url
 
 
-class GoogleSerper:
+class GoogleSerperUtil:
 
     def __init__(self):
-        self.su = SummaryUtil()
+        pass
 
     @staticmethod
     def load_google_serper_agent(search_query: str = None, temperature: float = 0.0, verbose: bool = True):
@@ -33,10 +32,11 @@ class GoogleSerper:
 
         return answer
 
+    @staticmethod
     def google_serper_summarization(
-            self, search_query: str = None, num_results: int = 3, temperature: float = 0.0,
+            search_query: str = None, num_results: int = 3, temperature: float = 0.0,
             model_name: str = "gpt-3.5-turbo", chain_type: str = "map_reduce",
-            max_tokens: int = 512
+            max_tokens: int = 512, summary_util=None
     ):
         # Use the Google Serper API and fetch news results for given search_query
         search = GoogleSerperAPIWrapper(type="news", tbs="qdr:w1")
@@ -44,25 +44,17 @@ class GoogleSerper:
 
         results = []
         if not result_dict['news']:
-            results.append({
-                "title": None,
-                "link": None,
-                "summary": None
-            })
+            results.append({"title": None, "link": None, "summary": None})
         else:
             # Load URL data from the top X news search results
             for i, item in zip(range(num_results), result_dict['news']):
                 data = parse_url(item['link'], return_data=True)
 
                 # Initialize summarization chain
-                summarization_chain = self.su.initialize_summarization_chain(
+                summarization_chain = summary_util.initialize_summarization_chain(
                     model_name=model_name, temperature=temperature, max_tokens=max_tokens,
                     chain_type=chain_type
                 )
                 summary = summarization_chain.run(data)
-                results.append({
-                    "title": item['title'],
-                    "link": item['link'],
-                    "summary": summary
-                })
+                results.append({"title": item['title'], "link": item['link'], "summary": summary})
         return results
