@@ -88,10 +88,16 @@ class VerbalVista:
             search_history_dir=self.search_history_dir
         )
 
+    def render_stocks_comparison_page(self):
+        """
+        Stocks comparison page.
+        """
+        render_stocks_comparison_page()
+
 
 def main():
     page_icon = Image.open('docs/logo-white.png')
-    app_version = "0.0.6"
+    app_version = "0.0.7"
     st.set_page_config(
         page_title="VerbalVista",
         page_icon=page_icon,
@@ -126,7 +132,8 @@ def main():
             "Explore Document",
             "Manage Index",
             "Q & A",
-            "Tell Me About"
+            "Tell Me About",
+            "Stocks Comparison"
         ], label_visibility="collapsed"
     )
 
@@ -169,6 +176,8 @@ def main():
         vv.render_document_explore_page()
     elif page == 'Tell Me About':
         vv.render_tell_me_about_page()
+    elif page == 'Stocks Comparison':
+        vv.render_stocks_comparison_page()
 
 
 if __name__ == '__main__':

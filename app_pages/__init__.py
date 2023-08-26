@@ -3,3 +3,4 @@ from .manage_indices import render_manage_index_page
 from .media_processing import render_media_processing_page
 from .question_answer import render_qa_page
 from .tell_me_about import render_tell_me_about_page
+from .stocks_comparison import render_stocks_comparison_page
