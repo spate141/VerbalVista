@@ -1,7 +1,6 @@
 import os
 import time
 import streamlit as st
-from streamlit_extras.colored_header import colored_header
 from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
@@ -11,11 +10,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
     This function will extract plain text from variety of media including video, audio, pdf and lots more.
     """
     supported_formats = ['m4a', 'mp3', 'wav', 'webm', 'mp4', 'mpg', 'mpeg', 'docx', 'pdf', 'txt', 'eml']
-    colored_header(
-        label="Process Media",
-        description=f"Process audio/video, document and email and parse plaintext!",
-        color_name="violet-70",
-    )
+    st.header("Process Media", divider='violet')
     with st.form('docs_processing'):
 
         st.markdown(f"<h6>Data description: (optional)</h6>", unsafe_allow_html=True)

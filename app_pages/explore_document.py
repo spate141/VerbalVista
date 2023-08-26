@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 from spacy_streamlit import visualize_ner
 from utils.generate_wordcloud import generate_wordcloud
-from streamlit_extras.colored_header import colored_header
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -11,11 +10,7 @@ def render_document_explore_page(document_dir=None, indices_dir=None, indexing_u
     """
     This function will allow user to explore plain text to better understand the data.
     """
-    colored_header(
-        label="Explore Document",
-        description="Select document, generate index!",
-        color_name="blue-green-70",
-    )
+    st.header('Explore Document', divider='blue')
     with st.form('explore_document'):
         st.markdown("<h6>Select Document:</h6>", unsafe_allow_html=True)
         documents_df = indexing_util.get_available_documents(

@@ -2,7 +2,6 @@ import os
 import time
 import pickle
 import streamlit as st
-from streamlit_extras.colored_header import colored_header
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -10,8 +9,7 @@ def render_tell_me_about_page(google_serper_util=None, summary_util=None, search
     """
 
     """
-    colored_header(label="Tell me about!", description="Let's ask internet about stuff!", color_name="orange-70")
-
+    st.header("Tell me about!", divider='grey')
     # load all previous search results directory names
     previous_searches = [None]
     for prev_search_query in os.listdir(search_history_dir):

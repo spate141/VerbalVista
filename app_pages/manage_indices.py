@@ -2,7 +2,6 @@ import os
 import time
 import pandas as pd
 import streamlit as st
-from streamlit_extras.colored_header import colored_header
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -10,12 +9,7 @@ def render_manage_index_page(document_dir=None, indices_dir=None, indexing_util=
     """
     This function will allow user to convert plain text into vector index or remove already created index.
     """
-    colored_header(
-        label="Manage Index",
-        description="Manage documents indices.",
-        color_name="blue-green-70",
-    )
-
+    st.header("Manage Index", divider='green')
     st.markdown("<h6>Select Mode:</h6>", unsafe_allow_html=True)
     mode = st.selectbox("mode", ["Create", "Delete"], index=0, label_visibility="collapsed")
     mode_label = None

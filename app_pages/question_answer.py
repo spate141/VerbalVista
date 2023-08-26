@@ -2,9 +2,7 @@ import os
 import time
 import pickle
 import streamlit as st
-from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
-from streamlit_extras.customize_running import center_running
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -24,13 +22,8 @@ def render_qa_page(
                 return True
         return False
 
-    icons = {"user": "docs/user.png", "assistant": "docs/robot.png"}
-
-    colored_header(
-        label="Q & A",
-        description="Select index, ask questions!",
-        color_name="red-70",
-    )
+    # icons = {"user": "docs/user.png", "assistant": "docs/robot.png"}
+    st.header("Q & A", divider='red')
     st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
     with st.container():
         # enable_audio = st.checkbox("Enable TTS")
@@ -84,7 +77,7 @@ def render_qa_page(
         for message_item, cost_item in zip(
                 st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['cost']
         ):
-            with st.chat_message(message_item["role"], avatar=icons[message_item["role"]]):
+            with st.chat_message(message_item["role"], avatar=message_item["role"]):
                 st.markdown(message_item["content"])
                 if cost_item:
                     st.info(cost_item)
@@ -126,7 +119,7 @@ def render_qa_page(
             st.session_state[selected_index_path]['cost'].append(None)
 
             # Display user message in chat message container
-            with st.chat_message("user", avatar=icons["user"]):
+            with st.chat_message("user", avatar="human"):
                 st.markdown(prompt)
 
             if _gen_summary(prompt) or get_summary:
@@ -143,7 +136,7 @@ def render_qa_page(
                     chat_history=_chat_history
                 )
                 # Display assistant response in chat message container
-                with st.chat_message("assistant", avatar=icons["assistant"]):
+                with st.chat_message("ai", avatar="ai"):
                     st.markdown(answer)
                     st.info(answer_meta)
                     # st.info(total_qa_cost)
@@ -154,7 +147,7 @@ def render_qa_page(
                     question=prompt, qa_chain=qa_chain, chat_history=_chat_history
                 )
                 # Display assistant response in chat message container
-                with st.chat_message("assistant", avatar=icons["assistant"]):
+                with st.chat_message("ai", avatar="ai"):
                     message_placeholder = st.empty()
                     full_response = ""
 

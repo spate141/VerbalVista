@@ -1,10 +1,10 @@
-openai~=0.27.8
+openai~=0.27.9
 tiktoken~=0.4.0
 pydub~=0.25.1
 pandas
-langchain~=0.0.261
-streamlit~=1.25.0
-streamlit_extras~=0.2.7
+langchain~=0.0.273
+streamlit~=1.26.0
+streamlit_extras~=0.3.0
 docx2txt~=0.8
 pypdf~=3.11.0
 wordcloud~=1.9.2
@@ -16,4 +16,3 @@ faiss-cpu~=1.7.4
 spacy==3.6.0
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl
 spacy-streamlit~=1.0.6
-tts~=0.15.6
