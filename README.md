@@ -18,6 +18,8 @@
   - Explore documents
   - Manage index
   - Q&A using LLM
+  - Tell me about!
+  - Stocks performance comparison
 
 ### Screenshots:
 
