@@ -4,6 +4,7 @@ from PIL import Image
 import streamlit as st
 from app_pages import *
 from utils.ask_util import AskUtil
+from utils.stocks_util import StockUtil
 from utils.indexing_util import IndexUtil
 from utils.summary_util import SummaryUtil
 from utils.google_serper_util import GoogleSerperUtil
@@ -13,7 +14,7 @@ from utils.logging_module import log_info, log_debug, log_error
 
 class VerbalVista:
 
-    def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None, search_history_dir: str = None):
+    def __init__(self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None, chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None):
 
         # Initialize all necessary classes
         self.whisper = WhisperAudioTranscribe()
@@ -21,9 +22,10 @@ class VerbalVista:
         self.ask_util = AskUtil()
         self.summary_util = SummaryUtil()
         self.google_serper_util = GoogleSerperUtil()
+        self.stock_util = StockUtil()
 
         # Create relevant directories
-        for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir, search_history_dir]:
+        for directory_path in [document_dir, indices_dir, tmp_audio_dir, chat_history_dir, search_history_dir, stock_data_dir]:
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
                 log_debug(f"Directory '{directory_path}' created successfully.")
@@ -34,6 +36,7 @@ class VerbalVista:
         self.tmp_audio_dir = tmp_audio_dir
         self.chat_history_dir = chat_history_dir
         self.search_history_dir = search_history_dir
+        self.stock_data_dir = stock_data_dir
         self.nlp = spacy.load("en_core_web_sm")
         self.ner_labels = self.nlp.get_pipe("ner").labels
 
@@ -92,7 +95,10 @@ class VerbalVista:
         """
         Stocks comparison page.
         """
-        render_stocks_comparison_page()
+        render_stocks_comparison_page(
+            stock_util=self.stock_util,
+            stock_data_dir=self.stock_data_dir
+        )
 
 
 def main():
@@ -142,6 +148,7 @@ def main():
     indices_dir = 'data/indices/'
     chat_history_dir = 'data/chat_history/'
     search_history_dir = 'data/search_history/'
+    stock_data_dir = 'data/stock_data_dir/'
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set
@@ -159,7 +166,7 @@ def main():
     vv = VerbalVista(
         document_dir=document_dir, indices_dir=indices_dir,
         tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
-        search_history_dir=search_history_dir
+        search_history_dir=search_history_dir, stock_data_dir=stock_data_dir
     )
     if page == "Media Processing":
         vv.render_media_processing_page()

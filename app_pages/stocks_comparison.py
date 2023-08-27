@@ -1,10 +1,9 @@
 import pandas as pd
 import streamlit as st
 from datetime import date
-from utils.stocks_util import *
 
 
-def render_stocks_comparison_page():
+def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
     """
     Render stock comparison page.
     """
@@ -27,13 +26,17 @@ def render_stocks_comparison_page():
             formatted_date = current_date.strftime("%Y-%m-%d")
             end_date = st.date_input("End date:", value=pd.to_datetime(formatted_date))
         with cols[5]:
-            trendline_type = st.selectbox("Trendline:", index=0, options=['exponential', 'linear'])
+            trendline_type = st.selectbox("Trend-line:", index=0, options=['exponential', 'linear'])
 
-        submit = st.form_submit_button('Submit')
+        submit = st.form_submit_button('Submit', type="primary")
         if submit:
             # Fetch and normalize stock data
-            company1_data_normalized = normalize_stock_data(get_stock_data(company1, start_date, end_date))
-            company2_data_normalized = normalize_stock_data(get_stock_data(company2, start_date, end_date))
+            company1_data_normalized = stock_util.normalize_stock_data(
+                stock_util.get_stock_data(company1, start_date, end_date, data_dir=stock_data_dir)
+            )
+            company2_data_normalized = stock_util.normalize_stock_data(
+                stock_util.get_stock_data(company2, start_date, end_date, data_dir=stock_data_dir)
+            )
 
             # Calculate investment performance
             investment1 = (company1_data_normalized / 100 + 1) * invested_amount
@@ -48,5 +51,11 @@ def render_stocks_comparison_page():
                 st.metric(company1, f"${int(final_investment1):,}", f"{int(final_investment1-invested_amount):,}")
             with cols[2]:
                 st.metric(company2, f"${int(final_investment2):,}", f"{int(final_investment2-invested_amount):,}")
-            fig = generate_plotly_chart(company1, company2, investment1, investment2, trendline_type=trendline_type)
+            fig = stock_util.generate_plotly_chart(
+                company1, company2,
+                investment1, investment2,
+                trendline_type=trendline_type,
+                start_date=start_date,
+                end_date=end_date
+            )
             st.plotly_chart(fig, use_container_width=True)

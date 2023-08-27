@@ -1,12 +1,14 @@
+import glob
 import os
 import time
-import glob
+
 import pandas as pd
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import DirectoryLoader
-from langchain.vectorstores.faiss import FAISS
 from langchain.callbacks import get_openai_callback
+from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores.faiss import FAISS
+
 from .logging_module import log_info, log_error
 
 
