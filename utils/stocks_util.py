@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 import yfinance as yf
@@ -23,15 +24,22 @@ class StockUtil:
         :return Pandas series
         """
         csv_file_path = os.path.join(data_dir, f"{ticker}_{start}_{end}.csv")
-        if os.path.exists(csv_file_path):
+        json_file_path = os.path.join(data_dir, f"{ticker}_{start}_{end}.json")
+        if os.path.exists(csv_file_path) and os.path.exists(json_file_path):
             log_debug(f"Loading {ticker} data from file: {csv_file_path}")
             stock_data = pd.read_csv(csv_file_path, parse_dates=True)
             stock_data = pd.Series(stock_data['Adj Close'].values, index=pd.to_datetime(stock_data['Date']))
+            with open(json_file_path, "r") as f:
+                stock_info = json.load(f)
         else:
             log_debug(f"Loading {ticker} from YFinance!")
             stock_data = yf.download(ticker, start=start, end=end)['Adj Close']
+            stock_info = yf.Ticker(ticker).info
             stock_data.to_csv(csv_file_path)
-        return stock_data
+            with open(json_file_path, 'w') as f:
+                json.dump(stock_info, f, indent=2)
+
+        return stock_data, stock_info
 
     @staticmethod
     def normalize_stock_data(data):
@@ -43,72 +51,61 @@ class StockUtil:
         return (data / data.iloc[0] - 1) * 100
 
     @staticmethod
-    def generate_plotly_chart(
-            company1, company2, investment1, investment2, trendline_type=None, start_date=None, end_date=None
-    ):
+    def generate_plotly_chart(companies, companies_investments, trendline_type=None, start_date=None, end_date=None):
         """
         Generate line chart using Plotly.
-        :param company1: Company 1 stock ticker
-        :param company2: Company 2 stock ticker
-        :param investment1: Company 1 invested amount series
-        :param investment2: Company 2 invested amount series
+        :param companies: List of company stock tickers
+        :param companies_investments: List of companies' invested amounts as series
         :param trendline_type: Chart trend-line type
         :param start_date: Start date
         :param end_date: End date
         :return Plotly figure
         """
-        # Initialize Plotly figure
         fig = make_subplots(rows=1, cols=1)
+        for company, investments in zip(companies, companies_investments):
+            fig.add_trace(go.Scatter(x=investments.index, y=investments.values, mode='lines', name=f"{company}"))
+            avg_investment = np.mean(investments.values)
+            fig.add_trace(go.Scatter(
+                x=investments.index, y=[avg_investment] * len(investments.index),
+                mode='lines', name=f"Avg {company}", line=dict(dash='dash'))
+            )
 
-        # Add investment lines for both companies
-        fig.add_trace(go.Scatter(x=investment1.index, y=investment1.values, mode='lines', name=f"{company1}"))
-        fig.add_trace(go.Scatter(x=investment2.index, y=investment2.values, mode='lines', name=f"{company2}"))
+            # Add trendline based on the selected trendline_type
+            if trendline_type:
+                if trendline_type == "exponential":
+                    trendline = np.polyfit(np.arange(len(investments)), np.log(investments.values), 1)
+                    trendline_label = "Exp Trend"
+                    trendline_dash = "dot"
+                elif trendline_type == "linear":
+                    trendline = np.polyfit(np.arange(len(investments)), investments.values, 1)
+                    trendline_label = "Linear Trend"
+                    trendline_dash = "dot"
+                # Add more trendline types here (logarithmic, power, polynomial, moving average)
 
-        # Calculate average investment values
-        avg_investment1 = np.mean(investment1.values)
-        avg_investment2 = np.mean(investment2.values)
-
-        # Add average lines for both companies
-        fig.add_trace(go.Scatter(x=investment1.index, y=[avg_investment1] * len(investment1.index),
-                                 mode='lines', name=f"Avg {company1}", line=dict(dash='dash')))
-        fig.add_trace(go.Scatter(x=investment2.index, y=[avg_investment2] * len(investment2.index),
-                                 mode='lines', name=f"Avg {company2}", line=dict(dash='dash')))
-
-        # Add trendlines based on the selected trendline_type
-        if trendline_type == "exponential":
-            trendline1 = np.polyfit(np.arange(len(investment1)), np.log(investment1.values), 1)
-            trendline2 = np.polyfit(np.arange(len(investment2)), np.log(investment2.values), 1)
-            fig.add_trace(go.Scatter(x=investment1.index, y=np.exp(np.polyval(trendline1, np.arange(len(investment1)))),
-                                     mode='lines', name=f"Exp Trend {company1}", line=dict(dash='dot')))
-            fig.add_trace(go.Scatter(x=investment2.index, y=np.exp(np.polyval(trendline2, np.arange(len(investment2)))),
-                                     mode='lines', name=f"Exp Trend {company2}", line=dict(dash='dot')))
-        elif trendline_type == "linear":
-            trendline1 = np.polyfit(np.arange(len(investment1)), investment1.values, 1)
-            trendline2 = np.polyfit(np.arange(len(investment2)), investment2.values, 1)
-            fig.add_trace(go.Scatter(x=investment1.index, y=np.polyval(trendline1, np.arange(len(investment1))),
-                                     mode='lines', name=f"Linear Trend {company1}", line=dict(dash='dot')))
-            fig.add_trace(go.Scatter(x=investment2.index, y=np.polyval(trendline2, np.arange(len(investment2))),
-                                     mode='lines', name=f"Linear Trend {company2}", line=dict(dash='dot')))
-        # Add more trendline types here (logarithmic, power, polynomial, moving average)
+                trendline_values = np.polyval(trendline, np.arange(len(investments)))
+                fig.add_trace(go.Scatter(
+                    x=investments.index, y=trendline_values,
+                    mode='lines', name=f"{trendline_label} {company}",
+                    line=dict(dash=trendline_dash)
+                ))
 
         # Set x-axis ticks and get tick positions
-        tickvals = investment1.index[::len(investment1.index) // 10]
+        tickvals = investments.index[::len(investments.index) // 10]
         fig.update_xaxes(tickvals=tickvals)
 
         # Add dollar amount annotations at tick positions
         for tick in tickvals:
-            y_val1 = investment1.loc[tick]
-            y_val2 = investment2.loc[tick]
-            fig.add_annotation(x=tick, y=y_val1, text=f"<b>${y_val1:.0f}</b>", showarrow=False)
-            fig.add_annotation(x=tick, y=y_val2, text=f"<b>${y_val2:.0f}</b>", showarrow=False)
+            for company, investments in zip(companies, companies_investments):
+                y_val = investments.loc[tick]
+                fig.add_annotation(x=tick, y=y_val, text=f"<b>${y_val:.0f}</b>", showarrow=False)
 
         # Label and render the figure
         fig.update_layout(
-            title_text=f"{company1} Vs {company2}: {start_date} to {end_date}",
+            title_text=f"{' Vs '.join(companies)}: {start_date} to {end_date}",
             title_x=0.35,
             title_y=0.9,
             title_font_size=24,
-            title_font_color="Green",
+            title_font_color="Black",
             yaxis_title='Investment Value (USD)',
             xaxis_title='Date',
             height=700,
