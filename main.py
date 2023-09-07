@@ -7,6 +7,7 @@ from utils.stocks_util import StockUtil
 from utils.indexing_util import IndexUtil
 from utils.summary_util import SummaryUtil
 from utils.google_serper_util import GoogleSerperUtil
+from utils.image_generation_util import ImageGeneration
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.logging_module import log_info, log_debug, log_error
 
@@ -15,7 +16,8 @@ class VerbalVista:
 
     def __init__(
             self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None,
-            chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None
+            chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None,
+            generated_images_dir: str = None
     ):
 
         # Initialize all necessary classes
@@ -25,11 +27,12 @@ class VerbalVista:
         self.summary_util = SummaryUtil()
         self.google_serper_util = GoogleSerperUtil()
         self.stock_util = StockUtil()
+        self.image_generation_util = ImageGeneration()
 
         # Create relevant directories
         for directory_path in [
             document_dir, indices_dir, tmp_audio_dir, chat_history_dir,
-            search_history_dir, stock_data_dir
+            search_history_dir, stock_data_dir, generated_images_dir
         ]:
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
@@ -42,6 +45,7 @@ class VerbalVista:
         self.chat_history_dir = chat_history_dir
         self.search_history_dir = search_history_dir
         self.stock_data_dir = stock_data_dir
+        self.generated_images_dir = generated_images_dir
         self.nlp = spacy.load("en_core_web_sm")
         self.ner_labels = self.nlp.get_pipe("ner").labels
 
@@ -87,17 +91,21 @@ class VerbalVista:
         """
         render_stocks_comparison_page(stock_util=self.stock_util, stock_data_dir=self.stock_data_dir)
 
+    def render_image_generation_page(self):
+        """
+        Image generation page.
+        """
+        render_image_generation_page(
+            generated_images_dir=self.generated_images_dir, image_generation_util=self.image_generation_util
+        )
+
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = '0.0.7'
+    APP_VERSION = "0.0.7"
     APP_PAGES = [
-        "Media Processing",
-        "Explore Document",
-        "Manage Index",
-        "Q & A",
-        "Tell Me About",
-        "Stocks Comparison"
+        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Tell Me About", "Stocks Comparison",
+        "Image Generation"
     ]
     # Render sidebar
     openai_api_key, selected_page = render_sidebar(
@@ -111,6 +119,7 @@ def main():
     chat_history_dir = 'data/chat_history/'
     search_history_dir = 'data/search_history/'
     stock_data_dir = 'data/stock_data_dir/'
+    generated_images_dir = 'data/generated_images/'
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set
@@ -128,7 +137,8 @@ def main():
     vv = VerbalVista(
         document_dir=document_dir, indices_dir=indices_dir,
         tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
-        search_history_dir=search_history_dir, stock_data_dir=stock_data_dir
+        search_history_dir=search_history_dir, stock_data_dir=stock_data_dir,
+        generated_images_dir=generated_images_dir
     )
     if selected_page == "Media Processing":
         vv.render_media_processing_page()
@@ -147,6 +157,8 @@ def main():
         vv.render_tell_me_about_page()
     elif selected_page == 'Stocks Comparison':
         vv.render_stocks_comparison_page()
+    elif selected_page == 'Image Generation':
+        vv.render_image_generation_page()
 
 
 if __name__ == '__main__':
