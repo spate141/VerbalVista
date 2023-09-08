@@ -6,6 +6,7 @@ def render_image_generation_page(generated_images_dir=None, image_generation_uti
 
     """
     st.header('Image Generation with DALL·E', divider='blue')
+    image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}
     with st.form('image_generation'):
         cols = st.columns([1, 0.4, 0.2])
         with cols[0]:
@@ -21,4 +22,8 @@ def render_image_generation_page(generated_images_dir=None, image_generation_uti
                 prompt=prompt, image_size=image_size, images_to_generate=images_to_generate,
                 generated_images_dir=generated_images_dir
             )
-            st.image(generated_image_filepaths)
+            st.markdown(
+                f"Total cost: <b>${round(image_cost[image_size] * images_to_generate, 2)}</b>",
+                unsafe_allow_html=True
+            )
+            st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
