@@ -4,6 +4,7 @@ from langchain.docstore.document import Document
 from langchain.callbacks import get_openai_callback
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from .logging_module import log_debug
 
 
 class SummaryUtil:
@@ -17,11 +18,15 @@ class SummaryUtil:
         This will split and convert the original text into LangChain Document.
         """
         r_splitter = RecursiveCharacterTextSplitter(
-            separators=["\n\n", "\n", "(?<=\. )"], chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            is_separator_regex=True
         )
         texts = r_splitter.split_text(text)
         docs = [Document(page_content=t) for t in texts]
+        log_debug(f'Text size: {len(text)}')
+        log_debug(f'Total summarization docs created: {len(docs)}')
         return docs
 
     @staticmethod
@@ -62,11 +67,11 @@ class SummaryUtil:
         )
         return summarization_chain
 
-    def summarize(self, chain=None, text=None, question=None, chat_history=None):
+    def summarize(self, chain=None, text=None, chunk_size=4000, question=None, chat_history=None):
         """
 
         """
-        docs = self.process_text(text)
+        docs = self.process_text(text, chunk_size=chunk_size)
         with get_openai_callback() as cb:
             summary = chain.run(docs)
         chat_history.append((question, summary))

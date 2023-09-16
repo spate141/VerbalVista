@@ -12,7 +12,10 @@ class ImageGeneration:
 
     @staticmethod
     def generate_image(
-            prompt: str = None, image_size: str = None, images_to_generate: int = None, generated_images_dir: str = None
+            prompt: str = None,
+            image_size: str = None,
+            images_to_generate: int = None,
+            generated_images_dir: str = None
     ):
 
         # call the OpenAI API
