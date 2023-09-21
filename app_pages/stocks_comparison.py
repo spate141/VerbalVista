@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 from datetime import date
-from streamlit_extras.let_it_rain import rain
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -33,9 +32,9 @@ def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
     """
     st.header('Stock Performance Comparison', divider='red')
     current_date = date.today()
-    cols = st.columns([0.8, 1, 1, 1, 1, 1])
+    cols = st.columns([1, 1, 1, 1, 1, 1])
     with cols[0]:
-        number_inputs = st.number_input("Numbers of Companies:", 2, 10, step=1)
+        number_inputs = st.number_input("Numbers of Companies:", value=2, max_value=10, step=1)
     with cols[1]:
         companies = [
             st.text_input(
@@ -60,12 +59,6 @@ def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
         submit = st.button('💰 Display Data! 💰', type="primary")
     st.markdown('')
     if submit:
-        rain(
-            emoji="💸",
-            font_size=54,
-            falling_speed=5,
-            animation_length=1,
-        )
         companies_investments = []
         for c in companies:
             log_debug(f"Processing: {c}")

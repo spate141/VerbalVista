@@ -2,7 +2,6 @@ import os
 import time
 import pickle
 import streamlit as st
-from streamlit_extras.no_default_selectbox import selectbox
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -28,9 +27,9 @@ def render_qa_page(
     with st.container():
         # enable_audio = st.checkbox("Enable TTS")
         indices_df = indexing_util.get_available_indices(indices_dir=indices_dir)
-        selected_index_path = selectbox(
-            "Select Index:", options=indices_df['Index Path'].to_list(),
-            no_selection_label="<select index>", label_visibility="collapsed"
+        selected_index_path = st.selectbox(
+            "Select Index:", options=indices_df['Index Path'].to_list(), index=None,
+            placeholder="<select index>", label_visibility="collapsed"
         )
 
         if selected_index_path is None:

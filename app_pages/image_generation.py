@@ -10,7 +10,7 @@ def render_image_generation_page(generated_images_dir=None, image_generation_uti
     with st.form('image_generation'):
         cols = st.columns([1, 0.4, 0.2])
         with cols[0]:
-            prompt = st.text_input("Enter prompt:")
+            prompt = st.text_area("Enter prompt:")
         with cols[1]:
             image_size = st.selectbox("Image size:", options=['256x256', '512x512', '1024x1024'], index=1)
         with cols[2]:
