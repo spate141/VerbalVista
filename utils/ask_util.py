@@ -17,7 +17,9 @@ class AskUtil:
         pass
 
     @staticmethod
-    def load_vectors(index_directory: str = None, embedding_model: str = "text-embedding-ada-002", chunk_size: int = 600):
+    def load_vectors(
+            index_directory: str = None, embedding_model: str = "text-embedding-ada-002", chunk_size: int = 600
+    ):
         """
 
         """
@@ -48,7 +50,9 @@ class AskUtil:
         return qa_chain
 
     @staticmethod
-    def ask_question(question: str = None, qa_chain: BaseConversationalRetrievalChain = None, chat_history: List[Tuple] = None):
+    def ask_question(
+            question: str = None, qa_chain: BaseConversationalRetrievalChain = None, chat_history: List[Tuple] = None
+    ):
         """
 
         """

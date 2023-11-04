@@ -128,7 +128,9 @@ def parse_email(file: BytesIO):
     return text
 
 
-def write_data_to_file(uploaded_file_name: str = None, document_dir: str = None, full_document: str = None, document_desc: str = None):
+def write_data_to_file(
+        uploaded_file_name: str = None, document_dir: str = None, full_document: str = None, document_desc: str = None
+):
     """
     Save the text to a file in a folder.
     :param uploaded_file_name:
