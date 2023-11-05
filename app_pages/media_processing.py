@@ -5,7 +5,7 @@ from utils.logging_module import log_info, log_debug, log_error
 from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
 
-def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_model=None):
+def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_model=None, reddit_util=None):
     """
     This function will extract plain text from variety of media including video, audio, pdf and lots more.
     """
@@ -101,9 +101,15 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
 
             elif url is not None:
-                msg.toast(f'Processing URL data...')
-                log_debug('Processing URL!')
-                full_document = parse_url(url)
+                if "reddit.com" in url:
+                    msg.toast(f'Processing Reddit post...')
+                    log_debug('Processing Reddit post!')
+                    full_document = reddit_util.fetch_comments_from_url(url)
+                    full_document = ' '.join(full_document)
+                else:
+                    msg.toast(f'Processing URL data...')
+                    log_debug('Processing URL!')
+                    full_document = parse_url(url)
                 uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
 
             elif text is not None:

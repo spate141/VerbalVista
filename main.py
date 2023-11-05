@@ -2,11 +2,13 @@ import os
 import spacy
 import streamlit as st
 from app_pages import *
+from dotenv import load_dotenv
 from utils.ask_util import AskUtil
 from utils.stocks_util import StockUtil
 from utils.indexing_util import IndexUtil
 from utils.summary_util import SummaryUtil
 from utils.google_serper_util import GoogleSerperUtil
+from utils.reddit_util import SubmissionCommentsFetcher
 from utils.image_generation_util import ImageGeneration
 from utils.audio_transcribe import WhisperAudioTranscribe
 from utils.logging_module import log_info, log_debug, log_error
@@ -19,6 +21,8 @@ class VerbalVista:
             chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None,
             generated_images_dir: str = None
     ):
+        # Load env variables
+        load_dotenv()
 
         # Initialize all necessary classes
         self.whisper = WhisperAudioTranscribe()
@@ -28,6 +32,11 @@ class VerbalVista:
         self.google_serper_util = GoogleSerperUtil()
         self.stock_util = StockUtil()
         self.image_generation_util = ImageGeneration()
+        self.reddit_util = SubmissionCommentsFetcher(
+            os.getenv('REDDIT_CLIENT_ID'),
+            os.getenv('REDDIT_CLIENT_SECRET'),
+            os.getenv('REDDIT_USER_AGENT')
+        )
 
         # Create relevant directories
         for directory_path in [
@@ -52,7 +61,8 @@ class VerbalVista:
     def render_media_processing_page(self):
 
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.whisper
+            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.whisper,
+            reddit_util=self.reddit_util
         )
 
     def render_manage_index_page(self):
