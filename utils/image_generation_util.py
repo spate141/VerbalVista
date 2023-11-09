@@ -15,11 +15,13 @@ class ImageGeneration:
             prompt: str = None,
             image_size: str = None,
             images_to_generate: int = None,
-            generated_images_dir: str = None
+            generated_images_dir: str = None,
+            model_name: str = "dall-e-3"
     ):
 
         # call the OpenAI API
         generation_response = openai.Image.create(
+            model=model_name,
             prompt=prompt,
             n=images_to_generate,
             size=image_size,

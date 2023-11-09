@@ -59,27 +59,35 @@ class VerbalVista:
         self.ner_labels = self.nlp.get_pipe("ner").labels
 
     def render_media_processing_page(self):
-
+        """
+        Media input and processing page.
+        """
         render_media_processing_page(
             document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.whisper,
             reddit_util=self.reddit_util
         )
 
     def render_manage_index_page(self):
-
+        """
+        Create/Manage/Delete document index page.
+        """
         render_manage_index_page(
             document_dir=self.document_dir, indices_dir=self.indices_dir, indexing_util=self.indexing_util
         )
 
     def render_document_explore_page(self):
-
+        """
+        Document explore page.
+        """
         render_document_explore_page(
             document_dir=self.document_dir, indices_dir=self.indices_dir,
             indexing_util=self.indexing_util, nlp=self.nlp, ner_labels=self.ner_labels
         )
 
     def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None):
-
+        """
+        Question answer page.
+        """
         render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=chain_type,
             ask_util=self.ask_util, indexing_util=self.indexing_util, summary_util=self.summary_util,
@@ -158,7 +166,7 @@ def main():
         with st.sidebar:
             temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"], index=0)
+            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=0)
             summ_chain_type = st.selectbox("Chain type", index=1, options=["stuff", "map_reduce", "refine"])
         vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=summ_chain_type)
     elif selected_page == "Explore Document":

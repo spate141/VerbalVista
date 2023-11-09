@@ -1,7 +1,6 @@
-import glob
 import os
 import time
-
+import glob
 import pandas as pd
 from langchain.callbacks import get_openai_callback
 from langchain.document_loaders import DirectoryLoader
@@ -107,6 +106,7 @@ class IndexUtil:
         meta_loader = DirectoryLoader(document_directory, glob="**/*.meta.txt")
 
         raw_documents = data_loader.load()
+
         try:
             raw_meta = meta_loader.load()[0].page_content
         except IndexError:
