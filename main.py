@@ -22,8 +22,6 @@ class VerbalVista:
             chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None,
             generated_images_dir: str = None
     ):
-        # Load env variables
-        load_dotenv()
 
         # Initialize all necessary classes
         self.whisper = WhisperAudioTranscribe()
@@ -141,6 +139,9 @@ def main():
     search_history_dir = 'data/search_history/'
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
+
+    # Load env variables
+    load_dotenv()
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set

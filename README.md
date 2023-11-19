@@ -5,12 +5,37 @@
 ### Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
 
-### Set the key:
+### Set the keys:
 - [Best Practices for API Key Safety](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
+- Edit the .env file at `PATH/TO/VerbalVista/.env` and set following keys
+```dotenv
+# Reddit
+REDDIT_CLIENT_ID=
+REDDIT_CLIENT_SECRET=
+REDDIT_USER_AGENT=
+
+# OpenAI
+OPENAI_API_KEY=
+
+# Serper
+SERPER_API_KEY=
+```
+
+### Build Docker Image [OPTIONAL]:
+```cmd
+>> cd VerbalVista
+>> docker build -t verbal_vista:1.0 .
+```
 
 ### Start the program:
 ```cmd
 >> streamlit run main.py
+```
+
+_...or..._
+
+```cmd
+>> docker run -p 8501:8501 verbal_vista:1.0
 ```
   
 ### Available functions:
