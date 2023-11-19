@@ -174,3 +174,4 @@ def render_qa_page(
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
+            st.rerun()

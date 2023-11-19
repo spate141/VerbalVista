@@ -5,11 +5,13 @@ import docx2txt
 from io import BytesIO
 from typing import List
 from pypdf import PdfReader
+from urllib.parse import urlparse
+from .hacker_news_scraper import scrape_hn_comments
 from langchain.docstore.document import Document
 from langchain.document_loaders import SeleniumURLLoader
 from langchain.document_loaders import UnstructuredEmailLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from .logging_module import log_debug
+from .logging_module import log_debug, log_error, log_info
 
 
 def parse_docx(file: BytesIO) -> str:
@@ -88,6 +90,12 @@ def text_to_docs(text: str | List[str]) -> List[Document]:
     return doc_chunks
 
 
+def is_hacker_news_url(url):
+    """Check if the URL is a valid Hacker News URL."""
+    parsed_url = urlparse(url)
+    return parsed_url.netloc == 'news.ycombinator.com'
+
+
 def parse_url(url, return_data=False):
     """
 
@@ -95,12 +103,18 @@ def parse_url(url, return_data=False):
     :param return_data:
     :return:
     """
-    loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
-    if return_data:
-        data = loader.load()
-        return data
-    data = loader.load()[0]
-    text = data.page_content
+    if is_hacker_news_url(url):
+        log_info('Parsing HackerNews URL')
+        comments = scrape_hn_comments(url)
+        text = '\n'.join(comments)
+    else:
+        log_info('Parsing Normal URL')
+        loader = SeleniumURLLoader(urls=[url], browser='chrome', headless=True)
+        if return_data:
+            data = loader.load()
+            return data
+        data = loader.load()[0]
+        text = data.page_content
     return text
 
 
