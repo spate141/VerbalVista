@@ -1,3 +1,4 @@
+from glob import glob
 import streamlit as st
 
 
@@ -29,3 +30,8 @@ def render_image_generation_page(generated_images_dir=None, image_generation_uti
                 unsafe_allow_html=True
             )
             st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
+
+    # display previously generated images
+    all_images_filepath = glob(f"{generated_images_dir}/*.png")
+    st.subheader(f'Previously generated images: {len(all_images_filepath)}', divider='red')
+    st.image(all_images_filepath)

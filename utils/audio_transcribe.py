@@ -1,17 +1,15 @@
 import os
 import time
-import openai
+from openai import OpenAI
 from pydub import AudioSegment
 from pydub.utils import mediainfo
 from .logging_module import log_info, log_debug, log_error
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class WhisperAudioTranscribe:
 
     def __init__(self):
-        pass
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     @staticmethod
     def load_audio_data(filepath):
@@ -119,17 +117,15 @@ class WhisperAudioTranscribe:
             process_bar.progress(pct_cmp[index - 1], f'Audio processed: {round(time.time() - start, 2)} sec')
         return audio_chunks_files, file_size_mb, file_duration_in_ms
 
-    @staticmethod
-    def transcribe_audio(audio_filepath: str = None, model: str = "whisper-1"):
+    def transcribe_audio(self, audio_filepath: str = None, model: str = "whisper-1"):
         """
         :param audio_filepath:
         :param model:
         :return:
         """
         audio = open(audio_filepath, "rb")
-        audio_transcript = openai.Audio.transcribe(model, audio)
-        audio_transcript = audio_transcript.get('text')
-        return audio_transcript
+        audio_transcript = self.client.audio.transcriptions.create(model=model, file=audio)
+        return audio_transcript.text
 
     @staticmethod
     def convert_milliseconds(milliseconds: float = None):

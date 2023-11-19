@@ -7,6 +7,7 @@ from utils.ask_util import AskUtil
 from utils.stocks_util import StockUtil
 from utils.indexing_util import IndexUtil
 from utils.summary_util import SummaryUtil
+from utils.text_to_speech import TextToSpeech
 from utils.google_serper_util import GoogleSerperUtil
 from utils.reddit_util import SubmissionCommentsFetcher
 from utils.image_generation_util import ImageGeneration
@@ -26,6 +27,7 @@ class VerbalVista:
 
         # Initialize all necessary classes
         self.whisper = WhisperAudioTranscribe()
+        self.tx2sp_util = TextToSpeech()
         self.indexing_util = IndexUtil()
         self.ask_util = AskUtil()
         self.summary_util = SummaryUtil()
@@ -84,14 +86,15 @@ class VerbalVista:
             indexing_util=self.indexing_util, nlp=self.nlp, ner_labels=self.ner_labels
         )
 
-    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None):
+    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None, enable_tts=False, tts_voice=None):
         """
         Question answer page.
         """
         render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=chain_type,
-            ask_util=self.ask_util, indexing_util=self.indexing_util, summary_util=self.summary_util,
-            indices_dir=self.indices_dir, document_dir=self.document_dir, chat_history_dir=self.chat_history_dir
+            ask_util=self.ask_util, indexing_util=self.indexing_util, summary_util=self.summary_util, tx2sp_util=self.tx2sp_util,
+            indices_dir=self.indices_dir, document_dir=self.document_dir, chat_history_dir=self.chat_history_dir,
+            enable_tts=enable_tts, tts_voice=tts_voice
         )
 
     def render_tell_me_about_page(self):
@@ -120,7 +123,7 @@ class VerbalVista:
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = "0.9"
+    APP_VERSION = "1.0"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Tell Me About", "Stocks Comparison",
         "Image Generation"
@@ -166,9 +169,16 @@ def main():
         with st.sidebar:
             temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=0)
+            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=2)
             summ_chain_type = st.selectbox("Chain type", index=1, options=["stuff", "map_reduce", "refine"])
-        vv.render_qa_page(temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=summ_chain_type)
+            enable_tts = st.checkbox("Enable text-to-speech", value=False)
+            tts_voice = "echo"
+            if enable_tts:
+                tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
+        vv.render_qa_page(
+            temperature=temperature, max_tokens=max_tokens, model_name=model_name,
+            chain_type=summ_chain_type, enable_tts=enable_tts, tts_voice=tts_voice
+        )
     elif selected_page == "Explore Document":
         vv.render_document_explore_page()
     elif selected_page == 'Tell Me About':

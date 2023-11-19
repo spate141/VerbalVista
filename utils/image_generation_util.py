@@ -1,6 +1,6 @@
 import os
-import openai
 import requests
+from openai import OpenAI
 from datetime import datetime
 from .logging_module import log_debug
 
@@ -8,10 +8,10 @@ from .logging_module import log_debug
 class ImageGeneration:
 
     def __init__(self):
-        pass
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    @staticmethod
     def generate_image(
+            self,
             prompt: str = None,
             image_size: str = None,
             images_to_generate: int = None,
@@ -20,7 +20,7 @@ class ImageGeneration:
     ):
 
         # call the OpenAI API
-        generation_response = openai.Image.create(
+        generation_response = self.client.images.generate(
             model=model_name,
             prompt=prompt,
             n=images_to_generate,
@@ -29,13 +29,13 @@ class ImageGeneration:
         )
         log_debug(f'Image generated')
         img_tag = prompt.replace(' ', '')[:10]
-        datetime_obj = datetime.fromtimestamp(generation_response['created'])
+        datetime_obj = datetime.fromtimestamp(generation_response.created)
         formatted_date_time = datetime_obj.strftime("%Y-%m-%d_%H-%M-%S")
         generated_image_filepaths = []
         for i in range(images_to_generate):
             generated_image_name = f"{img_tag}_{i}_{formatted_date_time}.png"
             generated_image_filepath = os.path.join(generated_images_dir, generated_image_name)
-            generated_image_url = generation_response["data"][i]["url"]
+            generated_image_url = generation_response.data[i].url
             generated_image = requests.get(generated_image_url).content
             with open(generated_image_filepath, "wb") as f:
                 f.write(generated_image)

@@ -7,8 +7,8 @@ from utils.logging_module import log_info, log_debug, log_error
 
 def render_qa_page(
         temperature=None, max_tokens=None, model_name=None, chain_type=None,
-        ask_util=None, indexing_util=None, summary_util=None,
-        indices_dir=None, document_dir=None, chat_history_dir=None
+        ask_util=None, indexing_util=None, summary_util=None, tx2sp_util=None,
+        indices_dir=None, document_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
 ):
     """
     This function allow user to do conversation with the data.
@@ -161,6 +161,8 @@ def render_qa_page(
                     # Display full message at the end with other stuff you want to show like `response_meta`.
                     message_placeholder.markdown(full_response)
                     st.info(answer_meta)
+                    if enable_tts:
+                        st.audio(tx2sp_util.text_to_speech(text=full_response, voice=tts_voice).content)
 
             _chat_history.extend(chat_history)
 
@@ -174,4 +176,4 @@ def render_qa_page(
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
-            st.rerun()
+            # st.rerun()
