@@ -107,9 +107,8 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                     full_document = reddit_util.fetch_comments_from_url(url)
                     full_document = ' '.join(full_document)
                 else:
-                    msg.toast(f'Processing URL data...')
                     log_debug('Processing URL!')
-                    full_document = parse_url(url)
+                    full_document = parse_url(url, msg)
                 uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
 
             elif text is not None:

@@ -50,14 +50,13 @@ def render_manage_index_page(document_dir=None, indices_dir=None, indexing_util=
                 for doc_dir_to_index in document_dirs:
                     file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
                     if mode == 'Create':
-                        indexing_meta = indexing_util.index_document(
+                        indexing_util.index_document(
                             document_directory=doc_dir_to_index,
                             index_directory=os.path.join(indices_dir, file_name),
                             chunk_size=chunk_size,
                             embedding_model=embedding_model
                         )
                         st.success(f"Document index {file_name} saved! Refreshing page now.")
-                        st.info(indexing_meta)
                     elif mode == 'Delete':
                         indexing_util.delete_document(
                             selected_directory=os.path.join(indices_dir, file_name)
@@ -68,4 +67,4 @@ def render_manage_index_page(document_dir=None, indices_dir=None, indexing_util=
                         st.error(f"Document index {file_name} deleted! Refreshing page now.")
 
         time.sleep(2)
-        st.experimental_rerun()
+        st.rerun()

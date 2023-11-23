@@ -24,8 +24,6 @@ class AskUtil:
 
         """
         # load vectorstore
-        # with open(os.path.join(index_directory, 'vectorstore.pkl'), "rb") as f:
-        #     vectorstore = pickle.load(f)
         log_debug(f"Loading index from: {index_directory}")
         embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
         vectorstore = FAISS.load_local(index_directory, embeddings)

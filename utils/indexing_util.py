@@ -4,7 +4,7 @@ import glob
 import pandas as pd
 from langchain.callbacks import get_openai_callback
 from langchain.document_loaders import DirectoryLoader
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import OpenAIEmbeddings, CohereEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 
@@ -119,11 +119,11 @@ class IndexUtil:
             separators=["\n\n", "\n", "(?<=\. )", " ", ""]
         )
         documents = text_splitter.split_documents(raw_documents)
+        log_info(f'Total documents for generating embeddings: {len(documents)}')
 
         # Load Data to vectorstore
-        with get_openai_callback() as cb:
-            embeddings = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
-            vectorstore = FAISS.from_documents(documents, embeddings)
+        embedding_class = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
+        vectorstore = FAISS.from_documents(documents, embedding_class)
 
         if not os.path.exists(index_directory):
             os.makedirs(index_directory)
@@ -137,4 +137,3 @@ class IndexUtil:
         with open(doc_meta_path, 'w') as f:
             f.write(raw_meta)
 
-        return cb
