@@ -3,11 +3,11 @@ import time
 import pickle
 import streamlit as st
 from utils.logging_module import log_info, log_debug, log_error
-
+from utils.rag_util import get_available_indices, load_index_and_metadata, do_chat_completion
 
 def render_qa_page(
         temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
-        rag_util=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
+        tx2sp_util=None, indices_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
 ):
     """
     This function allow user to do conversation with the data.
@@ -15,7 +15,7 @@ def render_qa_page(
     st.header("Q & A", divider='red')
     st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
     with st.container():
-        indices_df = rag_util.get_available_indices(indices_dir=indices_dir)
+        indices_df = get_available_indices(indices_dir=indices_dir)
         selected_index_path = st.selectbox(
             "Select Index:", options=indices_df['Index Path'].to_list(), index=None,
             placeholder="<select index>", label_visibility="collapsed"
@@ -27,7 +27,7 @@ def render_qa_page(
     if selected_index_path is not None:
 
         # Initialize QA Agent and get chunks for lexical search
-        agent_meta = rag_util.load_index_and_metadata(selected_index_path)
+        agent_meta = load_index_and_metadata(selected_index_path)
         chunks = [i['text'] for i in agent_meta['metadata_dict'].values()]
 
         index_meta = os.path.join(selected_index_path, 'doc.meta.txt')
@@ -90,7 +90,7 @@ def render_qa_page(
 
             # Other Q/A questions
             log_info("QA")
-            result = rag_util.do_chat_completion(
+            result = do_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
                 metadata_dict=agent_meta['metadata_dict'], chunks=chunks, reranker=None
@@ -129,5 +129,4 @@ def render_qa_page(
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
-            st.rerun()
-            print(st.session_state[selected_index_path])
+            # st.rerun()

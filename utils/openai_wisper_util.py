@@ -6,10 +6,10 @@ from pydub.utils import mediainfo
 from .logging_module import log_info, log_debug, log_error
 
 
-class WhisperAudioTranscribe:
+class OpenAIWisperUtil:
 
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, api_key=None):
+        self.client = OpenAI(api_key=api_key)
 
     @staticmethod
     def load_audio_data(filepath):

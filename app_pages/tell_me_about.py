@@ -3,9 +3,10 @@ import time
 import pickle
 import streamlit as st
 from utils.logging_module import log_info, log_debug, log_error
+from utils.google_serper_util import google_serper_summarization
 
 
-def render_tell_me_about_page(google_serper_util=None, summary_util=None, search_history_dir=None):
+def render_tell_me_about_page(search_history_dir=None):
     """
 
     """
@@ -70,10 +71,10 @@ def render_tell_me_about_page(google_serper_util=None, summary_util=None, search
 
         else:
             st.session_state[search_history_filepath] = []
-            results = google_serper_util.google_serper_summarization(
+            msg = st.toast('Processing data...')
+            results = google_serper_summarization(
                 search_query=search_query, num_results=num_results, temperature=temp,
-                model_name=model_name, chain_type=summ_chain_type, max_tokens=max_tokens,
-                summary_util=summary_util
+                model_name=model_name, chain_type=summ_chain_type, max_tokens=max_tokens, msg=msg
             )
             for r in results:
                 st.markdown(

@@ -2,15 +2,12 @@ import os
 import spacy
 import streamlit as st
 from app_pages import *
-from dotenv import load_dotenv
-from utils.stocks_util import StockUtil
-from utils.rag_util import RagUtil
-from utils.summary_util import SummaryUtil
-from utils.text_to_speech import TextToSpeech
-from utils.google_serper_util import GoogleSerperUtil
+from dotenv import load_dotenv; load_dotenv()
+
 from utils.reddit_util import SubmissionCommentsFetcher
-from utils.image_generation_util import ImageGeneration
-from utils.audio_transcribe import WhisperAudioTranscribe
+from utils.openai_dalle_util import OpenAIDalleUtil
+from utils.openai_wisper_util import OpenAIWisperUtil
+from utils.openai_text2speech_util import OpenAIText2SpeechUtil
 from utils.logging_module import log_info, log_debug, log_error
 
 
@@ -23,13 +20,9 @@ class VerbalVista:
     ):
 
         # Initialize all necessary classes
-        self.whisper = WhisperAudioTranscribe()
-        self.tx2sp_util = TextToSpeech()
-        self.rag_util = RagUtil()
-        self.summary_util = SummaryUtil()
-        self.google_serper_util = GoogleSerperUtil()
-        self.stock_util = StockUtil()
-        self.image_generation_util = ImageGeneration()
+        self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai_t2s_util = OpenAIText2SpeechUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai_dalle_util = OpenAIDalleUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.reddit_util = SubmissionCommentsFetcher(
             os.getenv('REDDIT_CLIENT_ID'),
             os.getenv('REDDIT_CLIENT_SECRET'),
@@ -61,7 +54,7 @@ class VerbalVista:
         Media input and processing page.
         """
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.whisper,
+            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.openai_wisper_util,
             reddit_util=self.reddit_util
         )
 
@@ -69,17 +62,14 @@ class VerbalVista:
         """
         Create/Manage/Delete document index page.
         """
-        render_manage_index_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir, rag_util=self.rag_util
-        )
+        render_manage_index_page(document_dir=self.document_dir, indices_dir=self.indices_dir)
 
     def render_document_explore_page(self):
         """
         Document explore page.
         """
         render_document_explore_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir,
-            rag_util=self.rag_util, nlp=self.nlp, ner_labels=self.ner_labels
+            document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=self.nlp, ner_labels=self.ner_labels
         )
 
     def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, enable_tts=False, tts_voice=None):
@@ -88,7 +78,7 @@ class VerbalVista:
         """
         render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name,
-            embedding_model_name=embedding_model_name, rag_util=self.rag_util, tx2sp_util=self.tx2sp_util,
+            embedding_model_name=embedding_model_name, tx2sp_util=self.openai_t2s_util,
             indices_dir=self.indices_dir,  chat_history_dir=self.chat_history_dir, enable_tts=enable_tts,
             tts_voice=tts_voice
         )
@@ -97,23 +87,20 @@ class VerbalVista:
         """
         Tell me more about page.
         """
-        render_tell_me_about_page(
-            google_serper_util=self.google_serper_util, summary_util=self.summary_util,
-            search_history_dir=self.search_history_dir
-        )
+        render_tell_me_about_page(search_history_dir=self.search_history_dir)
 
     def render_stocks_comparison_page(self):
         """
         Stocks comparison page.
         """
-        render_stocks_comparison_page(stock_util=self.stock_util, stock_data_dir=self.stock_data_dir)
+        render_stocks_comparison_page(stock_data_dir=self.stock_data_dir)
 
     def render_image_generation_page(self):
         """
         Image generation page.
         """
         render_image_generation_page(
-            generated_images_dir=self.generated_images_dir, image_generation_util=self.image_generation_util
+            generated_images_dir=self.generated_images_dir, image_generation_util=self.openai_dalle_util
         )
 
 
@@ -137,9 +124,6 @@ def main():
     search_history_dir = 'data/search_history/'
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
-
-    # Load env variables
-    load_dotenv()
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set

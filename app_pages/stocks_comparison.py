@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from datetime import date
 from utils.logging_module import log_info, log_debug, log_error
+from utils.stocks_util import get_stock_data, normalize_stock_data, generate_plotly_chart
 
 
 def render_stock_cards(company_name, company_info, final_investment, invested_amount):
@@ -26,7 +27,7 @@ def render_stock_cards(company_name, company_info, final_investment, invested_am
         st.metric("52-Week LOW", f"${company_info['fiftyTwoWeekLow']:,}")
 
 
-def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
+def render_stocks_comparison_page(stock_data_dir=None):
     """
     Render stock comparison page.
     """
@@ -62,10 +63,10 @@ def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
         companies_investments = []
         for c in companies:
             log_debug(f"Processing: {c}")
-            company_data, company_info = stock_util.get_stock_data(
+            company_data, company_info = get_stock_data(
                 c, start_date, end_date, data_dir=stock_data_dir
             )
-            company_data_normalized = stock_util.normalize_stock_data(company_data)
+            company_data_normalized = normalize_stock_data(company_data)
             investment = (company_data_normalized / 100 + 1) * invested_amount
             companies_investments.append(investment)
 
@@ -78,7 +79,7 @@ def render_stocks_comparison_page(stock_util=None, stock_data_dir=None):
         merged_data.columns = [f"{i} Investment" for i in companies]
 
         # Plot stock chart
-        fig = stock_util.generate_plotly_chart(
+        fig = generate_plotly_chart(
             companies,
             companies_investments,
             trendline_type=trendline_type,
