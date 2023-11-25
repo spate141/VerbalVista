@@ -6,14 +6,14 @@ from utils.generate_wordcloud import generate_wordcloud
 from utils.logging_module import log_info, log_debug, log_error
 
 
-def render_document_explore_page(document_dir=None, indices_dir=None, indexing_util=None, nlp=None, ner_labels=None):
+def render_document_explore_page(document_dir=None, indices_dir=None, rag_util=None, nlp=None, ner_labels=None):
     """
     This function will allow user to explore plain text to better understand the data.
     """
     st.header('Explore Document', divider='blue')
     with st.form('explore_document'):
         st.markdown("<h6>Select Document:</h6>", unsafe_allow_html=True)
-        documents_df = indexing_util.get_available_documents(
+        documents_df = rag_util.get_available_documents(
             document_dir=document_dir, indices_dir=indices_dir
         )
         documents_df = documents_df.rename(columns={'Select Index': 'Select Document'})

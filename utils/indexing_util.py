@@ -1,139 +1,87 @@
 import os
-import time
-import glob
-import pandas as pd
-from langchain.callbacks import get_openai_callback
-from langchain.document_loaders import DirectoryLoader
-from langchain.embeddings import OpenAIEmbeddings, CohereEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS
-
-from .logging_module import log_info, log_error
+import re
+import ray
+import faiss
+import pickle
+import numpy as np
+from rank_bm25 import BM25Okapi
 
 
-class IndexUtil:
+@ray.remote
+class FaissIndexActor:
 
-    def __init__(self):
-        pass
+    def __init__(self, embedding_dim):
+        """
+        Initialize FAISS IndexFlatIP and metadata dictionary.
+        :param embedding_dim: Embedding model dimension
+        """
+        self.index = faiss.IndexFlatIP(embedding_dim)
+        self.metadata_dict = {}
 
     @staticmethod
-    def get_available_indices(indices_dir: str = 'indices/'):
+    def normalize_embedding(embedding):
         """
+        Normalize embedding to unit vector.
+        :param embedding: Numpy array
+        :return Normalized numpy array
+        """
+        norm = np.linalg.norm(embedding)
+        return embedding / norm if norm > 0 else embedding
 
-        :param indices_dir:
-        :return:
+    def add_embeddings_and_metadata(self, embeddings, texts, sources):
         """
-        indices_data = []
-        all_indices_dirs = os.listdir(indices_dir)
-        all_indices_dirs = [i for i in all_indices_dirs if not i.startswith('.')]
-        for index_dir in all_indices_dirs:
-            index_dir_path = os.path.join(indices_dir, index_dir)
-            creation_date = time.ctime(os.stat(index_dir_path).st_ctime)
-            indices_data.append((index_dir_path, creation_date))
-        df = pd.DataFrame(indices_data, columns=['Index Path', 'Creation Date'])
-        df['Creation Date'] = pd.to_datetime(df['Creation Date'])
-        df = df.sort_values(by='Creation Date', ascending=False)
-        return df
+        Add embeddings to FAISS index and metadata to metadata dictionary.
+        :param embeddings: List of flot number list
+        :param texts: List of strings
+        :param sources: List of strings
+        :return
+        """
+        current_index = self.index.ntotal
+        for text, source, emb in zip(texts, sources, embeddings):
+            normalized_emb = self.normalize_embedding(emb)
+            self.index.add(np.array([normalized_emb]))
+            self.metadata_dict[current_index] = {'text': text, 'source': source}
+            current_index += 1
 
-    @staticmethod
-    def get_available_documents(document_dir: str = 'documents/', indices_dir: str = 'indices/'):
+    def save_lexical_index(self, lexical_index_path):
         """
+        Prepare and Save lexical index.
+        """
+        # Prepare chunks
+        chunks = [i['text'] for i in self.metadata_dict.values()]
 
-        :param document_dir:
-        :param indices_dir:
-        :return:
+        # BM25 index
+        texts = [re.sub(r"[^a-zA-Z0-9]", " ", chunk).lower().split() for chunk in chunks]
+        lexical_index = BM25Okapi(texts)
+
+        # Save index as pickle file
+        with open(lexical_index_path, 'wb') as f:
+            pickle.dump(lexical_index, f)
+
+    def save_index(self, index_directory):
         """
-        documents_data = []
-        documents_subdirs = next(os.walk(document_dir))[1]
-        indices_subdirs = next(os.walk(indices_dir))[1]
-        for doc_sub_dir in documents_subdirs:
-            document_path = os.path.join(document_dir, doc_sub_dir)
-            creation_date = time.ctime(os.stat(document_path).st_ctime)
-            try:
-                doc_meta_data_path = glob.glob(f"{document_path}/*.meta.txt")[0]
-                doc_meta_data = open(doc_meta_data_path, 'r').read()
-                doc_meta_data = ' '.join(doc_meta_data.split())
-            except IndexError:
-                doc_meta_data = None
-            if doc_sub_dir in indices_subdirs:
-                documents_data.append((False, '✅', doc_meta_data, document_path, creation_date))
-            else:
-                documents_data.append((False, '❓', doc_meta_data, document_path, creation_date))
-        df = pd.DataFrame(
-            documents_data,
-            columns=['Select Index', 'Index Status', 'Document Meta', 'Document Name', 'Creation Date']
+        Save faiss index and metadata to index_dir.
+        :param index_directory: Save index and metadata dict to this location.
+        """
+        index_path = os.path.join(index_directory, 'faiss.index')
+        lexical_index_path = os.path.join(index_directory, 'lexical.index')
+        metadata_path = os.path.join(index_directory, 'index.metadata')
+        faiss.write_index(self.index, index_path)
+        self.save_lexical_index(lexical_index_path)
+        with open(metadata_path, 'wb') as f:
+            pickle.dump(self.metadata_dict, f)
+
+
+class StoreResults:
+    def __init__(self, faiss_actor):
+        self.faiss_actor = faiss_actor
+
+    def __call__(self, batch):
+        ray.get(
+            self.faiss_actor.add_embeddings_and_metadata.remote(
+                batch["embeddings"], batch["text"], batch["source"]
+            )
         )
-        return df
+        return {}
 
-    @staticmethod
-    def delete_document(selected_directory: str = None):
-        """
-
-        :param selected_directory:
-        :return:
-        """
-        try:
-            # Remove all files and subdirectories within the directory
-            for root, dirs, files in os.walk(selected_directory, topdown=False):
-                for name in files:
-                    file_path = os.path.join(root, name)
-                    os.remove(file_path)
-                for name in dirs:
-                    dir_path = os.path.join(root, name)
-                    os.rmdir(dir_path)
-
-            # Remove the top-level directory itself
-            os.rmdir(selected_directory)
-            log_info(f"Directory '{selected_directory}' deleted successfully.")
-        except OSError as e:
-            log_error(f"Error: {e.strerror}")
-
-    @staticmethod
-    def index_document(
-            document_directory: str = None, index_directory: str = None, chunk_size: int = 600,
-            embedding_model: str = "text-embedding-ada-002"
-    ):
-        """
-        This function accepts a document_directory which contain files in plain text format and
-        create an index and save that index into index_directory.
-        :param document_directory:
-        :param index_directory:
-        :param chunk_size:
-        :param embedding_model:
-        """
-        # Load Data
-        data_loader = DirectoryLoader(document_directory, glob="**/*.data.txt")
-        meta_loader = DirectoryLoader(document_directory, glob="**/*.meta.txt")
-
-        raw_documents = data_loader.load()
-
-        try:
-            raw_meta = meta_loader.load()[0].page_content
-        except IndexError:
-            log_error(f"Meta file not found for: {document_directory}")
-            raw_meta = None
-
-        # Split text
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=20, length_function=len,
-            separators=["\n\n", "\n", "(?<=\. )", " ", ""]
-        )
-        documents = text_splitter.split_documents(raw_documents)
-        log_info(f'Total documents for generating embeddings: {len(documents)}')
-
-        # Load Data to vectorstore
-        embedding_class = OpenAIEmbeddings(model=embedding_model, chunk_size=chunk_size)
-        vectorstore = FAISS.from_documents(documents, embedding_class)
-
-        if not os.path.exists(index_directory):
-            os.makedirs(index_directory)
-
-        # Save vectorstore
-        faiss_index_path = os.path.join(index_directory, 'faiss')
-        vectorstore.save_local(faiss_index_path)
-
-        # Save document meta
-        doc_meta_path = os.path.join(index_directory, "doc.meta.txt")
-        with open(doc_meta_path, 'w') as f:
-            f.write(raw_meta)
 
