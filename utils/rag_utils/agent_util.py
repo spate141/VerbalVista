@@ -31,21 +31,7 @@ def get_num_tokens(text):
 
 class QueryAgent:
 
-    def __init__(
-            self, embedding_model_name="text-embedding-ada-002",  llm_model="gpt-3.5-turbo",
-            temperature=0.5, max_context_length=4096, system_content=SYS_PROMPT,
-            faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None
-    ):
-
-        # Embedding model for query encoding
-        self.embedding_model_name = embedding_model_name
-
-        # Context length (restrict input length to 50% of total context length)
-        try:
-            max_context_length = int(0.5 * MAX_CONTEXT_LENGTHS[llm_model])
-        except KeyError:
-            log_error(f'{llm_model} NOT FOUND IN `QueryAgent`')
-            max_context_length = int(0.5 * max_context_length)
+    def __init__(self, system_content=SYS_PROMPT, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -55,9 +41,6 @@ class QueryAgent:
 
         # LLM
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.llm_model = llm_model
-        self.temperature = temperature
-        self.context_length = max_context_length - get_num_tokens(system_content)
         self.system_content = system_content
 
         # Vectorstore
@@ -81,7 +64,7 @@ class QueryAgent:
             return response.choices[-1].message.content
 
     def generate_response(
-            self, llm_model, temperature=0.5, stream=True, system_content="", user_content="",
+            self, llm_model, temperature=0.5, stream=False, system_content="", user_content="",
             max_retries=1, retry_interval=60
     ):
         """Generate response from an LLM."""
@@ -105,10 +88,13 @@ class QueryAgent:
                 retry_count += 1
         return ""
 
-    def __call__(self, query, num_chunks=5, stream=True, lexical_search_k=1, rerank_threshold=0.2, rerank_k=7):
+    def __call__(
+            self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5,
+            embedding_model_name="text-embedding-ada-002", llm_model="gpt-3.5-turbo"
+    ):
 
         # Get sources and context
-        query_embedding = get_query_embedding(query, embedding_model_name=self.embedding_model_name)
+        query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -125,29 +111,26 @@ class QueryAgent:
 
         # Rerank
         if self.reranker:
-            # predicted_tag = custom_predict(
-            #     inputs=[query], classifier=self.reranker, threshold=rerank_threshold
-            # )[0]
-            # if predicted_tag != "other":
-            #     sources = [item["source"] for item in context_results]
-            #     reranked_indices = get_reranked_indices(sources, predicted_tag)
-            #     context_results = [context_results[i] for i in reranked_indices]
-            # context_results = context_results[:rerank_k]
             pass
 
         # Generate response
         context = [{"text": item["text"]} for item in context_results]
         sources = [item["source"] for item in context_results]
         user_content = f"query: {query}, context: {context}"
+        max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
+        context_length = max_context_length - get_num_tokens(self.system_content)
         answer = self.generate_response(
-            llm_model=self.llm_model,
-            temperature=self.temperature,
+            llm_model=llm_model,
+            temperature=temperature,
             stream=stream,
             system_content=self.system_content,
-            user_content=self.trim(user_content, self.context_length)
+            user_content=self.trim(user_content, context_length)
         )
 
         # Result
-        result = {"question": query, "sources": sources, "answer": answer, "llm": self.llm_model}
+        result = {
+            "query": query, "answer": answer, "llm_model": llm_model,
+            "embedding_model": embedding_model_name, "temperature": temperature, "sources": sources,
+        }
         return result
 

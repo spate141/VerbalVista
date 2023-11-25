@@ -90,14 +90,18 @@ def render_qa_page(
 
             # Other Q/A questions
             log_info("QA")
+            # result = {"query": query, "answer": answer, "llm_model": llm_model, "embedding_model": embedding_model_name,
+            #           "temperature": temperature, "sources": sources}
             result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
-                metadata_dict=agent_meta['metadata_dict'], reranker=None
+                metadata_dict=agent_meta['metadata_dict'], reranker=None, max_semantic_retrieval_chunks=5,
+                max_lexical_retrieval_chunks=1
             )
             answer = result['answer']
-            question = result['question']
+            question = result['query']
             sources = result['sources']  # List of strings
+
             answer_meta = None
 
             # Display assistant response in chat message container

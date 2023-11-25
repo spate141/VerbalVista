@@ -23,8 +23,13 @@ def do_semantic_search(query_embedding, faiss_index, metadata_dict, k=5):
     semantic_context = []
     for idx, distance in zip(I[0], D[0]):
         if idx < len(metadata_dict):  # Check if the index is within bounds
-            data = metadata_dict[idx]
-            semantic_context.append({"id": idx, "distance": distance, "text": data['text'], "source": data['source']})
+            try:
+                data = metadata_dict[idx]
+                semantic_context.append({
+                    "id": idx, "distance": distance, "text": data['text'], "source": data['source']
+                })
+            except KeyError:
+                pass
     return semantic_context
 
 

@@ -1,5 +1,4 @@
 import os
-import ray
 import time
 import faiss
 import pickle
@@ -7,13 +6,11 @@ import tiktoken
 import structlog
 import numpy as np
 from ray import serve
-from pathlib import Path
 from openai import OpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from langchain.embeddings import OpenAIEmbeddings
-from starlette.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -26,12 +23,7 @@ app = FastAPI(
 MAX_CONTEXT_LENGTHS = {
     'gpt-4': 8192,
     'gpt-3.5-turbo': 4096,
-    'gpt-3.5-turbo-16k': 16384,
-    'meta-llama/Llama-2-7b-chat-hf': 4096,
-    'meta-llama/Llama-2-13b-chat-hf': 4096,
-    'meta-llama/Llama-2-70b-chat-hf': 4096,
-    'codellama/CodeLlama-34b-Instruct-hf': 16384,
-    'mistralai/Mistral-7B-Instruct-v0.1': 65536
+    'gpt-3.5-turbo-16k': 16384
 }
 
 SYS_PROMPT = "Answer the query using the context provided. Be succinct. " \
@@ -52,13 +44,20 @@ app.add_middleware(
 
 class Query(BaseModel):
     query: str
+    llm: Optional[str] = "gpt-3.5-turbo"
+    embedding_model: Optional[str] = "text-embedding-ada-002"
+    temperature: Optional[float] = 0.5
+    max_semantic_retrieval_chunks: Optional[int] = 5
+    max_lexical_retrieval_chunks: Optional[int] = 1
 
 
 class Answer(BaseModel):
-    question: str
+    query: str
     answer: str
+    llm_model: str
+    embedding_model: str
+    temperature: float
     sources: List[str]
-    llm: str
 
 
 def load_index_and_metadata(index_directory: str = None):
@@ -83,13 +82,11 @@ def load_index_and_metadata(index_directory: str = None):
         return {"faiss_index": None, "lexical_index": None, "metadata_dict": None}
 
 
-def get_embedding_model(embedding_model_name, model_kwargs=None, encode_kwargs=None):
+def get_embedding_model(embedding_model_name):
     """
     Given the embedding_model_name; this will either use the OpenAI API or
     download the model with HuggingFaceEmbeddings.
-    :param embedding_model_name: Model name, could also be model_path
-    :param model_kwargs: Model kwargs (i.e. {"device": "cuda"})
-    :param encode_kwargs: Encoding kwargs (i.e. {"device": "cuda", "batch_size": 100})
+    :param embedding_model_name: Model name
     :return embedding model class instance
     """
     embedding_model = OpenAIEmbeddings(model=embedding_model_name)
@@ -117,8 +114,13 @@ def do_semantic_search(query_embedding, faiss_index, metadata_dict, k=5):
     semantic_context = []
     for idx, distance in zip(I[0], D[0]):
         if idx < len(metadata_dict):  # Check if the index is within bounds
-            data = metadata_dict[idx]
-            semantic_context.append({"id": idx, "distance": distance, "text": data['text'], "source": data['source']})
+            try:
+                data = metadata_dict[idx]
+                semantic_context.append({
+                    "id": idx, "distance": distance, "text": data['text'], "source": data['source']
+                })
+            except KeyError:
+                pass
     return semantic_context
 
 
@@ -151,19 +153,8 @@ def get_num_tokens(text):
 class QueryAgent:
 
     def __init__(
-            self, embedding_model_name="text-embedding-ada-002",  llm_model="gpt-3.5-turbo",
-            temperature=0.5, max_context_length=4096, system_content=SYS_PROMPT,
-            faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None
+            self, system_content=SYS_PROMPT, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None
     ):
-
-        # Embedding model for query encoding
-        self.embedding_model_name = embedding_model_name
-
-        # Context length (restrict input length to 50% of total context length)
-        try:
-            max_context_length = int(0.5 * MAX_CONTEXT_LENGTHS[llm_model])
-        except KeyError:
-            max_context_length = int(0.5 * max_context_length)
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -173,9 +164,6 @@ class QueryAgent:
 
         # LLM
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.llm_model = llm_model
-        self.temperature = temperature
-        self.context_length = max_context_length - get_num_tokens(system_content)
         self.system_content = system_content
 
         # Vectorstore
@@ -223,10 +211,13 @@ class QueryAgent:
                 retry_count += 1
         return ""
 
-    def __call__(self, query, num_chunks=5, stream=True, lexical_search_k=1, rerank_threshold=0.2, rerank_k=7):
+    def __call__(
+            self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5,
+            embedding_model_name="text-embedding-ada-002",  llm_model="gpt-3.5-turbo"
+    ):
 
         # Get sources and context
-        query_embedding = get_query_embedding(query, embedding_model_name=self.embedding_model_name)
+        query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -249,29 +240,33 @@ class QueryAgent:
         context = [{"text": item["text"]} for item in context_results]
         sources = [item["source"] for item in context_results]
         user_content = f"query: {query}, context: {context}"
+        max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
+        context_length = max_context_length - get_num_tokens(self.system_content)
         answer = self.generate_response(
-            llm_model=self.llm_model,
-            temperature=self.temperature,
+            llm_model=llm_model,
+            temperature=temperature,
             stream=stream,
             system_content=self.system_content,
-            user_content=self.trim(user_content, self.context_length)
+            user_content=self.trim(user_content, context_length)
         )
 
         # Result
-        result = {"question": query, "sources": sources, "answer": answer, "llm": self.llm_model}
+        result = {
+            "query": query, "answer": answer, "llm_model": llm_model,
+            "embedding_model": embedding_model_name, "temperature": temperature, "sources": sources,
+        }
         return result
 
 
-@serve.deployment(
-    num_replicas=1, ray_actor_options={"num_cpus": 4, "num_gpus": 0}
-)
+@serve.deployment(num_replicas=1, ray_actor_options={"num_cpus": 4, "num_gpus": 0})
 @serve.ingress(app)
 class RayAssistantDeployment:
+    """
+    Initialize Ray Assistant class with index_directory!
+    """
+    def __init__(self, index_directory=None):
 
-    def __init__(
-            self, index_directory="/Users/snehal/PycharmProjects/VerbalVista/data/indices/www-youtube-com-watch?v=gL6Vzt8FYS0",
-            embedding_model_name="text-embedding-ada-002", llm_model_name="gpt-4", temperature=0.5
-    ):
+        # setup logging
         structlog.configure(
             processors=[
                 structlog.processors.TimeStamper(fmt="iso"),
@@ -281,59 +276,36 @@ class RayAssistantDeployment:
         )
         self.logger = structlog.get_logger()
 
-        # get faiss, lexical and metadata
+        # get faiss index, lexical index and metadata for given index directory
         index_meta = load_index_and_metadata(index_directory=index_directory)
-        # {"faiss_index": faiss_index, "lexical_index": lexical_index, "metadata_dict": metadata_dict}
         faiss_index = index_meta["faiss_index"]
         lexical_index = index_meta["lexical_index"]
         metadata_dict = index_meta["metadata_dict"]
 
         # get query agent
         self.query_agent = QueryAgent(
-            embedding_model_name=embedding_model_name, llm_model=llm_model_name, temperature=temperature,
-            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=None
+            system_content=SYS_PROMPT, faiss_index=faiss_index, metadata_dict=metadata_dict,
+            lexical_index=lexical_index, reranker=None
         )
 
-    def predict(self, query: Query, stream: bool) -> Dict[str, Any]:
-        result = self.query_agent(query=query.query, stream=stream)
+    def predict(self, query: Query, stream: bool = False) -> Dict[str, Any]:
+        """
+        Generate response for /predict endpoint.
+        """
+        result = self.query_agent(
+            query=query.query,  temperature=query.temperature, embedding_model_name=query.embedding_model, stream=stream,
+            llm_model=query.llm, num_chunks=query.max_semantic_retrieval_chunks, lexical_search_k=query.max_lexical_retrieval_chunks,
+        )
         return result
 
     @app.post("/query")
     def query(self, query: Query) -> Answer:
-        result = self.predict(query, stream=False)
+        result = self.predict(query)
         return Answer.parse_obj(result)
 
-    def produce_streaming_answer(self, query, result):
-        answer = []
-        for answer_piece in result["answer"]:
-            answer.append(answer_piece)
-            yield answer_piece
 
-        if result["sources"]:
-            yield "\n\n**Sources:**\n"
-            for source in result["sources"]:
-                yield "* " + source + "\n"
-
-        self.logger.info(
-            "finished streaming query",
-            query=query,
-            document_ids=result["document_ids"],
-            llm=result["llm"],
-            answer="".join(answer),
-        )
-
-    @app.post("/stream")
-    def stream(self, query: Query) -> StreamingResponse:
-        result = self.predict(query, stream=True)
-        return StreamingResponse(
-            self.produce_streaming_answer(query.query, result), media_type="text/plain"
-        )
-
-
-deployment = RayAssistantDeployment.bind(
-    index_directory="/Users/snehal/PycharmProjects/VerbalVista/data/indices/www-youtube-com-watch?v=gL6Vzt8FYS0",
-    embedding_model_name="text-embedding-ada-002", llm_model_name="gpt-4", temperature=0.5
-)
+INDEX_DIR = "/Users/snehal/PycharmProjects/VerbalVista/data/indices/www-youtube-com-watch?v=gL6Vzt8FYS0"
+deployment = RayAssistantDeployment.bind(index_directory=INDEX_DIR)
 serve.run(deployment, route_prefix="/")
 
 # ray start --head
