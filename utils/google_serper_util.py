@@ -1,7 +1,7 @@
 from langchain.llms import OpenAI
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.agents import AgentType, load_tools, initialize_agent
-from utils.summary_util import initialize_summarization_chain
+from utils.rag_utils.summary_util import initialize_summarization_chain
 from utils.data_parsing_utils.document_parser import parse_url
 
 
