@@ -1,8 +1,8 @@
 import os
 import pickle
 import streamlit as st
-from utils import log_info, log_debug, log_error
-from utils.google_serper_util import google_serper_summarization
+from utils import log_debug
+from utils.other_utils import google_serper_summarization
 
 
 def render_tell_me_about_page(search_history_dir=None):

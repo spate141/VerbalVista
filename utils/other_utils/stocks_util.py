@@ -45,7 +45,7 @@ def normalize_stock_data(data):
     return (data / data.iloc[0] - 1) * 100
 
 
-def generate_plotly_chart(companies, companies_investments, trendline_type=None, start_date=None, end_date=None):
+def generate_stock_plotly_chart(companies, companies_investments, trendline_type=None, start_date=None, end_date=None):
     """
     Generate line chart using Plotly.
     :param companies: List of company stock tickers

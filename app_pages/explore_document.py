@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import streamlit as st
 from spacy_streamlit import visualize_ner
-from utils.generate_wordcloud import generate_wordcloud
+from utils.other_utils import generate_wordcloud
 from utils.rag_utils.rag_util import get_available_documents
 
 

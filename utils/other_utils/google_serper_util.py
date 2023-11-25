@@ -5,15 +5,15 @@ from utils.rag_utils.summary_util import initialize_summarization_chain
 from utils.data_parsing_utils.document_parser import parse_url
 
 
-def load_google_serper_agent(search_query: str = None, temperature: float = 0.0, verbose: bool = True):
-    """
-    Load the Google Serper agent from LangChain Agents.
-    """
-    llm = OpenAI(temperature=temperature)
-    tools = load_tools(["google-serper"], llm=llm)
-    agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=verbose)
-    answer = agent.run(search_query)
-    return answer
+# def load_google_serper_agent(search_query: str = None, temperature: float = 0.0, verbose: bool = True):
+#     """
+#     Load the Google Serper agent from LangChain Agents.
+#     """
+#     llm = OpenAI(temperature=temperature)
+#     tools = load_tools(["google-serper"], llm=llm)
+#     agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=verbose)
+#     answer = agent.run(search_query)
+#     return answer
 
 
 def google_serper_summarization(

@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 from datetime import date
-from utils import log_info, log_debug, log_error
-from utils.stocks_util import get_stock_data, normalize_stock_data, generate_plotly_chart
+from utils import log_debug
+from utils.other_utils import get_stock_data, normalize_stock_data, generate_stock_plotly_chart
 
 
 def render_stock_cards(company_name, company_info, final_investment, invested_amount):
@@ -79,7 +79,7 @@ def render_stocks_comparison_page(stock_data_dir=None):
         merged_data.columns = [f"{i} Investment" for i in companies]
 
         # Plot stock chart
-        fig = generate_plotly_chart(
+        fig = generate_stock_plotly_chart(
             companies,
             companies_investments,
             trendline_type=trendline_type,
