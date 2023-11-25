@@ -29,7 +29,6 @@ def render_qa_page(
 
         # Initialize QA Agent and get chunks for lexical search
         agent_meta = load_index_and_metadata(selected_index_path)
-        chunks = [i['text'] for i in agent_meta['metadata_dict'].values()]
 
         index_meta = os.path.join(selected_index_path, 'doc.meta.txt')
         index_meta_txt = open(index_meta, 'r').read()
@@ -94,7 +93,7 @@ def render_qa_page(
             result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
-                metadata_dict=agent_meta['metadata_dict'], chunks=chunks, reranker=None
+                metadata_dict=agent_meta['metadata_dict'], reranker=None
             )
             answer = result['answer']
             question = result['question']

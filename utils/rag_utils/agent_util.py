@@ -34,7 +34,7 @@ class QueryAgent:
     def __init__(
             self, embedding_model_name="text-embedding-ada-002",  llm_model="gpt-3.5-turbo",
             temperature=0.5, max_context_length=4096, system_content=SYS_PROMPT,
-            faiss_index=None, metadata_dict=None, lexical_index=None, chunks=None, reranker=None
+            faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None
     ):
 
         # Embedding model for query encoding
@@ -48,7 +48,6 @@ class QueryAgent:
             max_context_length = int(0.5 * max_context_length)
 
         # Lexical search
-        self.chunks = chunks
         self.lexical_index = lexical_index
 
         # Re-ranker

@@ -208,12 +208,11 @@ def load_index_and_metadata(index_directory: str = None):
 
 def do_some_chat_completion(
         query: str = None, embedding_model: str = "text-embedding-ada-002", llm_model: str = "gpt-3.5-turbo",
-        temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, chunks=None, reranker=None
+        temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None
 ):
     query_agent = QueryAgent(
         embedding_model_name=embedding_model, llm_model=llm_model, temperature=temperature,
-        faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index,
-        chunks=chunks, reranker=reranker
+        faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
     )
     # result = {"question": query, "sources": sources, "answer": answer, "llm": self.llm_model}
     result = query_agent(query=query, stream=False)
