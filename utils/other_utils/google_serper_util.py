@@ -2,18 +2,7 @@ from langchain.llms import OpenAI
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.agents import AgentType, load_tools, initialize_agent
 from utils.rag_utils.summary_util import initialize_summarization_chain
-from utils.data_parsing_utils.document_parser import parse_url
-
-
-# def load_google_serper_agent(search_query: str = None, temperature: float = 0.0, verbose: bool = True):
-#     """
-#     Load the Google Serper agent from LangChain Agents.
-#     """
-#     llm = OpenAI(temperature=temperature)
-#     tools = load_tools(["google-serper"], llm=llm)
-#     agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=verbose)
-#     answer = agent.run(search_query)
-#     return answer
+from utils.data_parsing_utils.url_parser import parse_url
 
 
 def google_serper_summarization(
