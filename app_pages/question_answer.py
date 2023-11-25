@@ -2,58 +2,39 @@ import os
 import time
 import pickle
 import streamlit as st
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug
+from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
 
 def render_qa_page(
-        temperature=None, max_tokens=None, model_name=None, chain_type=None,
-        ask_util=None, indexing_util=None, summary_util=None, tx2sp_util=None,
-        indices_dir=None, document_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
+        temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
+        tx2sp_util=None, indices_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
 ):
     """
     This function allow user to do conversation with the data.
     """
-
-    def _gen_summary(t):
-        keywords = ["summarize", "summary"]
-        for keyword in keywords:
-            if keyword in t.lower():
-                return True
-        return False
-
-    # icons = {"user": "docs/user.png", "assistant": "docs/robot.png"}
     st.header("Q & A", divider='red')
     st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
     with st.container():
-        # enable_audio = st.checkbox("Enable TTS")
-        indices_df = indexing_util.get_available_indices(indices_dir=indices_dir)
+        indices_df = get_available_indices(indices_dir=indices_dir)
         selected_index_path = st.selectbox(
             "Select Index:", options=indices_df['Index Path'].to_list(), index=None,
             placeholder="<select index>", label_visibility="collapsed"
         )
-
         if selected_index_path is None:
             st.error("Select index first!")
             return
 
     if selected_index_path is not None:
 
-        # Initialize Q/A Chain
-        qa_chain = ask_util.prepare_qa_chain(
-            index_directory=selected_index_path,
-            temperature=temperature,
-            model_name=model_name,
-            max_tokens=max_tokens
-        )
-        # Initialize summarization Chain
-        summarization_chain = summary_util.initialize_summarization_chain(
-            temperature=temperature, max_tokens=max_tokens, chain_type=chain_type
-        )
+        # Initialize QA Agent and get chunks for lexical search
+        agent_meta = load_index_and_metadata(selected_index_path)
 
         index_meta = os.path.join(selected_index_path, 'doc.meta.txt')
         index_meta_txt = open(index_meta, 'r').read()
         index_meta_txt = ' '.join(index_meta_txt.split())
         st.success(f"Description: {index_meta_txt}")
+
         chat_dir_path = os.path.join(chat_history_dir, os.path.basename(selected_index_path))
         if not os.path.exists(chat_dir_path):
             os.makedirs(chat_dir_path)
@@ -61,7 +42,7 @@ def render_qa_page(
         chat_history_filepath = os.path.join(chat_dir_path, f"{os.path.basename(selected_index_path)}.pickle")
 
         # Initialize chat history
-        _chat_history = []
+        # _chat_history = []
         if selected_index_path not in st.session_state:
 
             # check if chat history is available locally, if yes; load the chat history
@@ -80,23 +61,9 @@ def render_qa_page(
                 st.markdown(message_item["content"])
                 if cost_item:
                     st.info(cost_item)
-                    # st.info(total_qa_cost)
-        cols = st.columns(8)
-        with cols[0]:
-            get_one_point_summary = st.button("Highlight", type="primary")
-        with cols[1]:
-            get_summary = st.button("Summary", type="primary")
 
-        if get_summary:
-            # React to summarize button
-            prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
-            prompt = "Generate summary"
-        elif get_one_point_summary:
-            prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
-            prompt = "Describe this document in a single bullet point."
-        else:
-            # React to user input
-            prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
+        # React to user input
+        prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
 
         if prompt:
             center_css = """
@@ -121,50 +88,36 @@ def render_qa_page(
             with st.chat_message("user", avatar="human"):
                 st.markdown(prompt)
 
-            if _gen_summary(prompt) or get_summary:
-                # If the prompt is asking to summarize
-                log_info("Summarization")
-                doc_filepath = os.path.join(
-                    document_dir, os.path.basename(selected_index_path),
-                    f"{os.path.basename(selected_index_path)}.data.txt"
-                )
-                with open(doc_filepath, 'r') as f:
-                    text = f.read()
-                answer, answer_meta, chat_history = summary_util.summarize(
-                    chain=summarization_chain, text=text, question=prompt,
-                    chat_history=_chat_history
-                )
-                # Display assistant response in chat message container
-                with st.chat_message("ai", avatar="ai"):
-                    st.markdown(answer)
-                    st.info(answer_meta)
-                    # st.info(total_qa_cost)
-            else:
-                # Other Q/A questions
-                log_info("QA")
-                answer, answer_meta, chat_history = ask_util.ask_question(
-                    question=prompt, qa_chain=qa_chain, chat_history=_chat_history
-                )
-                # Display assistant response in chat message container
-                with st.chat_message("ai", avatar="ai"):
-                    message_placeholder = st.empty()
-                    full_response = ""
+            # Other Q/A questions
+            log_info("QA")
+            result = do_some_chat_completion(
+                query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
+                faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
+                metadata_dict=agent_meta['metadata_dict'], reranker=None
+            )
+            answer = result['answer']
+            question = result['question']
+            sources = result['sources']  # List of strings
+            answer_meta = None
 
-                    # Simulate stream of response with milliseconds delay
-                    for chunk in answer.split():
-                        full_response += chunk + " "
-                        time.sleep(0.03)
+            # Display assistant response in chat message container
+            with st.chat_message("ai", avatar="ai"):
+                message_placeholder = st.empty()
+                full_response = ""
 
-                        # Add a blinking cursor to simulate typing
-                        message_placeholder.markdown(full_response + "▌")
+                # Simulate stream of response with milliseconds delay
+                for chunk in answer.split():
+                    full_response += chunk + " "
+                    time.sleep(0.03)
 
-                    # Display full message at the end with other stuff you want to show like `response_meta`.
-                    message_placeholder.markdown(full_response)
-                    st.info(answer_meta)
-                    if enable_tts:
-                        st.audio(tx2sp_util.text_to_speech(text=full_response, voice=tts_voice).content)
+                    # Add a blinking cursor to simulate typing
+                    message_placeholder.markdown(full_response + "▌")
 
-            _chat_history.extend(chat_history)
+                # Display full message at the end with other stuff you want to show like `response_meta`.
+                message_placeholder.markdown(full_response)
+                st.info(answer_meta)
+                if enable_tts:
+                    st.audio(tx2sp_util.text_to_speech(text=full_response, voice=tts_voice).content)
 
             # Add assistant response to chat history
             st.session_state[selected_index_path]['messages'].append({

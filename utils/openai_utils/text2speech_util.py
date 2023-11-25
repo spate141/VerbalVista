@@ -1,12 +1,11 @@
-import os
 from openai import OpenAI
 from typing import Literal, Any
 
 
-class TextToSpeech:
+class OpenAIText2SpeechUtil:
 
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, api_key=None):
+        self.client = OpenAI(api_key=api_key)
 
     def text_to_speech(
             self, model_name: str = "tts-1",

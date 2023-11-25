@@ -2,17 +2,11 @@ import os
 import spacy
 import streamlit as st
 from app_pages import *
-from dotenv import load_dotenv
-from utils.ask_util import AskUtil
-from utils.stocks_util import StockUtil
-from utils.indexing_util import IndexUtil
-from utils.summary_util import SummaryUtil
-from utils.text_to_speech import TextToSpeech
-from utils.google_serper_util import GoogleSerperUtil
-from utils.reddit_util import SubmissionCommentsFetcher
-from utils.image_generation_util import ImageGeneration
-from utils.audio_transcribe import WhisperAudioTranscribe
-from utils.logging_module import log_info, log_debug, log_error
+from dotenv import load_dotenv; load_dotenv()
+
+from utils import log_info, log_debug, log_error
+from utils.data_parsing_utils import RedditSubmissionCommentsFetcher
+from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil
 
 
 class VerbalVista:
@@ -24,15 +18,10 @@ class VerbalVista:
     ):
 
         # Initialize all necessary classes
-        self.whisper = WhisperAudioTranscribe()
-        self.tx2sp_util = TextToSpeech()
-        self.indexing_util = IndexUtil()
-        self.ask_util = AskUtil()
-        self.summary_util = SummaryUtil()
-        self.google_serper_util = GoogleSerperUtil()
-        self.stock_util = StockUtil()
-        self.image_generation_util = ImageGeneration()
-        self.reddit_util = SubmissionCommentsFetcher(
+        self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai_t2s_util = OpenAIText2SpeechUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai_dalle_util = OpenAIDalleUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.reddit_util = RedditSubmissionCommentsFetcher(
             os.getenv('REDDIT_CLIENT_ID'),
             os.getenv('REDDIT_CLIENT_SECRET'),
             os.getenv('REDDIT_USER_AGENT')
@@ -63,7 +52,7 @@ class VerbalVista:
         Media input and processing page.
         """
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.whisper,
+            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.openai_wisper_util,
             reddit_util=self.reddit_util
         )
 
@@ -71,51 +60,45 @@ class VerbalVista:
         """
         Create/Manage/Delete document index page.
         """
-        render_manage_index_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir, indexing_util=self.indexing_util
-        )
+        render_manage_index_page(document_dir=self.document_dir, indices_dir=self.indices_dir)
 
     def render_document_explore_page(self):
         """
         Document explore page.
         """
         render_document_explore_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir,
-            indexing_util=self.indexing_util, nlp=self.nlp, ner_labels=self.ner_labels
+            document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=self.nlp, ner_labels=self.ner_labels
         )
 
-    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, chain_type=None, enable_tts=False, tts_voice=None):
+    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, enable_tts=False, tts_voice=None):
         """
         Question answer page.
         """
         render_qa_page(
-            temperature=temperature, max_tokens=max_tokens, model_name=model_name, chain_type=chain_type,
-            ask_util=self.ask_util, indexing_util=self.indexing_util, summary_util=self.summary_util, tx2sp_util=self.tx2sp_util,
-            indices_dir=self.indices_dir, document_dir=self.document_dir, chat_history_dir=self.chat_history_dir,
-            enable_tts=enable_tts, tts_voice=tts_voice
+            temperature=temperature, max_tokens=max_tokens, model_name=model_name,
+            embedding_model_name=embedding_model_name, tx2sp_util=self.openai_t2s_util,
+            indices_dir=self.indices_dir,  chat_history_dir=self.chat_history_dir, enable_tts=enable_tts,
+            tts_voice=tts_voice
         )
 
     def render_tell_me_about_page(self):
         """
         Tell me more about page.
         """
-        render_tell_me_about_page(
-            google_serper_util=self.google_serper_util, summary_util=self.summary_util,
-            search_history_dir=self.search_history_dir
-        )
+        render_tell_me_about_page(search_history_dir=self.search_history_dir)
 
     def render_stocks_comparison_page(self):
         """
         Stocks comparison page.
         """
-        render_stocks_comparison_page(stock_util=self.stock_util, stock_data_dir=self.stock_data_dir)
+        render_stocks_comparison_page(stock_data_dir=self.stock_data_dir)
 
     def render_image_generation_page(self):
         """
         Image generation page.
         """
         render_image_generation_page(
-            generated_images_dir=self.generated_images_dir, image_generation_util=self.image_generation_util
+            generated_images_dir=self.generated_images_dir, image_generation_util=self.openai_dalle_util
         )
 
 
@@ -139,9 +122,6 @@ def main():
     search_history_dir = 'data/search_history/'
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
-
-    # Load env variables
-    load_dotenv()
 
     if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
         # if both env variable and explicit key is not set
@@ -171,14 +151,14 @@ def main():
             temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
             model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=2)
-            summ_chain_type = st.selectbox("Chain type", index=1, options=["stuff", "map_reduce", "refine"])
+            embedding_model_name = st.selectbox("Embedding Model Name", ["text-embedding-ada-002"], index=0)
             enable_tts = st.checkbox("Enable text-to-speech", value=False)
             tts_voice = "echo"
             if enable_tts:
                 tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
         vv.render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name,
-            chain_type=summ_chain_type, enable_tts=enable_tts, tts_voice=tts_voice
+            embedding_model_name=embedding_model_name, enable_tts=enable_tts, tts_voice=tts_voice
         )
     elif selected_page == "Explore Document":
         vv.render_document_explore_page()

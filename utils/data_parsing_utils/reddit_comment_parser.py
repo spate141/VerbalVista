@@ -1,7 +1,7 @@
 import praw
 
 
-class SubmissionCommentsFetcher:
+class RedditSubmissionCommentsFetcher:
     def __init__(self, client_id, client_secret, user_agent):
         self.reddit = praw.Reddit(client_id=client_id,
                                   client_secret=client_secret,

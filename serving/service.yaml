@@ -1,0 +1,7 @@
+name: "verbal-vista-application"
+cluster_env: verbal-vista-application
+config:
+  access:
+    use_bearer_token: False
+ray_serve_config:
+  import_path: serve:deployment
