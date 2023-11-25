@@ -11,10 +11,9 @@ from langchain.document_loaders import SeleniumURLLoader
 from langchain.document_loaders import UnstructuredEmailLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from utils.logging_module import log_debug, log_error, log_info
-from utils.data_parsing_utils.hacker_news_scraper import scrape_hn_comments
-from utils.data_parsing_utils.four_chan_scraper import fetch_4chan_comments
-from utils.data_parsing_utils.youtube_scraper import scrape_youtube_video_transcript
+from utils import log_debug, log_error, log_info
+from utils.data_parsing_utils import scrape_hn_comments, fetch_4chan_comments, scrape_youtube_video_transcript
+
 
 def parse_docx(file: BytesIO) -> str:
     """

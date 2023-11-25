@@ -2,7 +2,7 @@ import os
 import requests
 from openai import OpenAI
 from datetime import datetime
-from utils.logging_module import log_debug
+from utils import log_debug
 
 
 class OpenAIDalleUtil:

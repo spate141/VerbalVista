@@ -2,8 +2,7 @@ import os
 import time
 import pandas as pd
 import streamlit as st
-from utils.logging_module import log_info, log_debug, log_error
-from utils.rag_util import get_available_documents, index_data, delete_document
+from utils.rag_utils.rag_util import get_available_documents, index_data, delete_document
 
 
 def render_manage_index_page(document_dir=None, indices_dir=None):

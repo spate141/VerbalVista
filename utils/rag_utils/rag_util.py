@@ -11,10 +11,10 @@ from ray.data import ActorPoolStrategy
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from utils.agent_util import QueryAgent
-from utils.indexing_util import StoreResults, FaissIndexActor
-from utils.logging_module import log_info, log_error, log_debug
-from utils.embedding_util import EmbedChunks, EMBEDDING_DIMENSIONS
+from utils import log_info, log_error, log_debug
+from utils.rag_utils.agent_util import QueryAgent
+from utils.rag_utils.indexing_util import StoreResults, FaissIndexActor
+from utils.rag_utils.embedding_util import EmbedChunks, EMBEDDING_DIMENSIONS
 
 
 def get_available_indices(indices_dir: str = 'indices/'):
@@ -206,7 +206,7 @@ def load_index_and_metadata(index_directory: str = None):
         return {"faiss_index": None, "lexical_index": None, "metadata_dict": None}
 
 
-def do_chat_completion(
+def do_some_chat_completion(
         query: str = None, embedding_model: str = "text-embedding-ada-002", llm_model: str = "gpt-3.5-turbo",
         temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, chunks=None, reranker=None
 ):

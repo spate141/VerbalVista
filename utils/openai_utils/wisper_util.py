@@ -3,7 +3,7 @@ import time
 from openai import OpenAI
 from pydub import AudioSegment
 from pydub.utils import mediainfo
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug, log_error
 
 
 class OpenAIWisperUtil:

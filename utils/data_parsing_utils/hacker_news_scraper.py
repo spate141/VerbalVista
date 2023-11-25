@@ -1,7 +1,7 @@
 import time
 import requests
 from bs4 import BeautifulSoup
-from utils.logging_module import log_debug, log_info
+from utils import log_debug, log_info
 
 
 def scrape_hn_comments(url):

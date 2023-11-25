@@ -1,5 +1,5 @@
 import numpy as np
-from utils.embedding_util import get_embedding_model
+from utils.rag_utils.embedding_util import get_embedding_model
 
 
 def get_query_embedding(query, embedding_model_name=None):

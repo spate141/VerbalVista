@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from datetime import date
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug, log_error
 from utils.stocks_util import get_stock_data, normalize_stock_data, generate_plotly_chart
 
 

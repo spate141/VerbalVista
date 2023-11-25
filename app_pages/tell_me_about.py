@@ -1,8 +1,7 @@
 import os
-import time
 import pickle
 import streamlit as st
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug, log_error
 from utils.google_serper_util import google_serper_summarization
 
 

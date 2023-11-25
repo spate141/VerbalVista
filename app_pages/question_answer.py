@@ -2,8 +2,8 @@ import os
 import time
 import pickle
 import streamlit as st
-from utils.logging_module import log_info, log_debug, log_error
-from utils.rag_util import get_available_indices, load_index_and_metadata, do_chat_completion
+from utils import log_info, log_debug
+from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
 
 def render_qa_page(
@@ -91,7 +91,7 @@ def render_qa_page(
 
             # Other Q/A questions
             log_info("QA")
-            result = do_chat_completion(
+            result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
                 metadata_dict=agent_meta['metadata_dict'], chunks=chunks, reranker=None

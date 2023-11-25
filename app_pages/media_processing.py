@@ -1,7 +1,7 @@
 import os
 import time
 import streamlit as st
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
 

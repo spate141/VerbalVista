@@ -3,8 +3,8 @@ import time
 import tiktoken
 from openai import OpenAI
 
-from utils.logging_module import log_info, log_debug, log_error
-from utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
+from utils import log_error
+from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
 
 
 MAX_CONTEXT_LENGTHS = {

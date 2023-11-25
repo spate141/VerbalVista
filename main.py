@@ -4,11 +4,9 @@ import streamlit as st
 from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
 
-from utils.data_parsing_utils.reddit_util import SubmissionCommentsFetcher
-from utils.openai_dalle_util import OpenAIDalleUtil
-from utils.openai_wisper_util import OpenAIWisperUtil
-from utils.openai_text2speech_util import OpenAIText2SpeechUtil
-from utils.logging_module import log_info, log_debug, log_error
+from utils import log_info, log_debug, log_error
+from utils.data_parsing_utils import RedditSubmissionCommentsFetcher
+from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil
 
 
 class VerbalVista:
@@ -23,7 +21,7 @@ class VerbalVista:
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.openai_t2s_util = OpenAIText2SpeechUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.openai_dalle_util = OpenAIDalleUtil(api_key=os.getenv("OPENAI_API_KEY"))
-        self.reddit_util = SubmissionCommentsFetcher(
+        self.reddit_util = RedditSubmissionCommentsFetcher(
             os.getenv('REDDIT_CLIENT_ID'),
             os.getenv('REDDIT_CLIENT_SECRET'),
             os.getenv('REDDIT_USER_AGENT')
