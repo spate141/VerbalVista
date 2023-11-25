@@ -5,6 +5,7 @@ import streamlit as st
 from utils.logging_module import log_info, log_debug, log_error
 from utils.rag_util import get_available_indices, load_index_and_metadata, do_chat_completion
 
+
 def render_qa_page(
         temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
         tx2sp_util=None, indices_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None

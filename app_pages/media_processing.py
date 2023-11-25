@@ -2,7 +2,7 @@ import os
 import time
 import streamlit as st
 from utils.logging_module import log_info, log_debug, log_error
-from utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
+from utils.data_parsing_utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, parse_url, write_data_to_file
 
 
 def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_model=None, reddit_util=None):

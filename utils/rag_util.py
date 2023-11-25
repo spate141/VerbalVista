@@ -170,7 +170,7 @@ def index_data(
         fn_constructor_kwargs={"faiss_actor": faiss_actor},
         batch_size=100,
         num_cpus=1,
-        compute=ActorPoolStrategy(size=6),
+        compute=ActorPoolStrategy(size=1),
     ).count()
 
     # Save the final index and metadata

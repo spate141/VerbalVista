@@ -4,7 +4,7 @@ import streamlit as st
 from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
 
-from utils.reddit_util import SubmissionCommentsFetcher
+from utils.data_parsing_utils.reddit_util import SubmissionCommentsFetcher
 from utils.openai_dalle_util import OpenAIDalleUtil
 from utils.openai_wisper_util import OpenAIWisperUtil
 from utils.openai_text2speech_util import OpenAIText2SpeechUtil

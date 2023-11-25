@@ -13,7 +13,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders import SeleniumURLLoader
 from langchain.document_loaders import UnstructuredEmailLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from .logging_module import log_debug, log_error, log_info
+from utils.logging_module import log_debug, log_error, log_info
 
 
 def parse_docx(file: BytesIO) -> str:

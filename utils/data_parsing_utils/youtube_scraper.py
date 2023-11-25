@@ -1,5 +1,5 @@
 from langchain.document_loaders import YoutubeLoader
-from .logging_module import log_info, log_debug, log_error
+from utils.logging_module import log_info, log_debug, log_error
 
 
 def scrape_youtube_video_transcript(url):

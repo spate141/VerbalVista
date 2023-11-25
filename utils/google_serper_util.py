@@ -2,7 +2,7 @@ from langchain.llms import OpenAI
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.agents import AgentType, load_tools, initialize_agent
 from utils.summary_util import initialize_summarization_chain
-from utils.document_parser import parse_url
+from utils.data_parsing_utils.document_parser import parse_url
 
 
 def load_google_serper_agent(search_query: str = None, temperature: float = 0.0, verbose: bool = True):
