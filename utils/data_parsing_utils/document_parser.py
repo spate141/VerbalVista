@@ -6,15 +6,15 @@ from io import BytesIO
 from typing import List
 from pypdf import PdfReader
 from urllib.parse import urlparse
-from .hacker_news_scraper import scrape_hn_comments
-from .four_chan_scraper import fetch_4chan_comments
-from .youtube_scraper import scrape_youtube_video_transcript
 from langchain.docstore.document import Document
 from langchain.document_loaders import SeleniumURLLoader
 from langchain.document_loaders import UnstructuredEmailLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from utils.logging_module import log_debug, log_error, log_info
 
+from utils.logging_module import log_debug, log_error, log_info
+from utils.data_parsing_utils.hacker_news_scraper import scrape_hn_comments
+from utils.data_parsing_utils.four_chan_scraper import fetch_4chan_comments
+from utils.data_parsing_utils.youtube_scraper import scrape_youtube_video_transcript
 
 def parse_docx(file: BytesIO) -> str:
     """

@@ -5,7 +5,7 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from .logging_module import log_debug
+from utils.logging_module import log_debug
 
 
 def get_stock_data(ticker, start, end, data_dir=None):

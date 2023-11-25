@@ -4,7 +4,7 @@ from langchain.docstore.document import Document
 from langchain.callbacks import get_openai_callback
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from .logging_module import log_debug
+from utils.logging_module import log_debug
 
 
 def process_text(text, chunk_size: int = 4000, chunk_overlap: int = 50):

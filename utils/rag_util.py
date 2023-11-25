@@ -11,10 +11,10 @@ from ray.data import ActorPoolStrategy
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from .agent_util import QueryAgent
-from .indexing_util import StoreResults, FaissIndexActor
-from .logging_module import log_info, log_error, log_debug
-from .embedding_util import EmbedChunks, EMBEDDING_DIMENSIONS
+from utils.agent_util import QueryAgent
+from utils.indexing_util import StoreResults, FaissIndexActor
+from utils.logging_module import log_info, log_error, log_debug
+from utils.embedding_util import EmbedChunks, EMBEDDING_DIMENSIONS
 
 
 def get_available_indices(indices_dir: str = 'indices/'):
