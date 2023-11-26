@@ -13,8 +13,7 @@ class VerbalVista:
 
     def __init__(
             self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None,
-            chat_history_dir: str = None, search_history_dir: str = None, stock_data_dir: str = None,
-            generated_images_dir: str = None
+            chat_history_dir: str = None, stock_data_dir: str = None, generated_images_dir: str = None
     ):
 
         # Initialize all necessary classes
@@ -29,8 +28,7 @@ class VerbalVista:
 
         # Create relevant directories
         for directory_path in [
-            document_dir, indices_dir, tmp_audio_dir, chat_history_dir,
-            search_history_dir, stock_data_dir, generated_images_dir
+            document_dir, indices_dir, tmp_audio_dir, chat_history_dir, stock_data_dir, generated_images_dir
         ]:
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
@@ -41,7 +39,6 @@ class VerbalVista:
         self.indices_dir = indices_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.chat_history_dir = chat_history_dir
-        self.search_history_dir = search_history_dir
         self.stock_data_dir = stock_data_dir
         self.generated_images_dir = generated_images_dir
         self.nlp = spacy.load("en_core_web_sm")
@@ -81,12 +78,6 @@ class VerbalVista:
             tts_voice=tts_voice
         )
 
-    def render_tell_me_about_page(self):
-        """
-        Tell me more about page.
-        """
-        render_tell_me_about_page(search_history_dir=self.search_history_dir)
-
     def render_stocks_comparison_page(self):
         """
         Stocks comparison page.
@@ -106,7 +97,7 @@ def main():
     APP_NAME = "VerbalVista"
     APP_VERSION = "1.3"
     APP_PAGES = [
-        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Tell Me About", "Stocks Comparison",
+        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison",
         "Image Generation"
     ]
     # Render sidebar
@@ -119,7 +110,6 @@ def main():
     tmp_audio_dir = 'data/tmp_audio_dir/'
     indices_dir = 'data/indices/'
     chat_history_dir = 'data/chat_history/'
-    search_history_dir = 'data/search_history/'
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
 
@@ -139,8 +129,7 @@ def main():
     vv = VerbalVista(
         document_dir=document_dir, indices_dir=indices_dir,
         tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
-        search_history_dir=search_history_dir, stock_data_dir=stock_data_dir,
-        generated_images_dir=generated_images_dir
+        stock_data_dir=stock_data_dir, generated_images_dir=generated_images_dir
     )
     if selected_page == "Media Processing":
         vv.render_media_processing_page()
@@ -162,8 +151,6 @@ def main():
         )
     elif selected_page == "Explore Document":
         vv.render_document_explore_page()
-    elif selected_page == 'Tell Me About':
-        vv.render_tell_me_about_page()
     elif selected_page == 'Stocks Comparison':
         vv.render_stocks_comparison_page()
     elif selected_page == 'Image Generation':

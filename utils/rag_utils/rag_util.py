@@ -8,7 +8,6 @@ import pandas as pd
 from pathlib import Path
 from functools import partial
 from ray.data import ActorPoolStrategy
-from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
@@ -118,6 +117,29 @@ def do_some_data_chunking(data, chunk_size=600, chunk_overlap=30):
     return [{"text": chunk.page_content, "source": chunk.metadata["source"]} for chunk in chunks]
 
 
+def load_first_meta_file(directory):
+    """
+    Load the content of the first .meta.txt file found in the given directory.
+
+    Args:
+    directory (str): Path to the directory to search in.
+
+    Returns:
+    str: Content of the first .meta.txt file, or an empty string if none found.
+    """
+    meta_files = directory.rglob('*.meta.txt')
+
+    for meta_file in meta_files:
+        try:
+            with open(meta_file, 'r') as file:
+                return file.read()
+        except Exception as e:
+            log_error(f"Error reading file {meta_file}: {e}")
+
+    log_error(f"Meta file not found for: {directory}")
+    return ""
+
+
 def index_data(
         document_directory: str = None, index_directory: str = None, chunk_size: int = 600,
         chunk_overlap: int = 30, embedding_model: str = "text-embedding-ada-002"
@@ -131,16 +153,13 @@ def index_data(
     :param chunk_overlap:
     :param embedding_model:
     """
-    # Load meta
-    meta_loader = DirectoryLoader(document_directory, glob="**/*.meta.txt")
-    try:
-        raw_meta = meta_loader.load()[0].page_content
-    except IndexError:
-        log_error(f"Meta file not found for: {document_directory}")
-        raw_meta = ""
 
-    # Load Data
     document_directory = Path(document_directory)
+
+    # Load meta normally as there will be only one meta file
+    raw_meta = load_first_meta_file(document_directory)
+
+    # Load data with ray as there could be multiple data files
     ds = ray.data.from_items(
         [{"path": path} for path in document_directory.rglob("*.data.txt") if not path.is_dir()]
     )

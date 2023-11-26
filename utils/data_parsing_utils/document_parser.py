@@ -1,12 +1,10 @@
 import re
-import os
-import tempfile
+import email
 import docx2txt
 from io import BytesIO
 from pypdf import PdfReader
-from langchain.document_loaders import UnstructuredEmailLoader
 
-from utils import log_debug
+from utils import log_error
 
 
 def parse_docx(file: BytesIO) -> str:
@@ -59,21 +57,35 @@ def parse_email(file: BytesIO):
 
     :param file:
     """
-    # Save the file to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.eml') as temp_file:
-        temp_filename = temp_file.name
-        log_debug(f"tmp email files saved at: {temp_filename}")
-        temp_file.write(file.getvalue())
+    try:
+        # Read the email file
+        email_content = file.read().decode("utf-8")
 
-    loader = UnstructuredEmailLoader(file_path=temp_filename)
-    raw_documents = loader.load()
-    texts = []
-    for i in raw_documents:
-        texts.append(i.page_content)
-    text = ' '.join(texts)
+        # Parse the email content
+        msg = email.message_from_string(email_content)
 
-    # Remove the temporary file
-    os.remove(temp_filename)
-    log_debug(f"tmp email files removed from: {temp_filename}")
+        # Extract subject
+        subject = msg['subject']
+
+        # Extract email body
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+
+                # Skip any text not in plain text or html
+                if "text/plain" in content_type or "text/html" in content_type:
+                    body = part.get_payload(decode=True).decode()
+                    break
+        else:
+            # Not a multipart message, simply get the payload
+            body = msg.get_payload(decode=True).decode()
+
+        text = subject + '\n\n' + body
+
+    except Exception as e:
+        log_error(f"An error occurred: {e}")
+        text = None
+
     return text
 
