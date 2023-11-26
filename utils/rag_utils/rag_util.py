@@ -136,7 +136,7 @@ def index_data(
         raw_meta = meta_loader.load()[0].page_content
     except IndexError:
         log_error(f"Meta file not found for: {document_directory}")
-        raw_meta = None
+        raw_meta = ""
 
     # Load Data
     document_directory = Path(document_directory)
