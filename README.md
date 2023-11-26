@@ -43,18 +43,38 @@ SERPER_API_KEY=
 >> streamlit run main.py
 ```
 
-## Ray server
+## Ray Server Management Script
 
-### Start the ray server
-```cmd
->> cd VerbalVista
->> ray start --head
->> python serve.py --index_dir=data/indices/my_index/
+This README provides guidance on using the `manage_server.sh` script for managing the Ray and application servers in your environment.
+
+### Overview
+
+The `manage_server.sh` script is a utility for easily starting and stopping the Ray server and a custom application server. It streamlines the process of server management through simple command-line commands.
+
+### Prerequisites
+
+- Ensure you have Ray installed in your environment.
+- The script should be executable. You can set it as executable using `chmod +x manage_server.sh`.
+
+### Usage
+
+Run the script from the command line with the desired command. The script supports the following commands:
+
+1. **start_ray**: Starts the Ray server.
+```bash
+bash manage_server.sh start_ray
 ```
-
-### Stop the ray server
-```cmd
->> ray stop
+2. **start_server [directory]**: Starts the application server with a specified index directory.
+```bash
+bash manage_server.sh start_server <index_directory>
+```
+3. **stop_server**: Stops the application server.
+```bash
+bash manage_server.sh stop_server
+```
+4. **stop_ray**: Stops the Ray server.
+```bash
+bash manage_server.sh stop_ray
 ```
 
 ### Ray server API endpoint example:

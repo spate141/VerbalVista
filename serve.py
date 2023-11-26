@@ -99,21 +99,40 @@ def main():
     >> ray stop
     """
     parser = argparse.ArgumentParser(description='Start VerbalVista Ray Server!')
-    parser.add_argument('--index_dir', type=str, help='Index directory.', default=None)
+    parser.add_argument('--index_dir', type=str, required=True, help='Index directory.')
+    parser.add_argument('--num_replicas', type=int, default=1, help='Number of replicas.')
+    parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs.')
+    parser.add_argument('--num_gpus', type=int, default=0, help='Number of GPUs.')
+    parser.add_argument('--max_concurrent_queries', type=int, default=100, help='Max concurrent queries.')
+    parser.add_argument('--health_check_period_s', type=int, default=10, help='Health check period (seconds).')
+    parser.add_argument('--health_check_timeout_s', type=int, default=30, help='Health check timeout (seconds).')
+    parser.add_argument('--graceful_shutdown_timeout_s', type=int, default=20, help='Graceful shutdown timeout (seconds).')
+    parser.add_argument('--graceful_shutdown_wait_loop_s', type=int, default=2, help='Graceful shutdown wait loop (seconds).')
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='Host address.')
+    parser.add_argument('--port', type=int, default=8000, help='Port number.')
+    parser.add_argument('--route_prefix', type=str, default='/', help='Route prefix.')
+    parser.add_argument('--server_name', type=str, default='verbal_vista', help='Server name.')
+
     args = parser.parse_args()
 
-    # start the server
-    if args.index_dir:
-        deployment = VerbalVistaAssistantDeployment.options(
-            name="VerbalVistaServer", num_replicas=1, ray_actor_options={"num_cpus": 4, "num_gpus": 0},
-            max_concurrent_queries=100, health_check_period_s=10, health_check_timeout_s=30,
-            graceful_shutdown_timeout_s=20, graceful_shutdown_wait_loop_s=2,
-        ).bind(
-            index_directory=args.index_dir
-        )
-        serve.run(deployment, route_prefix="/")
-    else:
-        print(f'Please provide valid --index_dir=/your/index/dir/')
+    deployment = VerbalVistaAssistantDeployment.options(
+        name="VerbalVistaServer",
+        num_replicas=args.num_replicas,
+        ray_actor_options={"num_cpus": args.num_cpus, "num_gpus": args.num_gpus},
+        max_concurrent_queries=args.max_concurrent_queries,
+        health_check_period_s=args.health_check_period_s,
+        health_check_timeout_s=args.health_check_timeout_s,
+        graceful_shutdown_timeout_s=args.graceful_shutdown_timeout_s,
+        graceful_shutdown_wait_loop_s=args.graceful_shutdown_wait_loop_s
+    ).bind(index_directory=args.index_dir)
+
+    serve.run(
+        deployment,
+        host=args.host,
+        port=args.port,
+        route_prefix=args.route_prefix,
+        name=args.server_name
+    )
 
 
 if __name__ == "__main__":
