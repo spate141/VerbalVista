@@ -150,7 +150,7 @@ def main():
         with st.sidebar:
             temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=2)
+            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=4)
             embedding_model_name = st.selectbox("Embedding Model Name", ["text-embedding-ada-002"], index=0)
             enable_tts = st.checkbox("Enable text-to-speech", value=False)
             tts_voice = "echo"

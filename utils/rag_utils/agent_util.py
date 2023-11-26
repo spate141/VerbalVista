@@ -2,21 +2,17 @@ import os
 import time
 import tiktoken
 from openai import OpenAI
+from langchain.callbacks.openai_info import get_openai_token_cost_for_model
 
-from utils import log_error
-from utils.openai_utils import get_openai_token_cost_for_model
 from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
 
 
 MAX_CONTEXT_LENGTHS = {
     'gpt-4': 8192,
+    'gpt-4-32k': 32768,
     'gpt-3.5-turbo': 4096,
     'gpt-3.5-turbo-16k': 16384,
-    'meta-llama/Llama-2-7b-chat-hf': 4096,
-    'meta-llama/Llama-2-13b-chat-hf': 4096,
-    'meta-llama/Llama-2-70b-chat-hf': 4096,
-    'codellama/CodeLlama-34b-Instruct-hf': 16384,
-    'mistralai/Mistral-7B-Instruct-v0.1': 65536
+    'gpt-4-1106-preview': 128000
 }
 
 SYS_PROMPT = "Answer the query using the context provided. Be succinct. " \
@@ -88,6 +84,7 @@ class QueryAgent:
                     llm_model, completion.usage.prompt_tokens, is_completion=False
                 )
                 completion_meta = {
+                    "llm_model": llm_model,
                     "completion_tokens": completion.usage.completion_tokens,
                     "prompt_tokens": completion.usage.prompt_tokens,
                     "total_tokens": completion.usage.total_tokens,
