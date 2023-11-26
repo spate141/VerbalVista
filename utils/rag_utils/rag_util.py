@@ -12,9 +12,10 @@ from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
+from utils.rag_utils import EMBEDDING_DIMENSIONS
 from utils.rag_utils.agent_util import QueryAgent
 from utils.rag_utils.indexing_util import StoreResults, FaissIndexActor
-from utils.rag_utils.embedding_util import EmbedChunks, EMBEDDING_DIMENSIONS
+from utils.rag_utils.embedding_util import EmbedChunks
 
 
 def get_available_indices(indices_dir: str = 'indices/'):

@@ -39,10 +39,6 @@ class Query(BaseModel):
 class Answer(BaseModel):
     query: str
     answer: str
-    llm_model: str
-    embedding_model: str
-    temperature: float
-    sources: List[str]
     completion_meta: Dict[str, Any]
 
 

@@ -60,18 +60,18 @@ def render_qa_page(
             with st.chat_message(message_item["role"], avatar=message_item["role"]):
                 st.markdown(message_item["content"])
                 if cost_item:
-                    st.info(cost_item)
+                    st.json(cost_item, expanded=False)
 
         # React to user input
-        prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)}'")
+        prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)[:50]}...'")
 
         if prompt:
             center_css = """
             <style>
             div[class*="StatusWidget"]{
                 position: fixed;
-                top: 50%;
-                left: 60%;
+                top: 91%;
+                left: 78%;
                 transform: translate(-50%, -50%);
                 width: 50%;
             }
@@ -88,10 +88,7 @@ def render_qa_page(
             with st.chat_message("user", avatar="human"):
                 st.markdown(prompt)
 
-            # Other Q/A questions
             log_info("QA")
-            # result = {"query": query, "answer": answer, "llm_model": llm_model, "embedding_model": embedding_model_name,
-            #           "temperature": temperature, "sources": sources}
             result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
@@ -99,8 +96,6 @@ def render_qa_page(
                 max_lexical_retrieval_chunks=1
             )
             answer = result['answer']
-            question = result['query']
-            sources = result['sources']  # List of strings
             answer_meta = result['completion_meta']
 
             # Display assistant response in chat message container
@@ -118,7 +113,7 @@ def render_qa_page(
 
                 # Display full message at the end with other stuff you want to show like `response_meta`.
                 message_placeholder.markdown(full_response)
-                st.info(answer_meta)
+                st.json(answer_meta, expanded=False)
                 if enable_tts:
                     st.audio(tx2sp_util.text_to_speech(text=full_response, voice=tts_voice).content)
 

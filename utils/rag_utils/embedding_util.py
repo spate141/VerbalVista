@@ -4,15 +4,6 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from utils import log_info, log_debug, log_error
 
 
-EMBEDDING_DIMENSIONS = {
-    'thenlper/gte-base': 768,
-    'thenlper/gte-large': 1024,
-    'BAAI/bge-large-en': 1024,
-    'text-embedding-ada-002': 1536,
-    'gte-large-fine-tuned': 1024
-}
-
-
 def get_embedding_model(embedding_model_name, model_kwargs=None, encode_kwargs=None):
     """
     Given the embedding_model_name; this will either use the OpenAI API or

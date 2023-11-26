@@ -31,7 +31,7 @@ class FaissIndexActor:
     def add_embeddings_and_metadata(self, embeddings, texts, sources):
         """
         Add embeddings to FAISS index and metadata to metadata dictionary.
-        :param embeddings: List of flot number list
+        :param embeddings: List[float numbers]
         :param texts: List of strings
         :param sources: List of strings
         :return

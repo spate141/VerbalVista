@@ -4,26 +4,9 @@ import tiktoken
 from openai import OpenAI
 from langchain.callbacks.openai_info import get_openai_token_cost_for_model
 
+from utils import log_error
+from utils.rag_utils import MAX_CONTEXT_LENGTHS, SYS_PROMPT
 from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
-
-
-MAX_CONTEXT_LENGTHS = {
-    'gpt-4': 8192,
-    'gpt-4-32k': 32768,
-    'gpt-3.5-turbo': 4096,
-    'gpt-3.5-turbo-16k': 16384,
-    'gpt-4-1106-preview': 128000
-}
-
-SYS_PROMPT = "Answer the query using the context provided. Be succinct. " \
-"Contexts are organized in a list of dictionaries [{'text': <context>}, {'text': <context>}, ...]. " \
-"Feel free to ignore any contexts in the list that don't seem relevant to the query. " \
-"If the question cannot be answered using the information provided answer with 'I don't know'."
-
-
-def get_num_tokens(text):
-    enc = tiktoken.get_encoding("cl100k_base")
-    return len(enc.encode(text))
 
 
 class QueryAgent:
@@ -60,9 +43,14 @@ class QueryAgent:
         else:
             return response.choices[-1].message.content
 
+    @staticmethod
+    def get_num_tokens(text):
+        enc = tiktoken.get_encoding("cl100k_base")
+        return len(enc.encode(text))
+
     def generate_response(
             self, llm_model, temperature=0.5, stream=False, system_content="", user_content="",
-            max_retries=1, retry_interval=60
+            max_retries=1, retry_interval=60, embedding_model_name="", sources=None
     ):
         """Generate response from an LLM."""
         retry_count = 0
@@ -85,17 +73,24 @@ class QueryAgent:
                 )
                 completion_meta = {
                     "llm_model": llm_model,
-                    "completion_tokens": completion.usage.completion_tokens,
-                    "prompt_tokens": completion.usage.prompt_tokens,
-                    "total_tokens": completion.usage.total_tokens,
-                    "total_cost": {
-                        "completion": _completion_cost, "prompt": _prompt_cost, "total": _completion_cost+_prompt_cost
-                    }
+                    "embedding_model": embedding_model_name,
+                    "temperature": temperature,
+                    "tokens": {
+                        "completion": completion.usage.completion_tokens,
+                        "prompt": completion.usage.prompt_tokens,
+                        "total": completion.usage.total_tokens,
+                    },
+                    "cost": {
+                        "completion": _completion_cost,
+                        "prompt": _prompt_cost,
+                        "total": _completion_cost+_prompt_cost
+                    },
+                    "sources": sources
                 }
                 return self.prepare_response(response=completion, stream=stream), completion_meta
 
             except Exception as e:
-                print(f"Exception: {e}")
+                log_error(f"Exception: {e}")
                 time.sleep(retry_interval)  # default is per-minute rate limits
                 retry_count += 1
         return ""
@@ -115,9 +110,7 @@ class QueryAgent:
 
         # Add lexical search results
         if self.lexical_index:
-            lexical_context = do_lexical_search(
-                self.lexical_index, query, self.metadata_dict, lexical_search_k
-            )
+            lexical_context = do_lexical_search(self.lexical_index, query, self.metadata_dict, lexical_search_k)
             # Insert after <lexical_search_k> worth of semantic results
             context_results[lexical_search_k:lexical_search_k] = lexical_context
 
@@ -130,20 +123,17 @@ class QueryAgent:
         sources = [item["source"] for item in context_results]
         user_content = f"query: {query}, context: {context}"
         max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
-        context_length = max_context_length - get_num_tokens(self.system_content)
+        context_length = max_context_length - self.get_num_tokens(self.system_content)
         answer, completion_meta = self.generate_response(
             llm_model=llm_model,
             temperature=temperature,
             stream=stream,
             system_content=self.system_content,
-            user_content=self.trim(user_content, context_length)
+            user_content=self.trim(user_content, context_length),
+            embedding_model_name=embedding_model_name,
+            sources=sources
         )
-
         # Result
-        result = {
-            "query": query, "answer": answer, "llm_model": llm_model,
-            "embedding_model": embedding_model_name, "temperature": temperature, "sources": sources,
-            "completion_meta": completion_meta
-        }
+        result = {"query": query, "answer": answer, "completion_meta": completion_meta}
         return result
 
