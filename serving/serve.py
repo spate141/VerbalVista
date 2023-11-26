@@ -2,6 +2,7 @@ import os
 import time
 import faiss
 import pickle
+import argparse
 import tiktoken
 import structlog
 import numpy as np
@@ -17,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🅛🅛🅜 + Your Data = 🩶",
-    version="1.1",
+    version="1.2",
 )
 
 MAX_CONTEXT_LENGTHS = {
@@ -152,9 +153,7 @@ def get_num_tokens(text):
 
 class QueryAgent:
 
-    def __init__(
-            self, system_content=SYS_PROMPT, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None
-    ):
+    def __init__(self, system_content=SYS_PROMPT, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -258,11 +257,11 @@ class QueryAgent:
         return result
 
 
-@serve.deployment(num_replicas=1, ray_actor_options={"num_cpus": 4, "num_gpus": 0})
+@serve.deployment()
 @serve.ingress(app)
-class RayAssistantDeployment:
+class VerbalVistaAssistantDeployment:
     """
-    Initialize Ray Assistant class with index_directory!
+    Initialize VerbalVista Ray Assistant class with index_directory!
     """
     def __init__(self, index_directory=None):
 
@@ -303,11 +302,35 @@ class RayAssistantDeployment:
         result = self.predict(query)
         return Answer.parse_obj(result)
 
+    def check_health(self):
+        if not self.query_agent.faiss_index:
+            raise RuntimeError("uh-oh, server is broken.")
 
-INDEX_DIR = "/Users/snehal/PycharmProjects/VerbalVista/data/indices/www-youtube-com-watch?v=gL6Vzt8FYS0"
-deployment = RayAssistantDeployment.bind(index_directory=INDEX_DIR)
-serve.run(deployment, route_prefix="/")
 
-# ray start --head
-# python serve.py
-# ray stop
+def main():
+    """
+    How to start and stop server?
+    >> ray start --head
+    >> python serve.py --index_dir=../data/indices/my_index/
+    >> ray stop
+    """
+    parser = argparse.ArgumentParser(description='Start VerbalVista Ray Server!')
+    parser.add_argument('--index_dir', type=str, help='Index directory.', default=None)
+    args = parser.parse_args()
+
+    # start the server
+    if args.index_dir:
+        deployment = VerbalVistaAssistantDeployment.options(
+            name="VerbalVistaServer", num_replicas=1, ray_actor_options={"num_cpus": 4, "num_gpus": 0},
+            max_concurrent_queries=100, health_check_period_s=10, health_check_timeout_s=30,
+            graceful_shutdown_timeout_s=20, graceful_shutdown_wait_loop_s=2,
+        ).bind(
+            index_directory=args.index_dir
+        )
+        serve.run(deployment, route_prefix="/")
+    else:
+        print(f'Please provide valid --index_dir=/your/index/dir/')
+
+
+if __name__ == "__main__":
+    main()

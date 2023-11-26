@@ -1,5 +1,5 @@
 name: "verbal-vista-application"
-cluster_env: verbal-vista-application
+proxy_location: EveryNode
 config:
   access:
     use_bearer_token: False
