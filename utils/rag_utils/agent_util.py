@@ -4,6 +4,7 @@ import tiktoken
 from openai import OpenAI
 
 from utils import log_error
+from utils.openai_utils import get_openai_token_cost_for_model
 from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
 
 
@@ -80,7 +81,21 @@ class QueryAgent:
                         {"role": "user", "content": user_content},
                     ],
                 )
-                return self.prepare_response(response=completion, stream=stream)
+                _completion_cost = get_openai_token_cost_for_model(
+                    llm_model, completion.usage.completion_tokens, is_completion=True
+                )
+                _prompt_cost = get_openai_token_cost_for_model(
+                    llm_model, completion.usage.prompt_tokens, is_completion=False
+                )
+                completion_meta = {
+                    "completion_tokens": completion.usage.completion_tokens,
+                    "prompt_tokens": completion.usage.prompt_tokens,
+                    "total_tokens": completion.usage.total_tokens,
+                    "total_cost": {
+                        "completion": _completion_cost, "prompt": _prompt_cost, "total": _completion_cost+_prompt_cost
+                    }
+                }
+                return self.prepare_response(response=completion, stream=stream), completion_meta
 
             except Exception as e:
                 print(f"Exception: {e}")
@@ -119,7 +134,7 @@ class QueryAgent:
         user_content = f"query: {query}, context: {context}"
         max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
         context_length = max_context_length - get_num_tokens(self.system_content)
-        answer = self.generate_response(
+        answer, completion_meta = self.generate_response(
             llm_model=llm_model,
             temperature=temperature,
             stream=stream,
@@ -131,6 +146,7 @@ class QueryAgent:
         result = {
             "query": query, "answer": answer, "llm_model": llm_model,
             "embedding_model": embedding_model_name, "temperature": temperature, "sources": sources,
+            "completion_meta": completion_meta
         }
         return result
 

@@ -101,8 +101,7 @@ def render_qa_page(
             answer = result['answer']
             question = result['query']
             sources = result['sources']  # List of strings
-
-            answer_meta = None
+            answer_meta = result['completion_meta']
 
             # Display assistant response in chat message container
             with st.chat_message("ai", avatar="ai"):
