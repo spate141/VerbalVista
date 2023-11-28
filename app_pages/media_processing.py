@@ -18,12 +18,12 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
         st.markdown(f"<h6>Data description: (optional)</h6>", unsafe_allow_html=True)
         document_desc = st.text_input("desc", placeholder="Enter data description", label_visibility="collapsed")
 
-        st.markdown(f"<h6>Process file:</h6>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader(
-            "Upload file:", type=supported_formats, accept_multiple_files=False,
+        st.markdown(f"<h6>Process files:</h6>", unsafe_allow_html=True)
+        uploaded_files = st.file_uploader(
+            "Upload file:", type=supported_formats, accept_multiple_files=True,
             label_visibility="collapsed"
         )
-
+        single_file_flag = st.checkbox("SAVE AS SINGLE FILE", value=False)
         st.markdown("<h6>Extract text from URL:</h6>", unsafe_allow_html=True)
         url = st.text_input("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
         url = None if len(url) == 0 else url
@@ -34,73 +34,85 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
 
         submitted = st.form_submit_button("Process", type="primary")
         if submitted:
-            full_document = ''
             msg = st.toast('Processing data...')
-            if uploaded_file is not None:
-                log_debug('Processing uploaded file!')
-                if uploaded_file.name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
-                    msg.toast(f'Processing audio/video data...')
-                    with st.spinner('Processing audio. Please wait.'):
-                        process_audio_bar = st.progress(0, text="Processing...")
-                        # Save the uploaded file to the specified directory
-                        tmp_audio_save_path = os.path.join(tmp_audio_dir, uploaded_file.name)
-                        log_debug(f"tmp_save_path: {tmp_audio_save_path}")
-                        with open(tmp_audio_save_path, "wb") as f:
-                            f.write(uploaded_file.getvalue())
-                        # Generate audio chunks
-                        audio_chunks_files, file_size_mb, file_duration_in_ms = audio_model.generate_audio_chunks(
-                            audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_audio_dir,
-                            process_bar=process_audio_bar
-                        )
-                        st.markdown(f"""
-                        #### Audio Meta:
-                        - Audio file size: {round(file_size_mb, 2)} MB
-                        - Audio file duration: {audio_model.convert_milliseconds(int(file_duration_in_ms))}
-                        """)
+            full_documents = []
+            if uploaded_files:
+                all_files = [{'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files]
+                log_debug(f'Processing {len(all_files)}')
 
-                    # Get transcript
-                    start = time.time()
-                    full_document = []
-                    with st.spinner('Transcribing audio. Please wait.'):
-                        transcribe_audio_bar = st.progress(0, text="Transcribing...")
-                        total_chunks = len(audio_chunks_files)
-                        pct_cmp = [i / total_chunks for i in range(1, total_chunks + 1)]
-                        for index, i in enumerate(audio_chunks_files):
-                            transcript = audio_model.transcribe_audio(i)
-                            full_document.append(transcript)
-                            transcribe_audio_bar.progress(
-                                pct_cmp[index - 1], f'Audio transcribed: {round(time.time() - start, 2)} sec'
+                for file_meta in all_files:
+                    file_name = file_meta['name']
+                    file = file_meta['file']
+                    full_document = ""
+
+                    if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
+                        msg.toast(f'Processing audio/video data...')
+                        with st.spinner('Processing audio. Please wait.'):
+                            process_audio_bar = st.progress(0, text="Processing...")
+                            # Save the uploaded file to the specified directory
+                            tmp_audio_save_path = os.path.join(tmp_audio_dir, file_name)
+                            log_debug(f"tmp_save_path: {tmp_audio_save_path}")
+                            with open(tmp_audio_save_path, "wb") as f:
+                                f.write(file.getvalue())
+                            # Generate audio chunks
+                            audio_chunks_files, file_size_mb, file_duration_in_ms = audio_model.generate_audio_chunks(
+                                audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_audio_dir,
+                                process_bar=process_audio_bar
                             )
-                        full_document = ' '.join(full_document)
+                            st.markdown(f"""
+                            #### Audio Meta:
+                            - Audio file size: {round(file_size_mb, 2)} MB
+                            - Audio file duration: {audio_model.convert_milliseconds(int(file_duration_in_ms))}
+                            """)
 
-                    # Remove tmp audio files
-                    log_debug(f"Removing tmp audio files")
-                    for file_name in os.listdir(tmp_audio_dir):
-                        file_path = os.path.join(tmp_audio_dir, file_name)
-                        if os.path.isfile(file_path):
-                            os.remove(file_path)
+                        # Get transcript for all chunks
+                        start = time.time()
+                        all_transcripts = []
+                        with st.spinner('Transcribing audio. Please wait.'):
+                            transcribe_audio_bar = st.progress(0, text="Transcribing...")
+                            total_chunks = len(audio_chunks_files)
+                            pct_cmp = [i / total_chunks for i in range(1, total_chunks + 1)]
+                            for index, i in enumerate(audio_chunks_files):
+                                transcript = audio_model.transcribe_audio(i)
+                                all_transcripts.append(transcript)
+                                transcribe_audio_bar.progress(
+                                    pct_cmp[index - 1], f'Audio transcribed: {round(time.time() - start, 2)} sec'
+                                )
 
-                elif uploaded_file.name.endswith(".pdf"):
-                    msg.toast(f'Processing PDF data...')
-                    with st.spinner('Processing pdf file. Please wait.'):
-                        full_document = parse_pdf(uploaded_file)
+                        # Remove tmp audio files
+                        log_debug(f"Removing tmp audio files")
+                        for file_name in os.listdir(tmp_audio_dir):
+                            file_path = os.path.join(tmp_audio_dir, file_name)
+                            if os.path.isfile(file_path):
+                                os.remove(file_path)
 
-                elif uploaded_file.name.endswith(".docx"):
-                    msg.toast(f'Processing DOCX data...')
-                    with st.spinner('Processing word file. Please wait.'):
-                        full_document = parse_docx(uploaded_file)
+                        # Create a single transcript from different chunks of audio
+                        full_document = ' '.join(all_transcripts)
 
-                elif uploaded_file.name.endswith(".txt"):
-                    msg.toast(f'Processing TXT data...')
-                    with st.spinner('Processing text file. Please wait.'):
-                        full_document = parse_txt(uploaded_file)
+                    elif file_name.endswith(".pdf"):
+                        msg.toast(f'Processing PDF data...')
+                        with st.spinner('Processing pdf file. Please wait.'):
+                            full_document = parse_pdf(file)
 
-                elif uploaded_file.name.endswith(".eml"):
-                    msg.toast(f'Processing EMAIL data...')
-                    with st.spinner('Processing email file. Please wait.'):
-                        full_document = parse_email(uploaded_file)
+                    elif file_name.endswith(".docx"):
+                        msg.toast(f'Processing DOCX data...')
+                        with st.spinner('Processing word file. Please wait.'):
+                            full_document = parse_docx(file)
 
-                uploaded_file_name = uploaded_file.name.replace('.', '_').replace(' ', '_')
+                    elif file_name.endswith(".txt"):
+                        msg.toast(f'Processing TXT data...')
+                        with st.spinner('Processing text file. Please wait.'):
+                            full_document = parse_txt(file)
+
+                    elif file_name.endswith(".eml"):
+                        msg.toast(f'Processing EMAIL data...')
+                        with st.spinner('Processing email file. Please wait.'):
+                            full_document = parse_email(file)
+
+                    full_documents.append({
+                        "file_name": file_name,
+                        "full_document": full_document,
+                    })
 
             elif url is not None:
                 if "reddit.com" in url:
@@ -111,14 +123,19 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 else:
                     log_debug('Processing URL!')
                     full_document = parse_url(url, msg)
-                uploaded_file_name = url[8:].replace("/", "-").replace('.', '-')
+
+                full_documents.append({
+                    "file_name": url[8:].replace("/", "-").replace('.', '-'),
+                    "full_document": full_document,
+                })
 
             elif text is not None:
                 msg.toast(f'Processing TEXT data...')
                 log_debug('Processing Text!')
-                full_document = text
-                uploaded_file_name = text[:20].replace("/", "-").replace('.', '-')
-
+                full_documents.append({
+                    "file_name": text[:20].replace("/", "-").replace('.', '-'),
+                    "full_document": text,
+                })
             else:
                 st.error("You have to either upload a file, URL or enter some text!")
                 return
@@ -132,9 +149,8 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 st.markdown("#### Document snippet:")
                 st.caption(full_document[:110] + '...')
                 tmp_document_save_path = write_data_to_file(
-                    uploaded_file_name=uploaded_file_name,
                     document_dir=document_dir,
-                    full_document=full_document,
-                    document_desc=document_desc
+                    full_documents=full_documents,
+                    single_file_flag=single_file_flag,
                 )
                 st.success(f"Document saved: {tmp_document_save_path}")

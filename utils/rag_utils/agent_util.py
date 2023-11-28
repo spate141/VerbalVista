@@ -22,15 +22,14 @@ class QueryAgent:
         # LLM
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.system_content = system_content
+        self.encoder = tiktoken.get_encoding("cl100k_base")
 
         # Vectorstore
         self.faiss_index = faiss_index
         self.metadata_dict = metadata_dict
 
-    @staticmethod
-    def trim(text, max_context_length):
-        enc = tiktoken.get_encoding("cl100k_base")
-        return enc.decode(enc.encode(text)[:max_context_length])
+    def trim(self, text, max_context_length):
+        return self.encoder.decode(self.encoder.encode(text)[:max_context_length])
 
     @staticmethod
     def response_stream(response):
@@ -43,10 +42,8 @@ class QueryAgent:
         else:
             return response.choices[-1].message.content
 
-    @staticmethod
-    def get_num_tokens(text):
-        enc = tiktoken.get_encoding("cl100k_base")
-        return len(enc.encode(text))
+    def get_num_tokens(self, text):
+        return len(self.encoder.encode(text))
 
     def generate_response(
             self, llm_model, temperature=0.5, stream=False, system_content="", user_content="",
@@ -83,7 +80,7 @@ class QueryAgent:
                     "cost": {
                         "completion": _completion_cost,
                         "prompt": _prompt_cost,
-                        "total": _completion_cost+_prompt_cost
+                        "total": _completion_cost + _prompt_cost
                     },
                     "sources": sources
                 }
@@ -93,7 +90,7 @@ class QueryAgent:
                 log_error(f"Exception: {e}")
                 time.sleep(retry_interval)  # default is per-minute rate limits
                 retry_count += 1
-        return ""
+        return None, None
 
     def __call__(
             self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5,
@@ -121,7 +118,7 @@ class QueryAgent:
         # Generate response
         context = [{"text": item["text"]} for item in context_results]
         sources = [item["source"] for item in context_results]
-        user_content = f"query: {query}, context: {context}"
+        user_content = f"query: {query}\n\ncontext: {context}\n\n"
         max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
         context_length = max_context_length - self.get_num_tokens(self.system_content)
         answer, completion_meta = self.generate_response(
