@@ -46,9 +46,9 @@ def render_manage_index_page(document_dir=None, indices_dir=None):
             with st.spinner(f'{mode_label} document. Please wait.'):
                 document_dirs = selected_documents_df[
                     selected_documents_df['Select Index']
-                ]['Document Name'].to_list()
+                ]['Directory Name'].to_list()
                 for doc_dir_to_index in document_dirs:
-                    file_name = os.path.splitext(os.path.basename(doc_dir_to_index))[0]
+                    file_name = os.path.basename(doc_dir_to_index)
                     if mode == 'Create':
                         index_data(
                             document_directory=doc_dir_to_index,

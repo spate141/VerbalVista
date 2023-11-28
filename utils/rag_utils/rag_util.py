@@ -36,6 +36,12 @@ def get_available_indices(indices_dir: str = 'indices/'):
     return df
 
 
+def count_files_in_dir(dir_path):
+    if not os.path.isdir(dir_path):
+        return 0
+    return len([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
+
+
 def get_available_documents(document_dir: str = 'documents/', indices_dir: str = 'indices/'):
     """
 
@@ -47,21 +53,22 @@ def get_available_documents(document_dir: str = 'documents/', indices_dir: str =
     documents_subdirs = next(os.walk(document_dir))[1]
     indices_subdirs = next(os.walk(indices_dir))[1]
     for doc_sub_dir in documents_subdirs:
-        document_path = os.path.join(document_dir, doc_sub_dir)
-        creation_date = time.ctime(os.stat(document_path).st_ctime)
+        subdir_path = os.path.join(document_dir, doc_sub_dir)
+        creation_date = time.ctime(os.stat(subdir_path).st_ctime)
+        total_files = count_files_in_dir(subdir_path)
         try:
-            doc_meta_data_path = glob.glob(f"{document_path}/*.meta.txt")[0]
+            doc_meta_data_path = glob.glob(f"{subdir_path}/*.meta.txt")[0]
             doc_meta_data = open(doc_meta_data_path, 'r').read()
             doc_meta_data = ' '.join(doc_meta_data.split())
         except IndexError:
             doc_meta_data = None
         if doc_sub_dir in indices_subdirs:
-            documents_data.append((False, '✅', doc_meta_data, document_path, creation_date))
+            documents_data.append((False, '✅', doc_meta_data, subdir_path, total_files, creation_date))
         else:
-            documents_data.append((False, '❓', doc_meta_data, document_path, creation_date))
+            documents_data.append((False, '❓', doc_meta_data, subdir_path, total_files, creation_date))
     df = pd.DataFrame(
         documents_data,
-        columns=['Select Index', 'Index Status', 'Document Meta', 'Document Name', 'Creation Date']
+        columns=['Select Index', 'Index Status', 'Document Meta', 'Directory Name', 'Total Files', 'Creation Date']
     )
     return df
 

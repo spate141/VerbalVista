@@ -24,14 +24,15 @@ def render_document_explore_page(document_dir=None, indices_dir=None, nlp=None, 
         if submitted:
             selected_docs_dir_paths = selected_documents_df[
                 selected_documents_df['Select Document']
-            ]['Document Name'].to_list()
+            ]['Directory Name'].to_list()
             data = []
             for selected_doc_dir_path in selected_docs_dir_paths:
-                filename = selected_doc_dir_path.split('/')[-1] + '.data.txt'
-                filepath = os.path.join(selected_doc_dir_path, filename)
-                with open(filepath, 'r') as f:
-                    text = f.read()
-                    data.append({"filename": filename, "text": text})
+                filenames = glob(f"{selected_doc_dir_path}/*.data.txt")
+                for filename in filenames:
+                    filename = os.path.basename(filename)
+                    filepath = os.path.join(selected_doc_dir_path, filename)
+                    with open(filepath, 'r') as f:
+                        data.append({"filename": filename, "text": f.read()})
 
             with st.expander("Text", expanded=False):
                 for doc in data:
