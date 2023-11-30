@@ -26,17 +26,32 @@ def write_data_to_file(
     if single_file_flag:
         full_directory_path = os.path.join(document_dir, directory_name)
         os.makedirs(full_directory_path, exist_ok=True)
-        file_name = directory_name + ".data.txt"
-        full_file_path = os.path.join(full_directory_path, file_name)
-        full_text = '\n\n\n'.join(
+        data_file_name = directory_name + ".data.txt"
+        meta_file_name = directory_name + ".meta.txt"
+        full_data_file_path = os.path.join(full_directory_path, data_file_name)
+        full_meta_file_path = os.path.join(full_directory_path, meta_file_name)
+        full_data_text = '\n\n\n'.join(
             f"""```\nFILE TITLE: {doc['file_name']}\nCONTENT: {doc['full_document']}\n```"""
             for doc in full_documents
         )
-        with open(full_file_path, 'w') as file:
-            file.write(full_text)
+        full_meta_text = full_documents[0]['doc_description']
+        with open(full_data_file_path, 'w') as file:
+            file.write(full_data_text)
+        with open(full_meta_file_path, 'w') as file:
+            file.write(full_meta_text)
     else:
         file_names = [doc['file_name'].replace(' ', "_") for doc in full_documents]
         full_texts = [doc['full_document'] for doc in full_documents]
+        full_meta_text = full_documents[0]['doc_description']
+
+        # save meta
+        meta_file_name = directory_name + ".meta.txt"
+        full_directory_path = os.path.join(document_dir, directory_name)
+        os.makedirs(full_directory_path, exist_ok=True)
+        full_meta_file_path = os.path.join(full_directory_path, meta_file_name)
+        with open(full_meta_file_path, 'w') as file:
+            file.write(full_meta_text)
+
         for file_name, full_text in zip(file_names, full_texts):
             file_name = f"{file_name[:15]}_{random_string_generator()}.data.txt"
             full_directory_path = os.path.join(document_dir, directory_name)

@@ -7,14 +7,15 @@ from utils.rag_utils.rag_util import get_available_indices, load_index_and_metad
 
 
 def render_qa_page(
-        temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
-        tx2sp_util=None, indices_dir=None, chat_history_dir=None, enable_tts=False, tts_voice=None
+        temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, max_semantic_retrieval_chunks=None,
+        max_lexical_retrieval_chunks=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None,
+        enable_tts=False, tts_voice=None
 ):
     """
     This function allow user to do conversation with the data.
     """
     st.header("Q & A", divider='red')
-    st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}")
+    st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}, max_semantic_retrieval_chunks: {max_semantic_retrieval_chunks}, max_lexical_retrieval_chunks: {max_lexical_retrieval_chunks}")
     with st.container():
         indices_df = get_available_indices(indices_dir=indices_dir)
         selected_index_path = st.selectbox(
@@ -92,8 +93,9 @@ def render_qa_page(
             result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
-                metadata_dict=agent_meta['metadata_dict'], reranker=None, max_semantic_retrieval_chunks=5,
-                max_lexical_retrieval_chunks=1
+                metadata_dict=agent_meta['metadata_dict'], reranker=None,
+                max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
+                max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
             )
             answer = result['answer']
             answer_meta = result['completion_meta']
@@ -127,4 +129,4 @@ def render_qa_page(
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
-            # st.rerun()
+            st.rerun()

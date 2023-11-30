@@ -112,6 +112,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                     full_documents.append({
                         "file_name": file_name,
                         "full_document": full_document,
+                        "doc_description": document_desc
                     })
 
             elif url is not None:
@@ -127,6 +128,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 full_documents.append({
                     "file_name": url[8:].replace("/", "-").replace('.', '-'),
                     "full_document": full_document,
+                    "doc_description": document_desc
                 })
 
             elif text is not None:
@@ -135,19 +137,20 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 full_documents.append({
                     "file_name": text[:20].replace("/", "-").replace('.', '-'),
                     "full_document": text,
+                    "doc_description": document_desc
                 })
             else:
                 st.error("You have to either upload a file, URL or enter some text!")
                 return
 
-            if len(full_document) == 0:
+            if len(full_documents) == 0:
                 st.error("No content available! Try something else.")
                 return
 
             else:
                 # Write document to a file
                 st.markdown("#### Document snippet:")
-                st.caption(full_document[:110] + '...')
+                # st.caption(full_document[:110] + '...')
                 tmp_document_save_path = write_data_to_file(
                     document_dir=document_dir,
                     full_documents=full_documents,
