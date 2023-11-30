@@ -2,7 +2,7 @@
   <img align="center" src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="40%" height="40%" />
 </p>
 
-![Static Badge](https://img.shields.io/badge/VerbalVista-1.3-blue)
+![Static Badge](https://img.shields.io/badge/VerbalVista-1.4-blue)
 
 ## Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
@@ -28,12 +28,12 @@ SERPER_API_KEY=
 ### Build docker image:
 ```cmd
 >> cd VerbalVista
->> docker build -t verbal_vista:1.3 .
+>> docker build -t verbal_vista:1.4 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 verbal_vista:1.3
+>> docker run -p 8501:8501 verbal_vista:1.4
 ```
 
 ## Streamlit APP

@@ -13,7 +13,7 @@ from utils.rag_utils.rag_util import load_index_and_metadata
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🅛🅛🅜 + Your Data = 🩶",
-    version="1.3",
+    version="1.4",
 )
 
 origins = ["*"]
