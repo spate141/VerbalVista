@@ -43,7 +43,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 for file_meta in all_files:
                     file_name = file_meta['name']
                     file = file_meta['file']
-                    full_document = ""
+                    extracted_text = ""
 
                     if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
                         msg.toast(f'Processing audio/video data...')
@@ -87,31 +87,31 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                                 os.remove(file_path)
 
                         # Create a single transcript from different chunks of audio
-                        full_document = ' '.join(all_transcripts)
+                        extracted_text = ' '.join(all_transcripts)
 
                     elif file_name.endswith(".pdf"):
                         msg.toast(f'Processing PDF data...')
                         with st.spinner('Processing pdf file. Please wait.'):
-                            full_document = parse_pdf(file)
+                            extracted_text = parse_pdf(file)
 
                     elif file_name.endswith(".docx"):
                         msg.toast(f'Processing DOCX data...')
                         with st.spinner('Processing word file. Please wait.'):
-                            full_document = parse_docx(file)
+                            extracted_text = parse_docx(file)
 
                     elif file_name.endswith(".txt"):
                         msg.toast(f'Processing TXT data...')
                         with st.spinner('Processing text file. Please wait.'):
-                            full_document = parse_txt(file)
+                            extracted_text = parse_txt(file)
 
                     elif file_name.endswith(".eml"):
                         msg.toast(f'Processing EMAIL data...')
                         with st.spinner('Processing email file. Please wait.'):
-                            full_document = parse_email(file)
+                            extracted_text = parse_email(file)
 
                     full_documents.append({
                         "file_name": file_name,
-                        "full_document": full_document,
+                        "extracted_text": extracted_text,
                         "doc_description": document_desc
                     })
 
@@ -119,15 +119,15 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 if "reddit.com" in url:
                     msg.toast(f'Processing Reddit post...')
                     log_debug('Processing Reddit post!')
-                    full_document = reddit_util.fetch_comments_from_url(url)
-                    full_document = ' '.join(full_document)
+                    extracted_text = reddit_util.fetch_comments_from_url(url)
+                    extracted_text = ' '.join(extracted_text)
                 else:
                     log_debug('Processing URL!')
-                    full_document = parse_url(url, msg)
+                    extracted_text = parse_url(url, msg)
 
                 full_documents.append({
                     "file_name": url[8:].replace("/", "-").replace('.', '-'),
-                    "full_document": full_document,
+                    "extracted_text": extracted_text,
                     "doc_description": document_desc
                 })
 
@@ -136,7 +136,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                 log_debug('Processing Text!')
                 full_documents.append({
                     "file_name": text[:20].replace("/", "-").replace('.', '-'),
-                    "full_document": text,
+                    "extracted_text": text,
                     "doc_description": document_desc
                 })
             else:

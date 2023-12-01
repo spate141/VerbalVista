@@ -39,7 +39,9 @@ def get_available_indices(indices_dir: str = 'indices/'):
 def count_files_in_dir(dir_path):
     if not os.path.isdir(dir_path):
         return 0
-    return len([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
+    return len([
+        f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f)) and f.endswith('.data.txt')
+    ])
 
 
 def get_available_documents(document_dir: str = 'documents/', indices_dir: str = 'indices/'):

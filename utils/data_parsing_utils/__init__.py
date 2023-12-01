@@ -23,6 +23,7 @@ def write_data_to_file(
     :return:
     """
     directory_name = '_+_'.join([doc['file_name'].replace(' ', "_")[:15] for doc in full_documents])
+    directory_name = f"{directory_name}_{random_string_generator()}"
     if single_file_flag:
         full_directory_path = os.path.join(document_dir, directory_name)
         os.makedirs(full_directory_path, exist_ok=True)
@@ -31,7 +32,7 @@ def write_data_to_file(
         full_data_file_path = os.path.join(full_directory_path, data_file_name)
         full_meta_file_path = os.path.join(full_directory_path, meta_file_name)
         full_data_text = '\n\n\n'.join(
-            f"""```\nFILE TITLE: {doc['file_name']}\nCONTENT: {doc['full_document']}\n```"""
+            f"""```\nFILE TITLE: {doc['file_name']}\nCONTENT: {doc['extracted_text']}\n```"""
             for doc in full_documents
         )
         full_meta_text = full_documents[0]['doc_description']
@@ -41,7 +42,7 @@ def write_data_to_file(
             file.write(full_meta_text)
     else:
         file_names = [doc['file_name'].replace(' ', "_") for doc in full_documents]
-        full_texts = [doc['full_document'] for doc in full_documents]
+        full_texts = [doc['extracted_text'] for doc in full_documents]
         full_meta_text = full_documents[0]['doc_description']
 
         # save meta
