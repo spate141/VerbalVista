@@ -6,7 +6,9 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 from utils import log_info
-from utils.data_parsing_utils import scrape_hn_comments, fetch_4chan_comments, scrape_youtube_video_transcript
+from utils.data_parsing_utils.hacker_news_scraper import scrape_hn_comments
+from utils.data_parsing_utils.four_chan_scraper import fetch_4chan_comments
+from utils.data_parsing_utils.youtube_scraper import scrape_youtube_video_transcript
 
 
 def is_youtube_url(url):
@@ -49,7 +51,7 @@ def get_webpage_text(url: str) -> str:
     return page_text
 
 
-def parse_url(url, msg):
+def process_url(url, msg):
     """
 
     :param url: URL

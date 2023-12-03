@@ -93,7 +93,7 @@ class OpenAIWisperUtil:
         :param process_bar:
         :return:
         """
-        start = time.time()
+        # start = time.time()
         audio_meta = self.load_audio_data(audio_filepath)
         audio = audio_meta['audio']
         file_size_mb = audio_meta['file_size_mb']
@@ -104,8 +104,8 @@ class OpenAIWisperUtil:
             file_duration_in_ms=file_duration_in_ms,
             max_audio_size=max_audio_size
         )
-        total_chunks = len(file_chunks_durations_ms)
-        pct_cmp = [i / total_chunks for i in range(1, total_chunks + 1)]
+        # total_chunks = len(file_chunks_durations_ms)
+        # pct_cmp = [i / total_chunks for i in range(1, total_chunks + 1)]
         audio_chunks_files = []
         for index, chunk_duration_ms in enumerate(file_chunks_durations_ms, 1):
             output_file = self.create_a_file(tmp_dir, f"tmp_audio_chunk_{index}.mp3")
@@ -114,7 +114,7 @@ class OpenAIWisperUtil:
             audio_chunk.export(output_file, format="mp3")
             audio = audio[chunk_duration_ms:]
             audio_chunks_files.append(output_file)
-            process_bar.progress(pct_cmp[index - 1], f'Audio processed: {round(time.time() - start, 2)} sec')
+            # process_bar.progress(pct_cmp[index - 1], f'Audio processed: {round(time.time() - start, 2)} sec')
         return audio_chunks_files, file_size_mb, file_duration_in_ms
 
     def transcribe_audio(self, audio_filepath: str = None, model: str = "whisper-1"):

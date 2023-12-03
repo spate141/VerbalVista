@@ -5,7 +5,7 @@ from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
 
 from utils import log_info, log_debug, log_error
-from utils.data_parsing_utils import RedditSubmissionCommentsFetcher
+from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil
 
 
@@ -49,7 +49,7 @@ class VerbalVista:
         Media input and processing page.
         """
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, audio_model=self.openai_wisper_util,
+            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, openai_wisper_util=self.openai_wisper_util,
             reddit_util=self.reddit_util
         )
 

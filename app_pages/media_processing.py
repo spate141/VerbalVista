@@ -2,12 +2,12 @@ import os
 import time
 import streamlit as st
 from utils import log_info, log_debug, log_error
-from utils.data_parsing_utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email
+from utils.data_parsing_utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, process_audio_files
 from utils.data_parsing_utils import write_data_to_file
-from utils.data_parsing_utils.url_parser import parse_url
+from utils.data_parsing_utils.url_parser import process_url
 
 
-def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_model=None, reddit_util=None):
+def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_wisper_util=None, reddit_util=None):
     """
     This function will extract plain text from variety of media including video, audio, pdf and lots more.
     """
@@ -36,6 +36,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
         if submitted:
             msg = st.toast('Processing data...')
             full_documents = []
+
             if uploaded_files:
                 all_files = [{'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files]
                 log_debug(f'Processing {len(all_files)}')
@@ -47,47 +48,10 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
 
                     if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
                         msg.toast(f'Processing audio/video data...')
-                        with st.spinner('Processing audio. Please wait.'):
-                            process_audio_bar = st.progress(0, text="Processing...")
-                            # Save the uploaded file to the specified directory
-                            tmp_audio_save_path = os.path.join(tmp_audio_dir, file_name)
-                            log_debug(f"tmp_save_path: {tmp_audio_save_path}")
-                            with open(tmp_audio_save_path, "wb") as f:
-                                f.write(file.getvalue())
-                            # Generate audio chunks
-                            audio_chunks_files, file_size_mb, file_duration_in_ms = audio_model.generate_audio_chunks(
-                                audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_audio_dir,
-                                process_bar=process_audio_bar
-                            )
-                            st.markdown(f"""
-                            #### Audio Meta:
-                            - Audio file size: {round(file_size_mb, 2)} MB
-                            - Audio file duration: {audio_model.convert_milliseconds(int(file_duration_in_ms))}
-                            """)
-
-                        # Get transcript for all chunks
-                        start = time.time()
-                        all_transcripts = []
                         with st.spinner('Transcribing audio. Please wait.'):
-                            transcribe_audio_bar = st.progress(0, text="Transcribing...")
-                            total_chunks = len(audio_chunks_files)
-                            pct_cmp = [i / total_chunks for i in range(1, total_chunks + 1)]
-                            for index, i in enumerate(audio_chunks_files):
-                                transcript = audio_model.transcribe_audio(i)
-                                all_transcripts.append(transcript)
-                                transcribe_audio_bar.progress(
-                                    pct_cmp[index - 1], f'Audio transcribed: {round(time.time() - start, 2)} sec'
-                                )
-
-                        # Remove tmp audio files
-                        log_debug(f"Removing tmp audio files")
-                        for file_name in os.listdir(tmp_audio_dir):
-                            file_path = os.path.join(tmp_audio_dir, file_name)
-                            if os.path.isfile(file_path):
-                                os.remove(file_path)
-
-                        # Create a single transcript from different chunks of audio
-                        extracted_text = ' '.join(all_transcripts)
+                            extracted_text = process_audio_files(
+                                tmp_audio_dir=tmp_audio_dir, file_meta=file_meta, openai_wisper_util=openai_wisper_util
+                            )
 
                     elif file_name.endswith(".pdf"):
                         msg.toast(f'Processing PDF data...')
@@ -123,7 +87,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                     extracted_text = ' '.join(extracted_text)
                 else:
                     log_debug('Processing URL!')
-                    extracted_text = parse_url(url, msg)
+                    extracted_text = process_url(url, msg)
 
                 full_documents.append({
                     "file_name": url[8:].replace("/", "-").replace('.', '-'),
@@ -139,6 +103,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, audio_mo
                     "extracted_text": text,
                     "doc_description": document_desc
                 })
+
             else:
                 st.error("You have to either upload a file, URL or enter some text!")
                 return

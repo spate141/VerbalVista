@@ -1,10 +1,12 @@
 import re
+import os
+import time
 import email
 import docx2txt
 from io import BytesIO
 from pypdf import PdfReader
-
-from utils import log_error
+from typing import Dict, Any
+from utils import log_error, log_debug
 
 
 def parse_docx(file: BytesIO) -> str:
@@ -88,4 +90,59 @@ def parse_email(file: BytesIO):
         text = None
 
     return text
+
+
+def process_document_files(files):
+    """
+    Given a list of different types of documents; extract the text from it
+    and return processed data with metadata.
+    """
+    pass
+
+
+def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None):
+    """
+    Process each audio file, do speech-to-text and extract transcript for each audio
+    and return processed data with metadata.
+    """
+
+    file_name = file_meta['name']
+    file = file_meta['file']
+
+    # Save the uploaded file to the specified directory
+    tmp_audio_save_path = os.path.join(tmp_audio_dir, file_name)
+    log_debug(f"tmp_save_path: {tmp_audio_save_path}")
+    with open(tmp_audio_save_path, "wb") as f:
+        f.write(file.getvalue())
+
+    # Generate audio chunks
+    audio_chunks_files, file_size_mb, file_duration_in_ms = openai_wisper_util.generate_audio_chunks(
+        audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_audio_dir
+    )
+
+    # Get transcript for all chunks
+    all_transcripts = []
+    for index, i in enumerate(audio_chunks_files):
+        transcript = openai_wisper_util.transcribe_audio(i)
+        all_transcripts.append(transcript)
+
+    # Create a single transcript from different chunks of audio
+    full_transcript = ' '.join(all_transcripts)
+
+    # Remove tmp audio files
+    log_debug(f"Removing tmp audio files")
+    for file_name in os.listdir(tmp_audio_dir):
+        file_path = os.path.join(tmp_audio_dir, file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    return full_transcript
+
+
+def process_image_files(files):
+    """
+    Process each image files, do ComputerVision and extract an embedding for each image
+    and return processed data with metadata
+    """
+    pass
 
