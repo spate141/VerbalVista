@@ -1,8 +1,6 @@
-import os
-import time
 import streamlit as st
 from utils import log_info, log_debug, log_error
-from utils.data_parsing_utils.document_parser import parse_docx, parse_pdf, parse_txt, parse_email, process_audio_files
+from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 from utils.data_parsing_utils import write_data_to_file
 from utils.data_parsing_utils.url_parser import process_url
 
@@ -38,12 +36,13 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
             full_documents = []
 
             if uploaded_files:
-                all_files = [{'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files]
+                all_files = [{
+                    'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files
+                ]
                 log_debug(f'Processing {len(all_files)}')
 
                 for file_meta in all_files:
                     file_name = file_meta['name']
-                    file = file_meta['file']
                     extracted_text = ""
 
                     if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
@@ -53,25 +52,10 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                                 tmp_audio_dir=tmp_audio_dir, file_meta=file_meta, openai_wisper_util=openai_wisper_util
                             )
 
-                    elif file_name.endswith(".pdf"):
-                        msg.toast(f'Processing PDF data...')
-                        with st.spinner('Processing pdf file. Please wait.'):
-                            extracted_text = parse_pdf(file)
-
-                    elif file_name.endswith(".docx"):
-                        msg.toast(f'Processing DOCX data...')
-                        with st.spinner('Processing word file. Please wait.'):
-                            extracted_text = parse_docx(file)
-
-                    elif file_name.endswith(".txt"):
-                        msg.toast(f'Processing TXT data...')
-                        with st.spinner('Processing text file. Please wait.'):
-                            extracted_text = parse_txt(file)
-
-                    elif file_name.endswith(".eml"):
-                        msg.toast(f'Processing EMAIL data...')
-                        with st.spinner('Processing email file. Please wait.'):
-                            extracted_text = parse_email(file)
+                    elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
+                        msg.toast(f'Processing file data...')
+                        with st.spinner('Processing data file. Please wait.'):
+                            extracted_text = process_document_files(file_meta=file_meta)
 
                     full_documents.append({
                         "file_name": file_name,

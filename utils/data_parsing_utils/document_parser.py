@@ -1,6 +1,5 @@
 import re
 import os
-import time
 import email
 import docx2txt
 from io import BytesIO
@@ -92,15 +91,33 @@ def parse_email(file: BytesIO):
     return text
 
 
-def process_document_files(files):
+def process_document_files(file_meta: Dict[str, Any] = None) -> str:
     """
     Given a list of different types of documents; extract the text from it
-    and return processed data with metadata.
+    and return extracted text.
     """
-    pass
+    file_name = file_meta['name']
+    file = file_meta['file']
+    extracted_text = ""
+    if file_name.endswith(".pdf"):
+        log_debug('Processing pdf file. Please wait.')
+        extracted_text = parse_pdf(file)
+
+    elif file_name.endswith(".docx"):
+        log_debug('Processing word file. Please wait.')
+        extracted_text = parse_docx(file)
+
+    elif file_name.endswith(".txt"):
+        log_debug('Processing text file. Please wait.')
+        extracted_text = parse_txt(file)
+
+    elif file_name.endswith(".eml"):
+        log_debug('Processing email file. Please wait.')
+        extracted_text = parse_email(file)
+    return extracted_text
 
 
-def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None):
+def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None) -> str:
     """
     Process each audio file, do speech-to-text and extract transcript for each audio
     and return processed data with metadata.
