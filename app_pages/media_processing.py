@@ -39,7 +39,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                 all_files = [{
                     'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files
                 ]
-                log_debug(f'Processing {len(all_files)}')
+                log_debug(f'Processing {len(all_files)} files.')
 
                 for file_meta in all_files:
                     file_name = file_meta['name']
@@ -63,7 +63,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                         "doc_description": document_desc
                     })
 
-            elif url is not None:
+            if url is not None:
                 if "reddit.com" in url:
                     msg.toast(f'Processing Reddit post...')
                     log_debug('Processing Reddit post!')
@@ -79,7 +79,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     "doc_description": document_desc
                 })
 
-            elif text is not None:
+            if text is not None:
                 msg.toast(f'Processing TEXT data...')
                 log_debug('Processing Text!')
                 full_documents.append({
@@ -99,7 +99,6 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
             else:
                 # Write document to a file
                 st.markdown("#### Document snippet:")
-                # st.caption(full_document[:110] + '...')
                 tmp_document_save_path = write_data_to_file(
                     document_dir=document_dir,
                     full_documents=full_documents,
