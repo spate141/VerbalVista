@@ -1,15 +1,20 @@
+import os
 import time
 import logging
 import argparse
 from ray import serve
+from io import BytesIO
 from fastapi import FastAPI
 from pydantic import BaseModel
-from fastapi import UploadFile, File, Depends
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
+from dotenv import load_dotenv; load_dotenv()
+from fastapi import UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 
+from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.agent_util import QueryAgent
-from utils.rag_utils.rag_util import load_index_and_metadata
+from utils.data_parsing_utils import write_data_to_file
+from utils.rag_utils.rag_util import load_index_and_metadata, index_data
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 
 app = FastAPI(
@@ -49,6 +54,24 @@ class ProcessDataInput(BaseModel):
     chunk_overlap: Optional[int] = 30
     embedding_model: Optional[str] = "text-embedding-ada-002"
     save_to_one_file: Optional[bool] = False
+    filemeta: Optional[str] = ""
+
+    @classmethod
+    def as_form(
+        cls,
+        chunk_size: int = Form(600),
+        chunk_overlap: int = Form(30),
+        embedding_model: str = Form("text-embedding-ada-002"),
+        save_to_one_file: bool = Form(False),
+        filemeta: str = Form("")
+    ):
+        return cls(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            embedding_model=embedding_model,
+            save_to_one_file=save_to_one_file,
+            filemeta=filemeta
+        )
 
 
 class ProcessDataOutput(BaseModel):
@@ -72,6 +95,10 @@ class VerbalVistaAssistantDeployment:
             to load the required components.
         :param: logging_level: Logging level
         """
+        self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.tmp_audio_dir = 'data/tmp_audio_dir/'
+        self.document_dir = 'data/documents/'
+        self.indices_dir = 'data/indices/'
         self.logger = logging.getLogger("ray.serve")
         self.logger.setLevel(logging_level)
 
@@ -135,8 +162,7 @@ class VerbalVistaAssistantDeployment:
         # Parse the prediction result into a QuestionOutput object and return it.
         return QuestionOutput.parse_obj(result)
 
-    @staticmethod
-    async def index_files(file: UploadFile = File(...), data: ProcessDataInput = Depends()) -> Dict[str, Any]:
+    async def index_files(self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)) -> Dict[str, Any]:
         """
         Asynchronously indexes files and returns metadata along with the index name.
 
@@ -156,10 +182,51 @@ class VerbalVistaAssistantDeployment:
 
         # Read the file content asynchronously.
         file_content = await file.read()
+        file_name = file.filename
+        file_meta = {
+            'name': file_name, 'type': file.content_type,
+            'size': len(file_content), 'file': BytesIO(file_content)
+        }
+
+        # Extract text from input file
+        full_documents = []
+        extracted_text = ""
+        if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
+            extracted_text = process_audio_files(
+                tmp_audio_dir=self.tmp_audio_dir, file_meta=file_meta, openai_wisper_util=self.openai_wisper_util
+            )
+        elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
+            extracted_text = process_document_files(file_meta=file_meta)
+        full_documents.append({
+            "file_name": file_name,
+            "extracted_text": extracted_text,
+            "doc_description": data.filemeta
+        })
+        self.logger.info(f"Text Extracted: {file_name}")
+
+        # Write extracted text to tmp file
+        tmp_document_save_path = write_data_to_file(
+            document_dir=self.document_dir,
+            full_documents=full_documents,
+            single_file_flag=data.save_to_one_file,
+        )
+        self.logger.info(f"Extracted text saved: {tmp_document_save_path}")
+
+        # FAISS index created from extracted text
+        doc_dir = os.path.join(self.document_dir, tmp_document_save_path)
+        index_dir = os.path.join(self.indices_dir, tmp_document_save_path)
+        index_data(
+            document_directory=doc_dir,
+            index_directory=index_dir,
+            chunk_size=data.chunk_size,
+            embedding_model=data.embedding_model
+        )
+        self.logger.info(f"Index created: {index_dir}")
 
         # Construct a metadata dictionary from the processing data.
+        _ = file_meta.pop("file")
         meta = {
-            "filename": file.filename,
+            "file_meta": file_meta,
             "chunk_size": data.chunk_size,
             "chunk_overlap": data.chunk_overlap,
             "embedding_model": data.embedding_model,
@@ -167,11 +234,11 @@ class VerbalVistaAssistantDeployment:
         }
 
         # Return a dictionary with the decoded file content as 'index_name' and the metadata.
-        return {"index_name": file_content.decode("utf-8"), "meta": meta}
+        return {"index_name": index_dir, "meta": meta}
 
     @app.post("/process/documents")
     async def process_documents(
-            self, file: UploadFile = File(...), data: ProcessDataInput = Depends()
+            self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)
     ) -> ProcessDataOutput:
         """
         Handle POST request to '/process/documents' endpoint.

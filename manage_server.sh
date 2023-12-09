@@ -6,13 +6,13 @@ usage() {
     echo ""
     echo "Commands:"
     echo "  start_ray               Start the Ray server."
-    echo "  start_server [dir]      Start the application server with the specified index directory."
+    echo "  start_server [dir] [-v|-vv|-vvv]      Start the application server with the specified index directory and optional verbosity."
     echo "  stop_server             Stop the application server."
     echo "  stop_ray                Stop the Ray server."
     echo ""
     echo "Examples:"
     echo "  bash manage_server.sh start_ray"
-    echo "  bash manage_server.sh start_server data/indices/stories"
+    echo "  bash manage_server.sh start_server data/indices/stories -vv"
     echo "  bash manage_server.sh stop_server"
     echo "  bash manage_server.sh stop_ray"
     echo ""
@@ -25,16 +25,19 @@ start_ray() {
     ray start --head
 }
 
-# Function to start the application server with index directory
+# Function to start the application server with index directory and optional verbosity
 start_server() {
-    if [ "$#" -ne 1 ]; then
+    if [ "$#" -lt 1 ]; then
         echo "Missing index directory for starting server."
         usage
         exit 1
     fi
 
-    echo "Starting application server with index directory $1..."
-    python serve.py --index_dir="$1"
+    index_dir=$1
+    shift # Remove the index directory from the arguments list
+
+    echo "Starting application server with index directory $index_dir and verbosity $@..."
+    python serve.py --index_dir="$index_dir" "$@"
 }
 
 # Function to stop the application server
@@ -55,7 +58,8 @@ case $1 in
         start_ray
         ;;
     start_server)
-        start_server $2
+        shift # Remove 'start_server' from the arguments list
+        start_server "$@"
         ;;
     stop_server)
         stop_server
