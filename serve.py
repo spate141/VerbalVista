@@ -1,6 +1,6 @@
+import time
 import logging
 import argparse
-import structlog
 from ray import serve
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -63,29 +63,17 @@ class VerbalVistaAssistantDeployment:
     Initialize VerbalVista Ray Assistant class with index_directory!
     """
 
-    def __init__(self, index_directory=None):
+    def __init__(self, index_directory=None, logging_level=None):
         """
         Initialize the search agent with necessary indices and metadata.
 
-        This constructor sets up the logging configuration, loads the FAISS index,
-        lexical index, and metadata required for the search operations. It also
-        initializes the query agent that will be used to handle search queries.
-
-        Parameters:
-        - index_directory (str, optional): The directory path where the indices and
-          metadata are stored. If not provided, a default path or method will be used
-          to load the required components.
+        :param: index_directory (str, optional): The directory path where the indices and
+            metadata are stored. If not provided, a default path or method will be used
+            to load the required components.
+        :param: logging_level: Logging level
         """
-        # setup logging
-        structlog.configure(
-            processors=[
-                structlog.processors.TimeStamper(fmt="iso"),
-                structlog.processors.JSONRenderer(),
-            ],
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
-        )
-        self.logger = structlog.get_logger()
+        self.logger = logging.getLogger("ray.serve")
+        self.logger.setLevel(logging_level)
 
         # get faiss index, lexical index and metadata for given index directory
         index_meta = load_index_and_metadata(index_directory=index_directory)
@@ -106,16 +94,13 @@ class VerbalVistaAssistantDeployment:
         retrieve relevant information. It supports both semantic and lexical search
         mechanisms.
 
-        Parameters:
-        - query (QuestionInput): An object containing the query parameters such as
+        :param: query (QuestionInput): An object containing the query parameters such as
           the actual query string, temperature setting for response variability,
           embedding model name for semantic search, LLM model name, and the number
           of chunks for semantic and lexical retrieval.
-        - stream (bool, optional): A flag indicating whether to stream results
+        :param: stream (bool, optional): A flag indicating whether to stream results
           continuously or not. Defaults to False.
-
-        Returns:
-        - Dict[str, Any]: The result from the query agent, typically including
+        :return: Dict[str, Any]: The result from the query agent, typically including
           information relevant to the input query.
         """
         result = self.query_agent(
@@ -137,16 +122,15 @@ class VerbalVistaAssistantDeployment:
         This method receives a query in the form of a QuestionInput object, processes it to predict an answer,
         and returns a QuestionOutput object containing the prediction result.
 
-        Parameters:
-        - self: Refers to the instance of the class where this method is defined.
-        - query: A QuestionInput object containing the query data.
-
-        Returns:
-        - QuestionOutput: An instance containing the predicted answer, parsed from the result object.
+        :param: self: Refers to the instance of the class where this method is defined.
+        :param: query: A QuestionInput object containing the query data.
+        :return: QuestionOutput: An instance containing the predicted answer, parsed from the result object.
         """
-
         # Process the query to predict the answer.
+        start = time.time()
         result = self.predict(query)
+        end = time.time()
+        self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
 
         # Parse the prediction result into a QuestionOutput object and return it.
         return QuestionOutput.parse_obj(result)
@@ -195,20 +179,17 @@ class VerbalVistaAssistantDeployment:
         This asynchronous function processes documents by indexing them and logging the operation.
         It accepts a file and additional processing data, then returns processed data output.
 
-        Parameters:
-        - self: Refers to the instance of the class where this method is defined.
-        - file: An UploadedFile object that contains the file to be processed.
-        - data: A ProcessDataInput object containing additional data for processing.
-
-        Returns:
-        - ProcessDataOutput: An instance containing the processed result, parsed from the result object.
+        :param: self: Refers to the instance of the class where this method is defined.
+        :param: file: An UploadedFile object that contains the file to be processed.
+        :param: data: A ProcessDataInput object containing additional data for processing.
+        :return: ProcessDataOutput: An instance containing the processed result, parsed from the result object.
         """
-
         # Index the provided file with the associated data asynchronously.
+        start = time.time()
         result = await self.index_files(file, data)
+        end = time.time()
 
-        # Log the completion of the document processing with metadata information.
-        self.logger.info("finished /process/documents", llm=result["meta"])
+        self.logger.info(f"Finished /process/documents in {round((end - start) * 1000, 2)} ms")
 
         # Parse the result into a ProcessDataOutput object and return it.
         return ProcessDataOutput.parse_obj(result)
@@ -235,8 +216,17 @@ def main():
     parser.add_argument('--port', type=int, default=8000, help='Port number.')
     parser.add_argument('--route_prefix', type=str, default='/', help='Route prefix.')
     parser.add_argument('--server_name', type=str, default='verbal_vista', help='Server name.')
+    parser.add_argument('-v', '--verbose', action='count', default=0, help='Increase verbosity (e.g., -v, -vv)')
 
     args = parser.parse_args()
+
+    # Set logging level based on verbosity count
+    if args.verbose >= 2:
+        logging_level = logging.DEBUG
+    elif args.verbose == 1:
+        logging_level = logging.INFO
+    else:
+        logging_level = logging.WARNING
 
     deployment = VerbalVistaAssistantDeployment.options(
         name="VerbalVistaServer",
@@ -247,7 +237,7 @@ def main():
         health_check_timeout_s=args.health_check_timeout_s,
         graceful_shutdown_timeout_s=args.graceful_shutdown_timeout_s,
         graceful_shutdown_wait_loop_s=args.graceful_shutdown_wait_loop_s
-    ).bind(index_directory=args.index_dir)
+    ).bind(index_directory=args.index_dir, logging_level=logging_level)
 
     serve.run(
         deployment,
