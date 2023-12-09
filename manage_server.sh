@@ -6,7 +6,7 @@ usage() {
     echo ""
     echo "Commands:"
     echo "  start_ray               Start the Ray server."
-    echo "  start_server [dir] [-v|-vv|-vvv]      Start the application server with the specified index directory and optional verbosity."
+    echo "  start_server [-v|-vv|-vvv]      Start the application server with optional verbosity."
     echo "  stop_server             Stop the application server."
     echo "  stop_ray                Stop the Ray server."
     echo ""
@@ -25,19 +25,10 @@ start_ray() {
     ray start --head
 }
 
-# Function to start the application server with index directory and optional verbosity
+# Function to start the application server with optional verbosity
 start_server() {
-    if [ "$#" -lt 1 ]; then
-        echo "Missing index directory for starting server."
-        usage
-        exit 1
-    fi
-
-    index_dir=$1
-    shift # Remove the index directory from the arguments list
-
-    echo "Starting application server with index directory $index_dir and verbosity $@..."
-    python server.py --index_dir="$index_dir" "$@"
+    echo "Starting application server with verbosity $@..."
+    python server.py "$@"
 }
 
 # Function to stop the application server

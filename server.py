@@ -36,6 +36,7 @@ app.add_middleware(
 
 class QuestionInput(BaseModel):
     query: str
+    index_name: str
     llm: Optional[str] = "gpt-3.5-turbo"
     embedding_model: Optional[str] = "text-embedding-ada-002"
     temperature: Optional[float] = 0.5
@@ -85,14 +86,9 @@ class VerbalVistaAssistantDeployment:
     """
     Initialize VerbalVista Ray Assistant class with index_directory!
     """
-
-    def __init__(self, index_directory=None, logging_level=None):
+    def __init__(self, logging_level=None):
         """
         Initialize the search agent with necessary indices and metadata.
-
-        :param: index_directory (str, optional): The directory path where the indices and
-            metadata are stored. If not provided, a default path or method will be used
-            to load the required components.
         :param: logging_level: Logging level
         """
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
@@ -101,17 +97,6 @@ class VerbalVistaAssistantDeployment:
         self.indices_dir = 'data/indices/'
         self.logger = logging.getLogger("ray.serve")
         self.logger.setLevel(logging_level)
-
-        # get faiss index, lexical index and metadata for given index directory
-        index_meta = load_index_and_metadata(index_directory=index_directory)
-        faiss_index = index_meta["faiss_index"]
-        lexical_index = index_meta["lexical_index"]
-        metadata_dict = index_meta["metadata_dict"]
-
-        # get query agent
-        self.query_agent = QueryAgent(
-            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=None
-        )
 
     def predict(self, query: QuestionInput, stream: bool = False) -> Dict[str, Any]:
         """
@@ -130,7 +115,27 @@ class VerbalVistaAssistantDeployment:
         :return: Dict[str, Any]: The result from the query agent, typically including
           information relevant to the input query.
         """
-        result = self.query_agent(
+        # Get faiss index, lexical index and metadata for given index directory
+        start = time.time()
+        index_meta = load_index_and_metadata(
+            index_directory=os.path.join(self.indices_dir, query.index_name)
+        )
+        faiss_index = index_meta["faiss_index"]
+        metadata_dict = index_meta["metadata_dict"]
+        lexical_index = index_meta["lexical_index"]
+
+        # Get query agent
+        query_agent = QueryAgent(
+            faiss_index=faiss_index,
+            metadata_dict=metadata_dict,
+            lexical_index=lexical_index,
+            reranker=None
+        )
+        end = time.time()
+        self.logger.info(f"Query Agent initiated in {round((end - start) * 1000, 2)} ms")
+
+        # Generate prediction response
+        result = query_agent(
             query=query.query,
             temperature=query.temperature,
             embedding_model_name=query.embedding_model,
@@ -242,7 +247,7 @@ class VerbalVistaAssistantDeployment:
         }
 
         # Return a dictionary with the decoded file content as 'index_name' and the metadata.
-        return {"index_name": index_dir, "meta": meta}
+        return {"index_name": os.path.basename(index_dir), "meta": meta}
 
     @app.post("/process/documents")
     async def process_documents(
@@ -278,7 +283,6 @@ def main():
     >> ray stop
     """
     parser = argparse.ArgumentParser(description='Start VerbalVista Ray Server!')
-    parser.add_argument('--index_dir', type=str, required=True, help='Index directory.')
     parser.add_argument('--num_replicas', type=int, default=1, help='Number of replicas.')
     parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs.')
     parser.add_argument('--num_gpus', type=int, default=0, help='Number of GPUs.')
@@ -312,7 +316,7 @@ def main():
         health_check_timeout_s=args.health_check_timeout_s,
         graceful_shutdown_timeout_s=args.graceful_shutdown_timeout_s,
         graceful_shutdown_wait_loop_s=args.graceful_shutdown_wait_loop_s
-    ).bind(index_directory=args.index_dir, logging_level=logging_level)
+    ).bind(logging_level=logging_level)
 
     serve.run(
         deployment,
