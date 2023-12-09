@@ -20,7 +20,7 @@ from utils.data_parsing_utils.document_parser import process_audio_files, proces
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🅛🅛🅜 + Your Data = 🩶",
-    version="1.4",
+    version="1.5",
 )
 
 origins = ["*"]
