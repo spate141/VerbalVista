@@ -162,7 +162,9 @@ class VerbalVistaAssistantDeployment:
         # Parse the prediction result into a QuestionOutput object and return it.
         return QuestionOutput.parse_obj(result)
 
-    async def index_files(self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)) -> Dict[str, Any]:
+    async def index_files(
+            self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)
+    ) -> Dict[str, Any]:
         """
         Asynchronously indexes files and returns metadata along with the index name.
 
@@ -181,6 +183,7 @@ class VerbalVistaAssistantDeployment:
         """
 
         # Read the file content asynchronously.
+        start = time.time()
         file_content = await file.read()
         file_name = file.filename
         file_meta = {
@@ -202,17 +205,21 @@ class VerbalVistaAssistantDeployment:
             "extracted_text": extracted_text,
             "doc_description": data.filemeta
         })
-        self.logger.info(f"Text Extracted: {file_name}")
+        end = time.time()
+        self.logger.info(f"Text Extracted from `{file_name}` in {round((end - start) * 1000, 2)} ms")
 
         # Write extracted text to tmp file
+        start = time.time()
         tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
             full_documents=full_documents,
             single_file_flag=data.save_to_one_file,
         )
-        self.logger.info(f"Extracted text saved: {tmp_document_save_path}")
+        end = time.time()
+        self.logger.info(f"Extracted text saved to `{tmp_document_save_path}` in {round((end - start) * 1000, 2)} ms")
 
         # FAISS index created from extracted text
+        start = time.time()
         doc_dir = os.path.join(self.document_dir, tmp_document_save_path)
         index_dir = os.path.join(self.indices_dir, tmp_document_save_path)
         index_data(
@@ -221,7 +228,8 @@ class VerbalVistaAssistantDeployment:
             chunk_size=data.chunk_size,
             embedding_model=data.embedding_model
         )
-        self.logger.info(f"Index created: {index_dir}")
+        end = time.time()
+        self.logger.info(f"FAISS index saved to `{index_dir}` in {round((end - start) * 1000, 2)} ms")
 
         # Construct a metadata dictionary from the processing data.
         _ = file_meta.pop("file")
@@ -266,7 +274,7 @@ def main():
     """
     How to start and stop server?
     >> ray start --head
-    >> python serve.py --index_dir=../data/indices/my_index/
+    >> python server.py --index_dir=../data/indices/my_index/
     >> ray stop
     """
     parser = argparse.ArgumentParser(description='Start VerbalVista Ray Server!')

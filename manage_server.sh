@@ -37,7 +37,7 @@ start_server() {
     shift # Remove the index directory from the arguments list
 
     echo "Starting application server with index directory $index_dir and verbosity $@..."
-    python serve.py --index_dir="$index_dir" "$@"
+    python server.py --index_dir="$index_dir" "$@"
 }
 
 # Function to stop the application server
