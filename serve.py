@@ -1,14 +1,16 @@
+import logging
 import argparse
 import structlog
 from ray import serve
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi import UploadFile, File, Depends
 from typing import Any, Dict, List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.rag_utils.agent_util import QueryAgent
 from utils.rag_utils.rag_util import load_index_and_metadata
-
+from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 
 app = FastAPI(
     title="Inference API for VerbalVista",
@@ -27,7 +29,7 @@ app.add_middleware(
 )
 
 
-class Query(BaseModel):
+class QuestionInput(BaseModel):
     query: str
     llm: Optional[str] = "gpt-3.5-turbo"
     embedding_model: Optional[str] = "text-embedding-ada-002"
@@ -36,10 +38,22 @@ class Query(BaseModel):
     max_lexical_retrieval_chunks: Optional[int] = 1
 
 
-class Answer(BaseModel):
+class QuestionOutput(BaseModel):
     query: str
     answer: str
     completion_meta: Dict[str, Any]
+
+
+class ProcessDataInput(BaseModel):
+    chunk_size: Optional[int] = 600
+    chunk_overlap: Optional[int] = 30
+    embedding_model: Optional[str] = "text-embedding-ada-002"
+    save_to_one_file: Optional[bool] = False
+
+
+class ProcessDataOutput(BaseModel):
+    index_name: str
+    meta: Dict[str, Any]
 
 
 @serve.deployment()
@@ -48,8 +62,20 @@ class VerbalVistaAssistantDeployment:
     """
     Initialize VerbalVista Ray Assistant class with index_directory!
     """
-    def __init__(self, index_directory=None):
 
+    def __init__(self, index_directory=None):
+        """
+        Initialize the search agent with necessary indices and metadata.
+
+        This constructor sets up the logging configuration, loads the FAISS index,
+        lexical index, and metadata required for the search operations. It also
+        initializes the query agent that will be used to handle search queries.
+
+        Parameters:
+        - index_directory (str, optional): The directory path where the indices and
+          metadata are stored. If not provided, a default path or method will be used
+          to load the required components.
+        """
         # setup logging
         structlog.configure(
             processors=[
@@ -57,6 +83,7 @@ class VerbalVistaAssistantDeployment:
                 structlog.processors.JSONRenderer(),
             ],
             logger_factory=structlog.stdlib.LoggerFactory(),
+            wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
         )
         self.logger = structlog.get_logger()
 
@@ -71,24 +98,120 @@ class VerbalVistaAssistantDeployment:
             faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=None
         )
 
-    def predict(self, query: Query, stream: bool = False) -> Dict[str, Any]:
+    def predict(self, query: QuestionInput, stream: bool = False) -> Dict[str, Any]:
         """
-        Generate response for /predict endpoint.
+        Generate predictions based on the input question.
+
+        This method uses the internal query agent to process a given question and
+        retrieve relevant information. It supports both semantic and lexical search
+        mechanisms.
+
+        Parameters:
+        - query (QuestionInput): An object containing the query parameters such as
+          the actual query string, temperature setting for response variability,
+          embedding model name for semantic search, LLM model name, and the number
+          of chunks for semantic and lexical retrieval.
+        - stream (bool, optional): A flag indicating whether to stream results
+          continuously or not. Defaults to False.
+
+        Returns:
+        - Dict[str, Any]: The result from the query agent, typically including
+          information relevant to the input query.
         """
         result = self.query_agent(
-            query=query.query,  temperature=query.temperature, embedding_model_name=query.embedding_model, stream=stream,
-            llm_model=query.llm, num_chunks=query.max_semantic_retrieval_chunks, lexical_search_k=query.max_lexical_retrieval_chunks,
+            query=query.query,
+            temperature=query.temperature,
+            embedding_model_name=query.embedding_model,
+            stream=stream,
+            llm_model=query.llm,
+            num_chunks=query.max_semantic_retrieval_chunks,
+            lexical_search_k=query.max_lexical_retrieval_chunks,
         )
         return result
 
     @app.post("/query")
-    def query(self, query: Query) -> Answer:
-        result = self.predict(query)
-        return Answer.parse_obj(result)
+    def query(self, query: QuestionInput) -> QuestionOutput:
+        """
+        Handle POST request to '/query' endpoint.
 
-    def check_health(self):
-        if not self.query_agent.faiss_index:
-            raise RuntimeError("uh-oh, server is broken.")
+        This method receives a query in the form of a QuestionInput object, processes it to predict an answer,
+        and returns a QuestionOutput object containing the prediction result.
+
+        Parameters:
+        - self: Refers to the instance of the class where this method is defined.
+        - query: A QuestionInput object containing the query data.
+
+        Returns:
+        - QuestionOutput: An instance containing the predicted answer, parsed from the result object.
+        """
+
+        # Process the query to predict the answer.
+        result = self.predict(query)
+
+        # Parse the prediction result into a QuestionOutput object and return it.
+        return QuestionOutput.parse_obj(result)
+
+    @staticmethod
+    async def index_files(file: UploadFile = File(...), data: ProcessDataInput = Depends()) -> Dict[str, Any]:
+        """
+        Asynchronously indexes files and returns metadata along with the index name.
+
+        This static method reads the contents of the uploaded file and constructs a metadata dictionary
+        based on the processing data provided. It decodes the file content into a UTF-8 string which is
+        used as the index name.
+
+        Parameters:
+        - file: An UploadFile object representing the file to be indexed.
+        - data: A ProcessDataInput object containing parameters for indexing such as chunk size,
+                chunk overlap, embedding model, and whether to save to one file.
+
+        Returns:
+        - Dict[str, Any]: A dictionary with two keys: 'index_name', containing the decoded file content,
+                           and 'meta', containing the metadata information.
+        """
+
+        # Read the file content asynchronously.
+        file_content = await file.read()
+
+        # Construct a metadata dictionary from the processing data.
+        meta = {
+            "filename": file.filename,
+            "chunk_size": data.chunk_size,
+            "chunk_overlap": data.chunk_overlap,
+            "embedding_model": data.embedding_model,
+            "save_to_one_file": data.save_to_one_file
+        }
+
+        # Return a dictionary with the decoded file content as 'index_name' and the metadata.
+        return {"index_name": file_content.decode("utf-8"), "meta": meta}
+
+    @app.post("/process/documents")
+    async def process_documents(
+            self, file: UploadFile = File(...), data: ProcessDataInput = Depends()
+    ) -> ProcessDataOutput:
+        """
+        Handle POST request to '/process/documents' endpoint.
+
+        This asynchronous function processes documents by indexing them and logging the operation.
+        It accepts a file and additional processing data, then returns processed data output.
+
+        Parameters:
+        - self: Refers to the instance of the class where this method is defined.
+        - file: An UploadedFile object that contains the file to be processed.
+        - data: A ProcessDataInput object containing additional data for processing.
+
+        Returns:
+        - ProcessDataOutput: An instance containing the processed result, parsed from the result object.
+        """
+
+        # Index the provided file with the associated data asynchronously.
+        result = await self.index_files(file, data)
+
+        # Log the completion of the document processing with metadata information.
+        self.logger.info("finished /process/documents", llm=result["meta"])
+
+        # Parse the result into a ProcessDataOutput object and return it.
+        return ProcessDataOutput.parse_obj(result)
 
 
 def main():
