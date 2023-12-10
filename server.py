@@ -11,11 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
-from utils.server_utils.list_indices import list_indices, ListIndicesOutput
-from utils.server_utils.query_util import QueryUtil, QuestionInput, QuestionOutput
-from utils.server_utils.process_text import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
-from utils.server_utils.process_urls import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
-from utils.server_utils.process_document_util import ProcessDocumentsUtil, ProcessDataInput, ProcessDataOutput
+from utils.server_utils import (
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessDocumentsUtil, ListIndicesUtil,
+    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessDocumentsInput,
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessDocumentsOutput, ListIndicesOutput,
+)
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
 
@@ -65,7 +65,8 @@ class VerbalVistaAssistantDeployment:
         Handle GET request to '/list/indices' endpoint.
         """
         start = time.time()
-        result = list_indices(indices_dir=self.indices_dir)
+        list_indices_util = ListIndicesUtil()
+        result = list_indices_util.list_indices(indices_dir=self.indices_dir)
         end = time.time()
         self.logger.info(f"Finished /list/indices in {round((end - start) * 1000, 2)} ms")
         return ListIndicesOutput.parse_list(result)
@@ -96,7 +97,7 @@ class VerbalVistaAssistantDeployment:
         return QuestionOutput.parse_obj(result)
 
     @app.post("/process/documents")
-    async def process_documents(self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)) -> ProcessDataOutput:
+    async def process_documents(self, file: UploadFile = File(...), data: ProcessDocumentsInput = Depends(ProcessDocumentsInput.as_form)) -> ProcessDocumentsOutput:
         """
         Handle POST request to '/process/documents' endpoint.
 
@@ -162,7 +163,7 @@ class VerbalVistaAssistantDeployment:
         }
         end = time.time()
         self.logger.info(f"Finished /process/documents in {round((end - start1) * 1000, 2)} ms")
-        return ProcessDataOutput.parse_obj(result)
+        return ProcessDocumentsOutput.parse_obj(result)
 
     @app.post("/process/urls")
     def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:

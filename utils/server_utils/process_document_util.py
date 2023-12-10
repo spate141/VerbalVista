@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, List
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 
 
-class ProcessDataInput(BaseModel):
+class ProcessDocumentsInput(BaseModel):
     chunk_size: Optional[int] = 600
     chunk_overlap: Optional[int] = 30
     embedding_model: Optional[str] = "text-embedding-ada-002"
@@ -30,7 +30,7 @@ class ProcessDataInput(BaseModel):
         )
 
 
-class ProcessDataOutput(BaseModel):
+class ProcessDocumentsOutput(BaseModel):
     index_name: str
     index_meta: Dict[str, Any]
 
