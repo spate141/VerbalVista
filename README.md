@@ -12,15 +12,12 @@
 - Edit the .env file at `PATH/TO/VerbalVista/.env` and set following keys
 ```dotenv
 # Reddit
-REDDIT_CLIENT_ID=
-REDDIT_CLIENT_SECRET=
-REDDIT_USER_AGENT=
+REDDIT_CLIENT_ID=1D1O3N1O2TdS2HcA4R3Ea
+REDDIT_CLIENT_SECRET=3D0OaN3O2T8S8HdA6R5E7
+REDDIT_USER_AGENT=4D2O2N1O3T7S9H2A3R5E2
 
 # OpenAI
-OPENAI_API_KEY=
-
-# Serper
-SERPER_API_KEY=
+OPENAI_API_KEY=6D6OeN8OcTeS2H6AaR4Ed
 ```
 
 ## Docker
@@ -55,6 +52,10 @@ The `manage_server.sh` script is a utility for easily starting and stopping the 
 
 - Ensure you have Ray installed in your environment.
 - The script should be executable. You can set it as executable using `chmod +x manage_server.sh`.
+
+### FastAPI Documentation:
+ 
+- http://localhost:8000/docs#/
 
 ### Usage
 

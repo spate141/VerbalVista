@@ -3,7 +3,8 @@ import time
 import logging
 import argparse
 from ray import serve
-from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi import FastAPI, status
 from dotenv import load_dotenv; load_dotenv()
 from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,16 +37,24 @@ app.add_middleware(
 )
 
 
+class HealthCheck(BaseModel):
+    status: str = "OK"
+
+
 @serve.deployment()
 @serve.ingress(app)
 class VerbalVistaAssistantDeployment:
     """
-    Initialize VerbalVista Ray Assistant class with index_directory!
+    Deployment class for the VerbalVista Ray Assistant. This class initializes
+    the necessary utilities and directories needed for processing queries and documents.
     """
     def __init__(self, logging_level=None):
         """
-        Initialize the search agent with necessary indices and metadata.
-        :param: logging_level: Logging level
+        Initializes the VerbalVista Assistant with necessary configurations.
+
+        Args:
+
+            logging_level (Optional[int]): Specifies the logging level for the application.
         """
         self.logger = logging.getLogger("ray.serve")
         self.logger.setLevel(logging_level)
@@ -59,10 +68,19 @@ class VerbalVistaAssistantDeployment:
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
 
-    @app.get("/list/indices")
+    @app.get(
+        "/list/indices",
+        tags=["list"],
+        summary="Returns list of available indices.",
+        response_model=ListIndicesOutput,
+    )
     def get_indices(self) -> ListIndicesOutput:
         """
-        Handle GET request to '/list/indices' endpoint.
+        Lists all the indices available in the system.
+
+        Returns:
+
+            ListIndicesOutput: Contains a list of all available indices.
         """
         start = time.time()
         list_indices_util = ListIndicesUtil()
@@ -71,17 +89,23 @@ class VerbalVistaAssistantDeployment:
         self.logger.info(f"Finished /list/indices in {round((end - start) * 1000, 2)} ms")
         return ListIndicesOutput.parse_list(result)
 
-    @app.post("/query")
+    @app.post(
+        "/query",
+        tags=["query"],
+        summary="Use index and LLMs to generate response to user's question.",
+        response_model=QuestionOutput,
+    )
     def query(self, query: QuestionInput) -> QuestionOutput:
         """
-        Handle POST request to '/query' endpoint.
+        Processes a query and returns the predicted answer.
 
-        This method receives a query in the form of a QuestionInput object, processes it to predict an answer,
-        and returns a QuestionOutput object containing the prediction result.
+        Args:
 
-        :param: self: Refers to the instance of the class where this method is defined.
-        :param: query: A QuestionInput object containing the query data.
-        :return: QuestionOutput: An instance containing the predicted answer, parsed from the result object.
+            query (QuestionInput): The query input containing parameters for processing.
+
+        Returns:
+
+            QuestionOutput: The output containing the predicted answer.
         """
         start = time.time()
         query_util = QueryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
@@ -96,17 +120,24 @@ class VerbalVistaAssistantDeployment:
         self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
         return QuestionOutput.parse_obj(result)
 
-    @app.post("/process/documents")
+    @app.post(
+        "/process/documents",
+        tags=["process"],
+        summary="Process documents and generate document index.",
+        response_model=ProcessDocumentsOutput,
+    )
     async def process_documents(self, file: UploadFile = File(...), data: ProcessDocumentsInput = Depends(ProcessDocumentsInput.as_form)) -> ProcessDocumentsOutput:
         """
-        Handle POST request to '/process/documents' endpoint.
+        Processes documents by indexing them and logs the operation.
 
-        This asynchronous function processes documents by indexing them and logging the operation.
-        It accepts a file and additional processing data, then returns processed data output.
+        Args:
 
-        :param: file: An UploadedFile object that contains the file to be processed.
-        :param: data: A ProcessDataInput object containing additional data for processing.
-        :return: ProcessDataOutput: An instance containing the processed result, parsed from the result object.
+            file (UploadFile): The file to be processed.
+            data (ProcessDocumentsInput): Additional data for processing the document.
+
+        Returns:
+
+            ProcessDocumentsOutput: The result of the document processing.
         """
 
         # Initialize Process Documents Util Class
@@ -165,10 +196,34 @@ class VerbalVistaAssistantDeployment:
         self.logger.info(f"Finished /process/documents in {round((end - start1) * 1000, 2)} ms")
         return ProcessDocumentsOutput.parse_obj(result)
 
-    @app.post("/process/urls")
+    @app.post(
+        "/process/urls",
+        tags=["process"],
+        summary="Process URLs and generate URLs index.",
+        response_model=ProcessUrlsOutput,
+    )
     def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
         """
-        Handle POST request to '/process/urls' endpoint.
+        Extracts and processes text from the provided URLs and creates an index.
+
+        This endpoint handles the extraction of text from given URLs, saving the extracted text
+        to a temporary file, and generating an index for the extracted text. The index can then
+        be used for querying within the text. The process involves several steps
+        including text extraction, file saving, and index generation.
+
+        Args:
+
+            data (ProcessUrlsInput): An object containing the list of URLs to be processed, along with
+                                     additional data like chunk size, chunk overlap, embedding model,
+                                     and a flag to determine if the extracted texts should be saved
+                                     to a single file or multiple files.
+
+        Returns:
+
+            ProcessUrlsOutput: An object containing the name of the generated index and metadata
+                               about the indexing process. This metadata includes details like the
+                               URLs processed, text extraction settings, and the configuration used
+                               for index generation.
         """
         # Initialize Process URLs Util Class
         process_urls_util = ProcessURLsUtil(
@@ -225,8 +280,35 @@ class VerbalVistaAssistantDeployment:
         self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
         return ProcessUrlsOutput.parse_obj(result)
 
-    @app.post("/process/text")
+    @app.post(
+        "/process/text",
+        tags=["process"],
+        summary="Process text and generate text index.",
+        response_model=ProcessTextOutput,
+    )
     def process_text(self, data: ProcessTextInput) -> ProcessTextOutput:
+        """
+        Processes a given text input, creates a searchable index, and returns metadata about the process.
+
+        This endpoint is designed to handle the processing of raw text data. It involves several steps,
+        including the extraction and processing of text, saving the processed text to a temporary file,
+        and then generating a FAISS index for the text. The endpoint is useful for making the provided
+        text searchable or queryable.
+
+        Args:
+
+            data (ProcessTextInput): An object containing the text to be processed, along with additional
+                                     processing parameters. These parameters include a description of the
+                                     text, chunk size for indexing, chunk overlap, the embedding model to
+                                     be used, and a flag to determine if the processed text should be saved
+                                     to a single file or multiple files.
+
+        Returns:
+
+            ProcessTextOutput: An object containing details about the generated index and the text processing.
+                               This includes the name of the index, the processed text metadata (like a snippet
+                               of the text and its description), and settings used for the indexing process.
+        """
         # Initialize Process URLs Util Class
         process_text_util = ProcessTextUtil(indices_dir=self.indices_dir, document_dir=self.document_dir)
 
@@ -277,6 +359,28 @@ class VerbalVistaAssistantDeployment:
         end = time.time()
         self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
         return ProcessTextOutput.parse_obj(result)
+
+    @app.get(
+        "/health",
+        tags=["healthcheck"],
+        summary="Perform a Health Check",
+        response_description="Return HTTP Status Code 200 (OK)",
+        status_code=status.HTTP_200_OK,
+        response_model=HealthCheck,
+    )
+    def health_check(self) -> HealthCheck:
+        """
+        Health check endpoint to ensure the server is up and running.
+
+        This endpoint performs basic checks to confirm that the FastAPI server and
+        Ray Serve are operational. It can be extended to include more comprehensive
+        checks depending on the application's requirements.
+
+        Returns:
+
+            HealthCheck: Response model to validate and return when performing a health check.
+        """
+        return HealthCheck(status="OK")
 
 
 def main():
