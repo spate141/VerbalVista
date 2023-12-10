@@ -28,19 +28,19 @@ SERPER_API_KEY=
 ### Build docker image:
 ```cmd
 >> cd VerbalVista
->> docker build -t verbal_vista:1.4 .
+>> docker build -t verbal_vista:1.5 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 verbal_vista:1.4
+>> docker run -p 8501:8501 verbal_vista:1.5
 ```
 
 ## Streamlit APP
 
 ### Start the program:
 ```cmd
->> streamlit run main.py
+>> streamlit run app.py
 ```
 
 ## Ray Server Management Script
@@ -66,7 +66,7 @@ bash manage_server.sh start_ray
 ```
 2. **start_server [directory]**: Starts the application server with a specified index directory.
 ```bash
-bash manage_server.sh start_server <index_directory>
+bash manage_server.sh start_server -vvv
 ```
 3. **stop_server**: Stops the application server.
 ```bash
