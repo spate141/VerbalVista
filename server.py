@@ -15,6 +15,7 @@ from utils.server_utils.query_util import QueryUtil, QuestionInput, QuestionOutp
 from utils.server_utils.process_urls import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
 from utils.server_utils.process_document_util import ProcessDocumentsUtil, ProcessDataInput, ProcessDataOutput
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
+from utils.server_utils.process_text import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
 
 
 app = FastAPI(
@@ -45,6 +46,8 @@ class VerbalVistaAssistantDeployment:
         Initialize the search agent with necessary indices and metadata.
         :param: logging_level: Logging level
         """
+        self.logger = logging.getLogger("ray.serve")
+        self.logger.setLevel(logging_level)
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
         # self.reddit_util = RedditSubmissionCommentsFetcher(
         #     client_id=os.getenv('REDDIT_CLIENT_ID'),
@@ -54,8 +57,6 @@ class VerbalVistaAssistantDeployment:
         self.tmp_audio_dir = 'data/tmp_audio_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
-        self.logger = logging.getLogger("ray.serve")
-        self.logger.setLevel(logging_level)
 
     @app.post("/query")
     def query(self, query: QuestionInput) -> QuestionOutput:
@@ -83,16 +84,13 @@ class VerbalVistaAssistantDeployment:
         return QuestionOutput.parse_obj(result)
 
     @app.post("/process/documents")
-    async def process_documents(
-            self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)
-    ) -> ProcessDataOutput:
+    async def process_documents(self, file: UploadFile = File(...), data: ProcessDataInput = Depends(ProcessDataInput.as_form)) -> ProcessDataOutput:
         """
         Handle POST request to '/process/documents' endpoint.
 
         This asynchronous function processes documents by indexing them and logging the operation.
         It accepts a file and additional processing data, then returns processed data output.
 
-        :param: self: Refers to the instance of the class where this method is defined.
         :param: file: An UploadedFile object that contains the file to be processed.
         :param: data: A ProcessDataInput object containing additional data for processing.
         :return: ProcessDataOutput: An instance containing the processed result, parsed from the result object.
@@ -105,10 +103,10 @@ class VerbalVistaAssistantDeployment:
         )
 
         # (1) Read the file content
-        start = time.time()
+        start1 = time.time()
         file_meta = await process_doc_util.read_file(file, file_description=data.file_description)
         end = time.time()
-        self.logger.info(f"Finished reading `{file_meta['name']}` in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Finished reading `{file_meta['name']}` in {round((end - start1) * 1000, 2)} ms")
 
         # (2) Process file content and extract text
         start = time.time()
@@ -151,13 +149,13 @@ class VerbalVistaAssistantDeployment:
             "save_to_one_file": data.save_to_one_file
         }
         end = time.time()
-        self.logger.info(f"Finished /process/documents in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Finished /process/documents in {round((end - start1) * 1000, 2)} ms")
         return ProcessDataOutput.parse_obj(result)
 
     @app.post("/process/urls")
     def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
         """
-
+        Handle POST request to '/process/urls' endpoint.
         """
         # Initialize Process URLs Util Class
         process_urls_util = ProcessURLsUtil(
@@ -165,7 +163,7 @@ class VerbalVistaAssistantDeployment:
         )
 
         # (1) Process URLs content and extract text
-        start = time.time()
+        start1 = time.time()
         urls_meta = []
         for url in data.urls:
             urls_meta.append({
@@ -174,7 +172,7 @@ class VerbalVistaAssistantDeployment:
             })
         extracted_texts = process_urls_util.extract_text(urls_meta)
         end = time.time()
-        self.logger.info(f"Text Extracted from `{len(data.urls)}` URLS in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Text Extracted from `{len(data.urls)}` URLS in {round((end - start1) * 1000, 2)} ms")
 
         # (2) Write extracted text to tmp file
         start = time.time()
@@ -213,8 +211,63 @@ class VerbalVistaAssistantDeployment:
             "save_to_one_file": data.save_to_one_file
         }
         end = time.time()
-        self.logger.info(f"Finished /process/urls in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
         return ProcessUrlsOutput.parse_obj(result)
+
+    @app.post("/process/text")
+    def process_text(self, data: ProcessTextInput) -> ProcessTextOutput:
+        # Initialize Process URLs Util Class
+        process_text_util = ProcessTextUtil(indices_dir=self.indices_dir, document_dir=self.document_dir)
+
+        # (1) Process URLs content and extract text
+        start1 = time.time()
+        text_meta = {
+            'text': data.text,
+            'description': data.text_description
+        }
+        extracted_text = process_text_util.process_text(text_meta)
+        end = time.time()
+        self.logger.info(f"Text Processed of len `{len(data.text)}` in {round((end - start1) * 1000, 2)} ms")
+
+        # (2) Write extracted text to tmp file
+        start = time.time()
+        tmp_document_save_path = write_data_to_file(
+            document_dir=self.document_dir,
+            full_documents=extracted_text,
+            single_file_flag=data.save_to_one_file,
+        )
+        end = time.time()
+        self.logger.info(f"Extracted text saved to `{tmp_document_save_path}` in {round((end - start) * 1000, 2)} ms")
+
+        # (3) Generate FAISS index
+        start = time.time()
+        document_directory = os.path.join(self.document_dir, tmp_document_save_path)
+        index_directory = os.path.join(self.indices_dir, tmp_document_save_path)
+        index_data(
+            document_directory=document_directory,
+            index_directory=index_directory,
+            chunk_size=data.chunk_size,
+            chunk_overlap=data.chunk_overlap,
+            embedding_model=data.embedding_model
+        )
+        result = {"index_name": os.path.basename(index_directory)}
+        end = time.time()
+        self.logger.info(f"FAISS index saved to `{index_directory}` in {round((end - start) * 1000, 2)} ms")
+
+        # (4) Construct a metadata dictionary from the processing data.
+        result["index_meta"] = {
+            "text_meta": {
+                'text_snippet': data.text[:100] + '...',
+                'description': data.text_description
+            },
+            "chunk_size": data.chunk_size,
+            "chunk_overlap": data.chunk_overlap,
+            "embedding_model": data.embedding_model,
+            "save_to_one_file": data.save_to_one_file
+        }
+        end = time.time()
+        self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
+        return ProcessTextOutput.parse_obj(result)
 
 
 def main():
