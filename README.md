@@ -78,12 +78,62 @@ bash manage_server.sh stop_server
 bash manage_server.sh stop_ray
 ```
 
-### Ray server API endpoint example:
+### Detailed API Endpoint Documentation
+
+#### Health Check
+- **Endpoint**: `/health`
+- **Method**: GET
+- **Description**: Checks the health of the server, ensuring it's operational.
+- **Response**: Status message indicating server health.
+
+#### List Indices
+- **Endpoint**: `/list/indices`
+- **Method**: GET
+- **Description**: Retrieves a list of all available indices on the server. Useful for understanding what data is currently indexed and available for querying.
+- **Response**: A list of index names.
+
+#### Query
+- **Endpoint**: `/query`
+- **Method**: POST
+- **Description**: Processes a user's query using a specified index and LLM (Large Language Model). This is the core functionality for extracting insights from indexed data.
+- **Request Parameters**: Query text, LLM model, embedding model, temperature, max semantic retrieval chunks, max lexical retrieval chunks.
+- **Response**: The predicted answer to the query along with metadata.
+
+#### Process Documents
+- **Endpoint**: `/process/documents`
+- **Method**: POST
+- **Description**: Processes uploaded documents, indexes them, and creates a searchable index. This endpoint is crucial for adding new data to the server.
+- **Request Parameters**: File to be processed, chunk size, chunk overlap, embedding model, flag for saving to one file.
+- **Response**: Metadata about the processed document and the generated index.
+
+#### Process URLs
+- **Endpoint**: `/process/urls`
+- **Method**: POST
+- **Description**: Extracts text from provided URLs, processes this text, and generates an index. This endpoint is useful for indexing web-based data.
+- **Request Parameters**: List of URLs, chunk size, chunk overlap, embedding model, flag for saving to one file.
+- **Response**: Metadata about the processed URLs and the generated index.
+
+#### Process Text
+- **Endpoint**: `/process/text`
+- **Method**: POST
+- **Description**: Processes raw text input, creates an index, and returns metadata. This endpoint enables indexing of ad-hoc text data.
+- **Request Parameters**: Text to be processed, chunk size, chunk overlap, embedding model, flag for saving to one file.
+- **Response**: Details about the generated index and text processing.
+
+### Utilizing the API
+
+To interact with these endpoints, you can use tools like `curl` or Postman. For each endpoint, ensure the appropriate HTTP method is used and include the necessary parameters in your request. The `/query` endpoint, for example, requires a POST request with a JSON body containing query parameters.
+
+### Example Usage
+
+To query the system, you might use a command like:
+
 ```cmd
 curl --location 'http://127.0.0.1:8000/query' \
 --header 'Content-Type: application/json' \
 --data '{
-    "query": "What is this document all about?",
+    "query": "What is the latest research on neural networks?",
+    "index_name": "generated_index_id",
     "llm": "gpt-3.5-turbo",
     "embedding_model": "text-embedding-ada-002",
     "temperature": 0.5,
@@ -91,32 +141,6 @@ curl --location 'http://127.0.0.1:8000/query' \
     "max_lexical_retrieval_chunks": 1
 }
 '
-```
-### Ray server sample output:
-```cmd
-{
-    "query": "What is this document all about?",
-    "answer": "The document is about Sqids, an open-source library that generates short, YouTube-looking IDs from numbers. These IDs can be customized and are collision-free. Sqids is mainly used for visual purposes, such as using IDs instead of numbers in web applications. It can be used for link shortening, event IDs, and generating one-time passwords.",
-    "llm_model": "gpt-3.5-turbo",
-    "embedding_model": "text-embedding-ada-002",
-    "temperature": 0.5,
-    "sources": [
-        "sqids-org-.data.txt",
-        "sqids-org-.data.txt",
-        "sqids-org-.data.txt",
-        "sqids-org-.data.txt"
-    ],
-    "completion_meta": {
-        "completion_tokens": 69,
-        "prompt_tokens": 873,
-        "total_tokens": 942,
-        "total_cost": {
-            "completion": 0.00013800000000000002,
-            "prompt": 0.0013095000000000001,
-            "total": 0.0014475000000000002
-        }
-    }
-}
 ```
 
 ## Available functions:
