@@ -46,7 +46,7 @@ class QueryAgent:
         return len(self.encoder.encode(text))
 
     def generate_response(
-            self, llm_model, temperature=0.5, stream=False, system_content="", user_content="",
+            self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
             max_retries=1, retry_interval=60, embedding_model_name="", sources=None
     ):
         """Generate response from an LLM."""
@@ -55,6 +55,7 @@ class QueryAgent:
             try:
                 completion = self.client.chat.completions.create(
                     model=llm_model,
+                    seed=seed,
                     temperature=temperature,
                     stream=stream,
                     messages=[
@@ -93,7 +94,7 @@ class QueryAgent:
         return None, None
 
     def __call__(
-            self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5,
+            self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
             embedding_model_name="text-embedding-ada-002", llm_model="gpt-3.5-turbo"
     ):
 
@@ -124,6 +125,7 @@ class QueryAgent:
         answer, completion_meta = self.generate_response(
             llm_model=llm_model,
             temperature=temperature,
+            seed=seed,
             stream=stream,
             system_content=self.system_content,
             user_content=self.trim(user_content, context_length),

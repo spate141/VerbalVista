@@ -29,8 +29,14 @@ def get_available_indices(indices_dir: str = 'indices/'):
     for index_dir in all_indices_dirs:
         index_dir_path = os.path.join(indices_dir, index_dir)
         creation_date = time.ctime(os.stat(index_dir_path).st_ctime)
-        indices_data.append((index_dir_path, creation_date))
-    df = pd.DataFrame(indices_data, columns=['Index Path', 'Creation Date'])
+        try:
+            index_meta_data_path = glob.glob(f"{index_dir_path}/*.meta.txt")[0]
+            index_meta_data = open(index_meta_data_path, 'r').read()
+            index_meta_data = ' '.join(index_meta_data.split())
+        except IndexError:
+            index_meta_data = None
+        indices_data.append((index_dir_path, index_meta_data, creation_date))
+    df = pd.DataFrame(indices_data, columns=['Index Path', 'Index Description', 'Creation Date'])
     df['Creation Date'] = pd.to_datetime(df['Creation Date'])
     df = df.sort_values(by='Creation Date', ascending=False)
     return df

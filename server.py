@@ -11,11 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
+from utils.server_utils.list_indices import list_indices, ListIndicesOutput
 from utils.server_utils.query_util import QueryUtil, QuestionInput, QuestionOutput
+from utils.server_utils.process_text import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
 from utils.server_utils.process_urls import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
 from utils.server_utils.process_document_util import ProcessDocumentsUtil, ProcessDataInput, ProcessDataOutput
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
-from utils.server_utils.process_text import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
 
 
 app = FastAPI(
@@ -57,6 +58,17 @@ class VerbalVistaAssistantDeployment:
         self.tmp_audio_dir = 'data/tmp_audio_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
+
+    @app.get("/list/indices")
+    def get_indices(self) -> ListIndicesOutput:
+        """
+        Handle GET request to '/list/indices' endpoint.
+        """
+        start = time.time()
+        result = list_indices(indices_dir=self.indices_dir)
+        end = time.time()
+        self.logger.info(f"Finished /list/indices in {round((end - start) * 1000, 2)} ms")
+        return ListIndicesOutput.parse_list(result)
 
     @app.post("/query")
     def query(self, query: QuestionInput) -> QuestionOutput:
@@ -167,8 +179,7 @@ class VerbalVistaAssistantDeployment:
         urls_meta = []
         for url in data.urls:
             urls_meta.append({
-                'url': url,
-                'description': data.url_description
+                'url': url, 'description': data.url_description
             })
         extracted_texts = process_urls_util.extract_text(urls_meta)
         end = time.time()
@@ -202,8 +213,7 @@ class VerbalVistaAssistantDeployment:
         # (4) Construct a metadata dictionary from the processing data.
         result["index_meta"] = {
             "urls_meta": {
-                'urls': data.urls,
-                'description': data.url_description
+                'urls': data.urls, 'description': data.url_description
             },
             "chunk_size": data.chunk_size,
             "chunk_overlap": data.chunk_overlap,
@@ -222,8 +232,7 @@ class VerbalVistaAssistantDeployment:
         # (1) Process URLs content and extract text
         start1 = time.time()
         text_meta = {
-            'text': data.text,
-            'description': data.text_description
+            'text': data.text, 'description': data.text_description
         }
         extracted_text = process_text_util.process_text(text_meta)
         end = time.time()
@@ -257,8 +266,7 @@ class VerbalVistaAssistantDeployment:
         # (4) Construct a metadata dictionary from the processing data.
         result["index_meta"] = {
             "text_meta": {
-                'text_snippet': data.text[:100] + '...',
-                'description': data.text_description
+                'text_snippet': data.text[:100] + '...', 'description': data.text_description
             },
             "chunk_size": data.chunk_size,
             "chunk_overlap": data.chunk_overlap,
