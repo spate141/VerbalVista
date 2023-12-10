@@ -5,7 +5,7 @@ import argparse
 from ray import serve
 from pydantic import BaseModel
 from fastapi import FastAPI, status
-from dotenv import load_dotenv; load_dotenv()
+from dotenv import load_dotenv; load_dotenv(".env")
 from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -59,11 +59,11 @@ class VerbalVistaAssistantDeployment:
         self.logger = logging.getLogger("ray.serve")
         self.logger.setLevel(logging_level)
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
-        # self.reddit_util = RedditSubmissionCommentsFetcher(
-        #     client_id=os.getenv('REDDIT_CLIENT_ID'),
-        #     client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
-        #     user_agent=os.getenv('REDDIT_USER_AGENT')
-        # )
+        self.reddit_util = RedditSubmissionCommentsFetcher(
+            client_id=os.getenv('REDDIT_CLIENT_ID'),
+            client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+            user_agent=os.getenv('REDDIT_USER_AGENT')
+        )
         self.tmp_audio_dir = 'data/tmp_audio_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
@@ -227,7 +227,7 @@ class VerbalVistaAssistantDeployment:
         """
         # Initialize Process URLs Util Class
         process_urls_util = ProcessURLsUtil(
-            indices_dir=self.indices_dir, document_dir=self.document_dir, reddit_util=None
+            indices_dir=self.indices_dir, document_dir=self.document_dir, reddit_util=self.reddit_util
         )
 
         # (1) Process URLs content and extract text
