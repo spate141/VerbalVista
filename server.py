@@ -9,8 +9,12 @@ from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.openai_utils import OpenAIWisperUtil
+from utils.rag_utils.rag_util import index_data
+from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils.query_util import QueryUtil, QuestionInput, QuestionOutput
+from utils.server_utils.process_urls import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
 from utils.server_utils.process_document_util import ProcessDocumentsUtil, ProcessDataInput, ProcessDataOutput
+from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
 
 app = FastAPI(
@@ -42,6 +46,11 @@ class VerbalVistaAssistantDeployment:
         :param: logging_level: Logging level
         """
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        # self.reddit_util = RedditSubmissionCommentsFetcher(
+        #     client_id=os.getenv('REDDIT_CLIENT_ID'),
+        #     client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+        #     user_agent=os.getenv('REDDIT_USER_AGENT')
+        # )
         self.tmp_audio_dir = 'data/tmp_audio_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
@@ -109,21 +118,28 @@ class VerbalVistaAssistantDeployment:
 
         # (3) Write extracted text to tmp file
         start = time.time()
-        tmp_document_save_path = process_doc_util.save_extracted_text(
-            extracted_texts=extracted_texts, single_file_flag=data.save_to_one_file
+        tmp_document_save_path = write_data_to_file(
+            document_dir=self.document_dir,
+            full_documents=extracted_texts,
+            single_file_flag=data.save_to_one_file,
         )
         end = time.time()
         self.logger.info(f"Extracted text saved to `{tmp_document_save_path}` in {round((end - start) * 1000, 2)} ms")
 
         # (4) Generate FAISS index
         start = time.time()
-        result = process_doc_util.generate_faiss_index(
-            local_doc_filepath=tmp_document_save_path, chunk_size=data.chunk_size, chunk_overlap=data.chunk_overlap,
+        document_directory = os.path.join(self.document_dir, tmp_document_save_path)
+        index_directory = os.path.join(self.indices_dir, tmp_document_save_path)
+        index_data(
+            document_directory=document_directory,
+            index_directory=index_directory,
+            chunk_size=data.chunk_size,
+            chunk_overlap=data.chunk_overlap,
             embedding_model=data.embedding_model
         )
+        result = {"index_name": os.path.basename(index_directory)}
         end = time.time()
-        _index_dir = result.pop("index_directory")
-        self.logger.info(f"FAISS index saved to `{_index_dir}` in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"FAISS index saved to `{index_directory}` in {round((end - start) * 1000, 2)} ms")
 
         # (5) Construct a metadata dictionary from the processing data.
         _ = file_meta.pop("file")
@@ -137,6 +153,68 @@ class VerbalVistaAssistantDeployment:
         end = time.time()
         self.logger.info(f"Finished /process/documents in {round((end - start) * 1000, 2)} ms")
         return ProcessDataOutput.parse_obj(result)
+
+    @app.post("/process/urls")
+    def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
+        """
+
+        """
+        # Initialize Process URLs Util Class
+        process_urls_util = ProcessURLsUtil(
+            indices_dir=self.indices_dir, document_dir=self.document_dir, reddit_util=None
+        )
+
+        # (1) Process URLs content and extract text
+        start = time.time()
+        urls_meta = []
+        for url in data.urls:
+            urls_meta.append({
+                'url': url,
+                'description': data.url_description
+            })
+        extracted_texts = process_urls_util.extract_text(urls_meta)
+        end = time.time()
+        self.logger.info(f"Text Extracted from `{len(data.urls)}` URLS in {round((end - start) * 1000, 2)} ms")
+
+        # (2) Write extracted text to tmp file
+        start = time.time()
+        tmp_document_save_path = write_data_to_file(
+            document_dir=self.document_dir,
+            full_documents=extracted_texts,
+            single_file_flag=data.save_to_one_file,
+        )
+        end = time.time()
+        self.logger.info(f"Extracted text saved to `{tmp_document_save_path}` in {round((end - start) * 1000, 2)} ms")
+
+        # (3) Generate FAISS index
+        start = time.time()
+        document_directory = os.path.join(self.document_dir, tmp_document_save_path)
+        index_directory = os.path.join(self.indices_dir, tmp_document_save_path)
+        index_data(
+            document_directory=document_directory,
+            index_directory=index_directory,
+            chunk_size=data.chunk_size,
+            chunk_overlap=data.chunk_overlap,
+            embedding_model=data.embedding_model
+        )
+        result = {"index_name": os.path.basename(index_directory)}
+        end = time.time()
+        self.logger.info(f"FAISS index saved to `{index_directory}` in {round((end - start) * 1000, 2)} ms")
+
+        # (4) Construct a metadata dictionary from the processing data.
+        result["index_meta"] = {
+            "urls_meta": {
+                'urls': data.urls,
+                'description': data.url_description
+            },
+            "chunk_size": data.chunk_size,
+            "chunk_overlap": data.chunk_overlap,
+            "embedding_model": data.embedding_model,
+            "save_to_one_file": data.save_to_one_file
+        }
+        end = time.time()
+        self.logger.info(f"Finished /process/urls in {round((end - start) * 1000, 2)} ms")
+        return ProcessUrlsOutput.parse_obj(result)
 
 
 def main():

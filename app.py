@@ -21,9 +21,9 @@ class VerbalVista:
         self.openai_t2s_util = OpenAIText2SpeechUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.openai_dalle_util = OpenAIDalleUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.reddit_util = RedditSubmissionCommentsFetcher(
-            os.getenv('REDDIT_CLIENT_ID'),
-            os.getenv('REDDIT_CLIENT_SECRET'),
-            os.getenv('REDDIT_USER_AGENT')
+            client_id=os.getenv('REDDIT_CLIENT_ID'),
+            client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+            user_agent=os.getenv('REDDIT_USER_AGENT')
         )
 
         # Create relevant directories
