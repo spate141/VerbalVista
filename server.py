@@ -127,7 +127,7 @@ class VerbalVistaAssistantDeployment:
 
         # (5) Construct a metadata dictionary from the processing data.
         _ = file_meta.pop("file")
-        result["meta"] = {
+        result["index_meta"] = {
             "file_meta": file_meta,
             "chunk_size": data.chunk_size,
             "chunk_overlap": data.chunk_overlap,

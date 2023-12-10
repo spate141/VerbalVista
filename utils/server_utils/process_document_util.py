@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from fastapi import Form
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
@@ -35,19 +35,27 @@ class ProcessDataInput(BaseModel):
 
 class ProcessDataOutput(BaseModel):
     index_name: str
-    meta: Dict[str, Any]
+    index_meta: Dict[str, Any]
 
 
 class ProcessDocumentsUtil:
 
-    def __init__(self, indices_dir=None, document_dir=None, tmp_audio_dir=None, openai_wisper_util=None):
+    def __init__(
+            self, indices_dir: str = None, document_dir: str = None, tmp_audio_dir: str = None, openai_wisper_util=None
+    ):
         self.indices_dir = indices_dir
         self.document_dir = document_dir
         self.tmp_audio_dir = tmp_audio_dir
         self.openai_wisper_util = openai_wisper_util
 
     @staticmethod
-    async def read_file(file, file_description: str = None):
+    async def read_file(file, file_description: str = None) -> Dict[str, Any]:
+        """
+        Read the content of the file.
+        :param: file: FastAPI File object
+        :param: file_description: File description defined by user in API endpoint
+        :return: Dict[str, Any]: File metadata
+        """
         file_content = await file.read()
         file_meta = {
             'file': BytesIO(file_content),
@@ -58,7 +66,12 @@ class ProcessDocumentsUtil:
         }
         return file_meta
 
-    def extract_text(self, file_meta: Dict[str, Any] = None):
+    def extract_text(self, file_meta: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """
+        Extract text from the previously read file object based on file type.
+        :param: file_meta: Dict[str, Any]: File metadata
+        :return: List[Dict[str, Any]]: List of extracted text object dictionary.
+        """
         extracted_texts = []
         extracted_text = ""
         file_name = file_meta['name']
@@ -76,7 +89,13 @@ class ProcessDocumentsUtil:
         })
         return extracted_texts
 
-    def save_extracted_text(self, extracted_texts=None, single_file_flag: bool = False):
+    def save_extracted_text(self, extracted_texts: List[Dict[str, Any]] = None, single_file_flag: bool = False) -> str:
+        """
+        Save the previously extracted text objects to tmp local file.
+        :param: extracted_texts: List of extracted text object dictionary
+        :param: single_file_flag: Boolean flag to indicate if to save all extracted texts objects into single file or not
+        :return: file path of saved data.
+        """
         tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_texts,
@@ -88,7 +107,14 @@ class ProcessDocumentsUtil:
             self, local_doc_filepath: str = None, chunk_size: int = None, chunk_overlap: int = None,
             embedding_model: str = None
     ) -> Dict[str, Any]:
-
+        """
+        Generate FAISS index from previously extracted and saved file object.
+        :param: local_doc_filepath:
+        :param: chunk_size:
+        :param: chunk_overlap:
+        :param: embedding_model:
+        :return: Index dict metadata.
+        """
         # FAISS index created from extracted text
         document_directory = os.path.join(self.document_dir, local_doc_filepath)
         index_directory = os.path.join(self.indices_dir, local_doc_filepath)

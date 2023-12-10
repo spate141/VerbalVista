@@ -24,11 +24,13 @@ class QuestionOutput(BaseModel):
 class QueryUtil:
 
     def __init__(self, indices_dir: str = None, index_name: str = None):
+        """
+        Get query agent.
+        """
         index_meta = load_index_and_metadata(index_directory=os.path.join(indices_dir, index_name))
         faiss_index = index_meta["faiss_index"]
         metadata_dict = index_meta["metadata_dict"]
         lexical_index = index_meta["lexical_index"]
-        # Get query agent
         self.query_agent = QueryAgent(
             faiss_index=faiss_index,
             metadata_dict=metadata_dict,
@@ -40,8 +42,9 @@ class QueryUtil:
             self, query: str = None, temperature: float = None, embedding_model: str = None, llm_model: str = None,
             max_semantic_retrieval_chunks: int = None, max_lexical_retrieval_chunks: int = None
     ) -> Dict[str, Any]:
-
-        # Generate prediction response
+        """
+        Generate prediction response
+        """
         result = self.query_agent(
             query=query,
             temperature=temperature,
