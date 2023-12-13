@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, List
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 
 
-class ProcessDocumentsInput(BaseModel):
+class ProcessMultimediaInput(BaseModel):
     chunk_size: Optional[int] = 600
     chunk_overlap: Optional[int] = 30
     embedding_model: Optional[str] = "text-embedding-ada-002"
@@ -30,12 +30,12 @@ class ProcessDocumentsInput(BaseModel):
         )
 
 
-class ProcessDocumentsOutput(BaseModel):
+class ProcessMultimediaOutput(BaseModel):
     index_name: str
     index_meta: Dict[str, Any]
 
 
-class ProcessDocumentsUtil:
+class ProcessMultimediaUtil:
 
     def __init__(
             self, indices_dir: str = None, document_dir: str = None, tmp_audio_dir: str = None, openai_wisper_util=None

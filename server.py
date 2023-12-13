@@ -13,9 +13,9 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessDocumentsUtil, ListIndicesUtil,
-    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessDocumentsInput,
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessDocumentsOutput, ListIndicesOutput,
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil,
+    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput,
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -121,40 +121,62 @@ class VerbalVistaAssistantDeployment:
         return QuestionOutput.parse_obj(result)
 
     @app.post(
-        "/process/documents",
+        "/process/multimedia",
         tags=["process"],
         summary="Process documents and generate document index.",
-        response_model=ProcessDocumentsOutput,
+        response_model=ProcessMultimediaOutput,
     )
-    async def process_documents(self, file: UploadFile = File(...), data: ProcessDocumentsInput = Depends(ProcessDocumentsInput.as_form)) -> ProcessDocumentsOutput:
+    async def process_multimedia(self, file: UploadFile = File(...), data: ProcessMultimediaInput = Depends(ProcessMultimediaInput.as_form)) -> ProcessMultimediaOutput:
         """
-        Processes documents by indexing them and logs the operation.
+        Processes multimedia documents by indexing them and logs the operation.
+
+        Supported files:
+
+        ## Audio Files
+        The endpoint supports the following audio file formats:
+        - `.m4a` - MPEG-4 Audio, used mainly for music and other audio recordings.
+        - `.mp3` - A popular audio format for music and audio streaming, known for its compression capabilities.
+        - `.wav` - Waveform Audio File Format, used for uncompressed audio data.
+        - `.webm` - A modern media format for web videos, can contain both audio and video, but also supports audio-only files.
+        - `.mpga` - Often associated with MPEG-1 or MPEG-2 audio layer 3, another extension for MP3 files.
+
+        ## Video Files
+        Supported video file formats include:
+        - `.mp4` - A digital multimedia container format commonly used to store video and audio.
+        - `.mpeg` - A standard format for lossy compression of video and audio.
+
+        ## Document Files
+        The endpoint can process the following document file formats:
+        - `.pdf` - Portable Document Format, used for presenting documents with text formatting and images.
+        - `.docx` - Microsoft Word Open XML Format Document, the default file format for Word documents since Office 2007.
+        - `.txt` - Standard text file format, containing unformatted text.
+        - `.eml` - Email message saved to a file in the Internet Message Format protocol.
 
         Args:
 
             file (UploadFile): The file to be processed.
-            data (ProcessDocumentsInput): Additional data for processing the document.
+            data (ProcessMultimediaInput): Additional data for processing the document.
 
         Returns:
 
-            ProcessDocumentsOutput: The result of the document processing.
+            ProcessMultimediaOutput: The result of the document processing.
         """
 
         # Initialize Process Documents Util Class
-        process_doc_util = ProcessDocumentsUtil(
+        process_multimedia_util = ProcessMultimediaUtil(
             indices_dir=self.indices_dir, document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir,
             openai_wisper_util=self.openai_wisper_util
         )
 
         # (1) Read the file content
         start1 = time.time()
-        file_meta = await process_doc_util.read_file(file, file_description=data.file_description)
+        file_meta = await process_multimedia_util.read_file(file, file_description=data.file_description)
         end = time.time()
         self.logger.info(f"Finished reading `{file_meta['name']}` in {round((end - start1) * 1000, 2)} ms")
 
         # (2) Process file content and extract text
         start = time.time()
-        extracted_texts = process_doc_util.extract_text(file_meta=file_meta)
+        extracted_texts = process_multimedia_util.extract_text(file_meta=file_meta)
         end = time.time()
         self.logger.info(f"Text Extracted from `{file_meta['name']}` in {round((end - start) * 1000, 2)} ms")
 
@@ -194,7 +216,7 @@ class VerbalVistaAssistantDeployment:
         }
         end = time.time()
         self.logger.info(f"Finished /process/documents in {round((end - start1) * 1000, 2)} ms")
-        return ProcessDocumentsOutput.parse_obj(result)
+        return ProcessMultimediaOutput.parse_obj(result)
 
     @app.post(
         "/process/urls",

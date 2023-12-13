@@ -99,10 +99,10 @@ bash manage_server.sh stop_ray
 - **Request Parameters**: Query text, LLM model, embedding model, temperature, max semantic retrieval chunks, max lexical retrieval chunks.
 - **Response**: The predicted answer to the query along with metadata.
 
-#### Process Documents
-- **Endpoint**: `/process/documents`
+#### Process Multimedia
+- **Endpoint**: `/process/multimedia`
 - **Method**: POST
-- **Description**: Processes uploaded documents, indexes them, and creates a searchable index. This endpoint is crucial for adding new data to the server.
+- **Description**: Processes uploaded multimedia files, indexes them, and creates a searchable index. This endpoint is crucial for adding new data to the server.
 - **Request Parameters**: File to be processed, chunk size, chunk overlap, embedding model, flag for saving to one file.
 - **Response**: Metadata about the processed document and the generated index.
 
