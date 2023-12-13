@@ -8,7 +8,7 @@ def random_string_generator(k=4):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
 
 
-def write_data_to_file(
+async def write_data_to_file(
         document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False
 ):
     """

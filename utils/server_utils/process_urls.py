@@ -1,3 +1,4 @@
+import asyncio
 from pydantic import BaseModel
 from typing import Any, Dict, Optional, List
 from utils.data_parsing_utils.url_parser import process_url
@@ -19,7 +20,7 @@ class ProcessUrlsOutput(BaseModel):
 
 class ProcessURLsUtil:
 
-    def __init__(self, indices_dir : str = None, document_dir : str = None, reddit_util=None):
+    def __init__(self, indices_dir: str = None, document_dir: str = None, reddit_util=None):
         self.indices_dir = indices_dir
         self.document_dir = document_dir
         self.reddit_util = reddit_util
@@ -31,18 +32,18 @@ class ProcessURLsUtil:
         :param: urls_meta: List[Dict[str, Any]]: URLs metadata
         :return: List[Dict[str, Any]]: List of extracted text object dictionary.
         """
-        extracted_texts = []
-        for url_obj in urls_meta:
-            url = url_obj['url']
-            url_desc = url_obj['description']
-            # if "reddit.com" in url:
-            #     extracted_text = self.reddit_util.fetch_comments_from_url(url)
-            #     extracted_text = ' '.join(extracted_text)
-            # else:
-            extracted_text = await process_url(url)
-            extracted_texts.append({
-                "file_name": url[8:].replace("/", "-").replace('.', '-'),
-                "extracted_text": extracted_text,
-                "doc_description": url_desc
-            })
+        # Create a list of coroutine objects for each URL
+        coroutines = [process_url(url_obj['url']) for url_obj in urls_meta]
+
+        # Run all coroutine objects concurrently and wait for their results
+        results = await asyncio.gather(*coroutines)
+
+        # Combine results with metadata
+        extracted_texts = [
+            {
+                "file_name": urls_meta[i]['url'][8:].replace("/", "-").replace('.', '-'),
+                "extracted_text": result,
+                "doc_description": urls_meta[i]['description']
+            } for i, result in enumerate(results)
+        ]
         return extracted_texts

@@ -23,7 +23,7 @@ class ProcessTextUtil:
         self.document_dir = document_dir
 
     @staticmethod
-    def process_text(text_meta: Dict[str, Any]):
+    async def process_text(text_meta: Dict[str, Any]):
         """
 
         """

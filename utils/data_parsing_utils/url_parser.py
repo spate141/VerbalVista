@@ -1,3 +1,4 @@
+import asyncio
 from selenium import webdriver
 from urllib.parse import urlparse
 from selenium.webdriver.common.by import By
@@ -35,6 +36,22 @@ def is_4chan_url(url):
 async def get_webpage_text(url: str) -> str:
     """
     Fetch the text content of a webpage given its URL using Selenium.
+
+    Args:
+    url (str): URL of the webpage.
+
+    Returns:
+    str: The text content of the webpage.
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, lambda: fetch_page_text(url)
+    )
+
+
+def fetch_page_text(url: str) -> str:
+    """
+    Synchronous function to fetch the text content of a webpage using Selenium.
 
     Args:
     url (str): URL of the webpage.

@@ -1,12 +1,16 @@
 import re
-import requests
+import aiohttp
 from bs4 import BeautifulSoup
 from better_profanity import profanity
 
 
 async def fetch_4chan_comments(url, purge_bad_words=True):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    """
+
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            soup = BeautifulSoup(await response.text(), 'html.parser')
 
     comments = soup.find_all('blockquote', class_='postMessage')
 

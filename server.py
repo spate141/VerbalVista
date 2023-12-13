@@ -183,7 +183,7 @@ class VerbalVistaAssistantDeployment:
 
         # (3) Write extracted texts to tmp file
         start = time.time()
-        tmp_document_save_path = write_data_to_file(
+        tmp_document_save_path = await write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_texts,
             single_file_flag=data.save_to_one_file,
@@ -267,7 +267,7 @@ class VerbalVistaAssistantDeployment:
 
         # (2) Write extracted text to tmp file
         start = time.time()
-        tmp_document_save_path = write_data_to_file(
+        tmp_document_save_path = await write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_texts,
             single_file_flag=data.save_to_one_file,
@@ -310,7 +310,7 @@ class VerbalVistaAssistantDeployment:
         summary="Process text and generate text index.",
         response_model=ProcessTextOutput,
     )
-    def process_text(self, data: ProcessTextInput) -> ProcessTextOutput:
+    async def process_text(self, data: ProcessTextInput) -> ProcessTextOutput:
         """
         Processes a given text input, creates a searchable index, and returns metadata about the process.
 
@@ -341,13 +341,13 @@ class VerbalVistaAssistantDeployment:
         text_meta = {
             'text': data.text, 'description': data.text_description
         }
-        extracted_text = process_text_util.process_text(text_meta)
+        extracted_text = await process_text_util.process_text(text_meta)
         end = time.time()
         self.logger.info(f"Text Processed of len `{len(data.text)}` in {round((end - start1) * 1000, 2)} ms")
 
         # (2) Write extracted text to tmp file
         start = time.time()
-        tmp_document_save_path = write_data_to_file(
+        tmp_document_save_path = await write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_text,
             single_file_flag=data.save_to_one_file,
