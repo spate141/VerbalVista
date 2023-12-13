@@ -3,6 +3,7 @@ import time
 import logging
 import argparse
 from ray import serve
+from typing import List
 from pydantic import BaseModel
 from fastapi import FastAPI, status
 from dotenv import load_dotenv; load_dotenv(".env")
@@ -126,7 +127,7 @@ class VerbalVistaAssistantDeployment:
         summary="Process documents and generate document index.",
         response_model=ProcessMultimediaOutput,
     )
-    async def process_multimedia(self, file: UploadFile = File(...), data: ProcessMultimediaInput = Depends(ProcessMultimediaInput.as_form)) -> ProcessMultimediaOutput:
+    async def process_multimedia(self, files: List[UploadFile] = File(...), data: ProcessMultimediaInput = Depends(ProcessMultimediaInput.as_form)) -> ProcessMultimediaOutput:
         """
         Processes multimedia documents by indexing them and logs the operation.
 
@@ -154,7 +155,7 @@ class VerbalVistaAssistantDeployment:
 
         Args:
 
-            file (UploadFile): The file to be processed.
+            files (List[UploadFile]): The list of files to be processed.
             data (ProcessMultimediaInput): Additional data for processing the document.
 
         Returns:
@@ -170,15 +171,15 @@ class VerbalVistaAssistantDeployment:
 
         # (1) Read the file content
         start1 = time.time()
-        file_meta = await process_multimedia_util.read_file(file, file_description=data.file_description)
+        files_meta = await process_multimedia_util.read_file(files, file_description=data.file_description)
         end = time.time()
-        self.logger.info(f"Finished reading `{file_meta['name']}` in {round((end - start1) * 1000, 2)} ms")
+        self.logger.info(f"Finished reading `{len(files_meta)}` files in {round((end - start1) * 1000, 2)} ms")
 
         # (2) Process file content and extract text
         start = time.time()
-        extracted_texts = process_multimedia_util.extract_text(file_meta=file_meta)
+        extracted_texts = process_multimedia_util.extract_text(files_meta=files_meta)
         end = time.time()
-        self.logger.info(f"Text Extracted from `{file_meta['name']}` in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Text Extracted from `{len(files_meta)}` files in {round((end - start) * 1000, 2)} ms")
 
         # (3) Write extracted text to tmp file
         start = time.time()
@@ -206,9 +207,10 @@ class VerbalVistaAssistantDeployment:
         self.logger.info(f"FAISS index saved to `{index_directory}` in {round((end - start) * 1000, 2)} ms")
 
         # (5) Construct a metadata dictionary from the processing data.
-        _ = file_meta.pop("file")
+        _ = [file_meta.pop("file", None) for file_meta in files_meta]
+
         result["index_meta"] = {
-            "file_meta": file_meta,
+            "files_meta": files_meta,
             "chunk_size": data.chunk_size,
             "chunk_overlap": data.chunk_overlap,
             "embedding_model": data.embedding_model,

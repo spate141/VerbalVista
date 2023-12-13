@@ -46,43 +46,47 @@ class ProcessMultimediaUtil:
         self.openai_wisper_util = openai_wisper_util
 
     @staticmethod
-    async def read_file(file, file_description: str = None) -> Dict[str, Any]:
+    async def read_file(files, file_description: str = None) -> List[Dict[str, Any]]:
         """
         Read the content of the file.
-        :param: file: FastAPI File object
+        :param: files: List of FastAPI File object
         :param: file_description: File description defined by user in API endpoint
-        :return: Dict[str, Any]: File metadata
+        :return: List[Dict[str, Any]]: Files metadata
         """
-        file_content = await file.read()
-        file_meta = {
-            'file': BytesIO(file_content),
-            'name': file.filename,
-            'type': file.content_type,
-            'size': len(file_content),
-            'description': file_description
-        }
-        return file_meta
+        files_meta = []
+        for file in files:
+            file_content = await file.read()
+            file_meta = {
+                'file': BytesIO(file_content),
+                'name': file.filename,
+                'type': file.content_type,
+                'size': len(file_content),
+                'description': file_description
+            }
+            files_meta.append(file_meta)
+        return files_meta
 
-    def extract_text(self, file_meta: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    def extract_text(self, files_meta: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Extract text from the previously read file object based on file type.
-        :param: file_meta: Dict[str, Any]: File metadata
+        :param: files_meta: List[Dict[str, Any]]: Files metadata
         :return: List[Dict[str, Any]]: List of extracted text object dictionary.
         """
         extracted_texts = []
-        extracted_text = ""
-        file_name = file_meta['name']
-        file_desc = file_meta['description']
-        if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
-            extracted_text = process_audio_files(
-                tmp_audio_dir=self.tmp_audio_dir, file_meta=file_meta, openai_wisper_util=self.openai_wisper_util
-            )
-        elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
-            extracted_text = process_document_files(file_meta=file_meta)
-        extracted_texts.append({
-            "file_name": file_name,
-            "extracted_text": extracted_text,
-            "doc_description": file_desc
-        })
+        for file_meta in files_meta:
+            extracted_text = ""
+            file_name = file_meta['name']
+            file_desc = file_meta['description']
+            if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
+                extracted_text = process_audio_files(
+                    tmp_audio_dir=self.tmp_audio_dir, file_meta=file_meta, openai_wisper_util=self.openai_wisper_util
+                )
+            elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
+                extracted_text = process_document_files(file_meta=file_meta)
+            extracted_texts.append({
+                "file_name": file_name,
+                "extracted_text": extracted_text,
+                "doc_description": file_desc
+            })
         return extracted_texts
 
