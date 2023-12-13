@@ -3,7 +3,7 @@ from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, Tran
 from utils import log_info, log_debug, log_error
 
 
-def scrape_youtube_video_transcript(youtube_url: str) -> str:
+async def scrape_youtube_video_transcript(youtube_url: str) -> str:
     """
     Fetch the English transcript of a YouTube video given its URL.
 
@@ -14,7 +14,7 @@ def scrape_youtube_video_transcript(youtube_url: str) -> str:
     str: The English transcript of the video.
     """
     # Extract the video ID from the URL
-    video_id = extract_video_id(youtube_url)
+    video_id = await extract_video_id(youtube_url)
 
     # Attempt to fetch the transcript
     try:
@@ -27,7 +27,7 @@ def scrape_youtube_video_transcript(youtube_url: str) -> str:
         return ""
 
 
-def extract_video_id(youtube_url: str) -> str:
+async def extract_video_id(youtube_url: str) -> str:
     """
     Extract the video ID from a YouTube URL.
 

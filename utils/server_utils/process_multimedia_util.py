@@ -46,9 +46,9 @@ class ProcessMultimediaUtil:
         self.openai_wisper_util = openai_wisper_util
 
     @staticmethod
-    async def read_file(files, file_description: str = None) -> List[Dict[str, Any]]:
+    async def read_files(files, file_description: str = None) -> List[Dict[str, Any]]:
         """
-        Read the content of the file.
+        Read the content of the files.
         :param: files: List of FastAPI File object
         :param: file_description: File description defined by user in API endpoint
         :return: List[Dict[str, Any]]: Files metadata

@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from better_profanity import profanity
 
 
-def fetch_4chan_comments(url, purge_bad_words=True):
+async def fetch_4chan_comments(url, purge_bad_words=True):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 

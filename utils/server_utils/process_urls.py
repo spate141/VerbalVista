@@ -24,7 +24,8 @@ class ProcessURLsUtil:
         self.document_dir = document_dir
         self.reddit_util = reddit_util
 
-    def extract_text(self, urls_meta: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    @staticmethod
+    async def extract_text(urls_meta: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Extract text from the previously read file object based on file type.
         :param: urls_meta: List[Dict[str, Any]]: URLs metadata
@@ -38,7 +39,7 @@ class ProcessURLsUtil:
             #     extracted_text = self.reddit_util.fetch_comments_from_url(url)
             #     extracted_text = ' '.join(extracted_text)
             # else:
-            extracted_text = process_url(url)
+            extracted_text = await process_url(url)
             extracted_texts.append({
                 "file_name": url[8:].replace("/", "-").replace('.', '-'),
                 "extracted_text": extracted_text,

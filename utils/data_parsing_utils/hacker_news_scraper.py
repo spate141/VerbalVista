@@ -4,13 +4,13 @@ from bs4 import BeautifulSoup
 from utils import log_debug, log_info
 
 
-def scrape_hn_comments(url):
+async def scrape_hn_comments(url):
     """Scrape comments from a Hacker News post, handling pagination."""
-    comments = scrape_comments_from_page(url, 1)
+    comments = await scrape_comments_from_page(url, 1)
     return comments
 
 
-def scrape_comments_from_page(url, page_number):
+async def scrape_comments_from_page(url, page_number):
     """Scrape comments from a single page and follow pagination."""
     comments = []
     response = requests.get(url)

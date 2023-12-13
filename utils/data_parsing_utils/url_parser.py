@@ -32,7 +32,7 @@ def is_4chan_url(url):
     return domain in ['boards.4chan.org', 'boards.4channel.org']
 
 
-def get_webpage_text(url: str) -> str:
+async def get_webpage_text(url: str) -> str:
     """
     Fetch the text content of a webpage given its URL using Selenium.
 
@@ -51,7 +51,7 @@ def get_webpage_text(url: str) -> str:
     return page_text
 
 
-def process_url(url, msg=None):
+async def process_url(url, msg=None):
     """
 
     :param url: URL
@@ -62,25 +62,25 @@ def process_url(url, msg=None):
         if msg:
             msg.toast(f'Processing HackerNews URL...')
         log_info('Parsing HackerNews URL')
-        comments = scrape_hn_comments(url)
+        comments = await scrape_hn_comments(url)
         text = '\n'.join(comments)
 
     elif is_4chan_url(url):
         if msg:
             msg.toast(f'Processing 4chan URL...')
         log_info('Parsing 4chan URL')
-        comments = fetch_4chan_comments(url)
+        comments = await fetch_4chan_comments(url)
         text = '\n'.join(comments)
 
     elif is_youtube_url(url):
         if msg:
             msg.toast(f'Processing YouTube URL...')
         log_info('Parsing YouTube URL')
-        text = scrape_youtube_video_transcript(url)
+        text = await scrape_youtube_video_transcript(url)
 
     else:
         if msg:
             msg.toast(f'Processing Normal URL...')
         log_info('Parsing Normal URL')
-        text = get_webpage_text(url)
+        text = await get_webpage_text(url)
     return text

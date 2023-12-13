@@ -171,17 +171,17 @@ class VerbalVistaAssistantDeployment:
 
         # (1) Read the file content
         start1 = time.time()
-        files_meta = await process_multimedia_util.read_file(files, file_description=data.file_description)
+        files_meta = await process_multimedia_util.read_files(files, file_description=data.file_description)
         end = time.time()
         self.logger.info(f"Finished reading `{len(files_meta)}` files in {round((end - start1) * 1000, 2)} ms")
 
-        # (2) Process file content and extract text
+        # (2) Process files content and extract text
         start = time.time()
         extracted_texts = process_multimedia_util.extract_text(files_meta=files_meta)
         end = time.time()
         self.logger.info(f"Text Extracted from `{len(files_meta)}` files in {round((end - start) * 1000, 2)} ms")
 
-        # (3) Write extracted text to tmp file
+        # (3) Write extracted texts to tmp file
         start = time.time()
         tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
@@ -226,7 +226,7 @@ class VerbalVistaAssistantDeployment:
         summary="Process URLs and generate URLs index.",
         response_model=ProcessUrlsOutput,
     )
-    def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
+    async def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
         """
         Extracts and processes text from the provided URLs and creates an index.
 
@@ -261,7 +261,7 @@ class VerbalVistaAssistantDeployment:
             urls_meta.append({
                 'url': url, 'description': data.url_description
             })
-        extracted_texts = process_urls_util.extract_text(urls_meta)
+        extracted_texts = await process_urls_util.extract_text(urls_meta)
         end = time.time()
         self.logger.info(f"Text Extracted from `{len(data.urls)}` URLS in {round((end - start1) * 1000, 2)} ms")
 
