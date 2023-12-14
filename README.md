@@ -2,7 +2,7 @@
   <img align="center" src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="40%" height="40%" />
 </p>
 
-![Static Badge](https://img.shields.io/badge/VerbalVista-1.6-blue)
+![Static Badge](https://img.shields.io/badge/VerbalVista-1.7-blue)
 
 ## Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
@@ -25,12 +25,12 @@ OPENAI_API_KEY=6D6OeN8OcTeS2H6AaR4Ed
 ### Build docker image:
 ```cmd
 >> cd VerbalVista
->> docker build -t verbal_vista:1.6 .
+>> docker build -t verbal_vista:1.7 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 verbal_vista:1.6
+>> docker run -p 8501:8501 verbal_vista:1.7
 ```
 
 ## Streamlit APP
@@ -91,6 +91,14 @@ bash manage_server.sh stop_ray
 - **Method**: GET
 - **Description**: Retrieves a list of all available indices on the server. Useful for understanding what data is currently indexed and available for querying.
 - **Response**: A list of index names.
+
+#### Delete Index
+- **Endpoint**: `/delete/{index_name}`
+- **Method**: DELETE
+- **Description**: Removes a specified index from the server. This endpoint is essential for managing the indices and ensuring that outdated or unnecessary indices can be deleted to maintain optimal server performance and data relevance.
+- **Path Parameter**: `index_name` - The unique identifier of the index to be deleted.
+- **Response**: Confirmation of the deletion process, along with details of the deleted index or an error message if the index does not exist or cannot be deleted.
+
 
 #### Query
 - **Endpoint**: `/query`

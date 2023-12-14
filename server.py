@@ -24,7 +24,7 @@ from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionComme
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🅛🅛🅜 + Your Data = 🩶",
-    version="1.6",
+    version="1.7",
 )
 
 origins = ["*"]
