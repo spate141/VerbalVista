@@ -5,6 +5,7 @@ import glob
 import faiss
 import pickle
 import pandas as pd
+from typing import Dict
 from pathlib import Path
 from functools import partial
 from ray.data import ActorPoolStrategy
@@ -19,9 +20,18 @@ from utils.rag_utils.embedding_util import EmbedChunks
 
 def get_available_indices(indices_dir: str = 'indices/'):
     """
+    Retrieves a list of available index directories, excluding hidden ones, along with their metadata and creation dates.
 
-    :param indices_dir:
-    :return:
+    This function scans the specified directory for subdirectories that represent index directories,
+    ignoring any that are hidden (start with a dot). It attempts to read a metadata file with a '.meta.txt'
+    extension within each index directory to gather descriptive information about the index. It then collects
+    the path to the index directory, its metadata, and its creation date, returning this information as a
+    sorted pandas DataFrame.
+
+    :param indices_dir: The path to the directory containing index subdirectories. Defaults to 'indices/'.
+                        The trailing slash indicates it is a directory.
+    :return: A pandas DataFrame with columns ['Index Path', 'Index Description', 'Creation Date'],
+             sorted by 'Creation Date' in descending order.
     """
     indices_data = []
     all_indices_dirs = os.listdir(indices_dir)
@@ -42,7 +52,17 @@ def get_available_indices(indices_dir: str = 'indices/'):
     return df
 
 
-def count_files_in_dir(dir_path):
+def count_files_in_dir(dir_path: str = None):
+    """
+    Counts the number of '.data.txt' files in a given directory.
+
+    This function checks if the provided directory path exists and is indeed a directory. If it is,
+    the function counts the number of files within that directory that have a '.data.txt' extension.
+
+    :param dir_path: The path to the directory where files will be counted.
+    :return: An integer representing the count of '.data.txt' files in the specified directory.
+             Returns 0 if the directory does not exist or the path does not refer to a directory.
+    """
     if not os.path.isdir(dir_path):
         return 0
     return len([
@@ -52,10 +72,18 @@ def count_files_in_dir(dir_path):
 
 def get_available_documents(document_dir: str = 'documents/', indices_dir: str = 'indices/'):
     """
+    Gathers information about document directories and their indexing status.
 
-    :param document_dir:
-    :param indices_dir:
-    :return:
+    This function scans the provided document directory for subdirectories, then checks each one for a metadata file
+    and counts the number of '.data.txt' files. It also compares these document subdirectories against index
+    subdirectories to determine whether each document directory has been indexed. The collected data is returned as a
+    pandas DataFrame with relevant information such as indexing status, metadata, directory name, total number of
+    files, and creation date.
+
+    :param document_dir: The path to the directory containing document subdirectories. Defaults to 'documents/'.
+    :param indices_dir: The path to the directory containing index subdirectories. Defaults to 'indices/'.
+    :return: A pandas DataFrame with columns ['Select Index', 'Index Status', 'Document Meta', 'Directory Name',
+             'Total Files', 'Creation Date'] representing the gathered information about each document subdirectory.
     """
     documents_data = []
     documents_subdirs = next(os.walk(document_dir))[1]
@@ -81,11 +109,17 @@ def get_available_documents(document_dir: str = 'documents/', indices_dir: str =
     return df
 
 
-def delete_document(selected_directory: str = None):
+def delete_directory(selected_directory: str = None):
     """
+    Deletes a specified directory along with all its contained files and subdirectories.
 
-    :param selected_directory:
-    :return:
+    This function recursively traverses the specified directory from the bottom up, deleting all files
+    and subdirectories before finally deleting the top-level directory itself. If any operation fails,
+    an error is logged with the description of the issue.
+
+    :param selected_directory: The path to the directory that should be deleted. If this parameter
+                               is not provided or `None`, the function will not perform any action.
+    :return: None
     """
     try:
         # Remove all files and subdirectories within the directory
@@ -100,13 +134,22 @@ def delete_document(selected_directory: str = None):
         # Remove the top-level directory itself
         os.rmdir(selected_directory)
         log_info(f"Directory '{selected_directory}' deleted successfully.")
+        return True
     except OSError as e:
         log_error(f"Error: {e.strerror}")
+        return False
 
 
-def do_some_data_extraction(record):
+def do_some_data_extraction(record: Dict = None):
     """
-    Extract data from the record['path'] txt file and return [{source: filename, text: text}, ...] object
+    Extracts text data from a file specified in the given record.
+
+    This function opens the file located at the path indicated by 'record['path']', reads its content, and returns a
+    list of dictionaries. Each dictionary contains two key-value pairs: 'source' with the name of the file, and 'text'
+    with the content of the file.
+
+    :param record: A dictionary containing the key 'path' that holds a Path object pointing to the target text file.
+    :return: A list containing a single dictionary with 'source' set to the filename and 'text' set to the file content.
     """
     filename = record["path"].name
     with open(record["path"], "r", encoding="utf-8") as f:
@@ -117,7 +160,19 @@ def do_some_data_extraction(record):
 
 def do_some_data_chunking(data, chunk_size=600, chunk_overlap=30):
     """
-    Split the input data into proper chunks.
+    Splits the input text data into chunks of a specified size with a defined overlap between consecutive chunks.
+
+    This function utilizes a RecursiveCharacterTextSplitter to divide the provided text data into smaller parts,
+    each of a maximum character length defined by 'chunk_size'. The chunks can optionally overlap by a number of
+    characters specified by 'chunk_overlap'. The function returns a list of dictionaries, where each dictionary
+    represents a text chunk and its source information.
+
+    :param data: A dictionary containing the keys 'text' with the full text to be chunked and 'source' with the
+                 source information.
+    :param chunk_size: The maximum number of characters for each chunk. Defaults to 600.
+    :param chunk_overlap: The number of characters that each chunk will overlap with the next. Defaults to 30.
+    :return: A list of dictionaries, each containing a 'text' key with the chunk content and a 'source' key with
+             the source information from the input data.
     """
     text_splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n", "(?<=\. )", " ", ""],
@@ -160,13 +215,17 @@ def index_data(
         chunk_overlap: int = 30, embedding_model: str = "text-embedding-ada-002"
 ):
     """
-    This function accepts a document_directory which contain files in plain text format and
-    create an index and save that index into index_directory.
-    :param document_directory:
-    :param index_directory:
-    :param chunk_size:
-    :param chunk_overlap:
-    :param embedding_model:
+    Indexes text data from a specified document directory and stores the index in an index directory.
+
+    This function processes text files from the document_directory by extracting their content, chunking them into
+    smaller parts, embedding these chunks using a specified model, and then storing the results in a FAISS index.
+    The index is saved to the index_directory. Metadata is also loaded and saved alongside the index.
+
+    :param document_directory: The path to the directory containing the text files to be indexed.
+    :param index_directory: The path where the generated index will be stored.
+    :param chunk_size: The number of characters each text chunk should contain. Defaults to 600.
+    :param chunk_overlap: The number of characters that should overlap between consecutive chunks. Defaults to 30.
+    :param embedding_model: The name of the model used for embedding the text chunks. Defaults to "text-embedding-ada-002".
     """
 
     document_directory = Path(document_directory)
@@ -221,9 +280,22 @@ def index_data(
 
 def load_index_and_metadata(index_directory: str = None):
     """
-    Load FAISS index and metadata dict from local disk.
-    :param index_directory: Directory containing FAISS index and metadata dict.
-    :return: {"faiss_index": faiss_index, "lexical_index": lexical_index, "metadata_dict": metadata_dict}
+    Load the FAISS index, lexical index, and metadata dictionary from the specified directory.
+
+    This function attempts to read the FAISS index, lexical index, and metadata dictionary from
+    the given directory. It requires the presence of three specific files within the directory:
+    'faiss.index', 'lexical.index', and 'index.metadata'. If any of these files are missing,
+    the function logs an error and returns a dictionary with None values.
+
+    Parameters:
+    index_directory (str): The path to the directory containing the index and metadata files.
+                           If None, defaults to the current working directory.
+
+    Returns:
+    dict: A dictionary containing the following key-value pairs:
+          - "faiss_index": The loaded FAISS index object, or None if not found.
+          - "lexical_index": The loaded lexical index object, or None if not found.
+          - "metadata_dict": The loaded metadata dictionary, or None if not found.
     """
     index_path = os.path.join(index_directory, 'faiss.index')
     lexical_index_path = os.path.join(index_directory, 'lexical.index')
@@ -246,6 +318,29 @@ def do_some_chat_completion(
         temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
         max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1
 ):
+    """
+    Perform chat completion using a combination of semantic and lexical retrieval methods.
+
+    This function takes a query and uses the provided FAISS index, lexical index, and metadata dictionary
+    to retrieve relevant chunks of information. It then utilizes a language model to generate a response
+    based on the query and retrieved information. The function supports temperature control for response
+    generation variability and allows specification of the number of chunks to retrieve semantically and lexically.
+
+    Parameters:
+    query (str): The input query string for which the chat completion is to be performed.
+    embedding_model (str): The name of the embedding model to be used for semantic retrieval. Defaults to "text-embedding-ada-002".
+    llm_model (str): The name of the large language model to be used for response generation. Defaults to "gpt-3.5-turbo".
+    temperature (float): Controls randomness in response generation. Lower values make responses more deterministic. Defaults to 0.5.
+    faiss_index: The FAISS index object used for semantic retrieval.
+    lexical_index: The lexical index object used for lexical retrieval.
+    metadata_dict (dict): A dictionary containing metadata associated with the indexed chunks.
+    reranker: An optional reranker object to reorder retrieved results based on relevance.
+    max_semantic_retrieval_chunks (int): The maximum number of chunks to retrieve semantically. Defaults to 5.
+    max_lexical_retrieval_chunks (int): The maximum number of chunks to retrieve lexically. Defaults to 1.
+
+    Returns:
+    The result of the chat completion, which includes the generated response and any other relevant information.
+    """
     query_agent = QueryAgent(
         faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
     )

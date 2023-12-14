@@ -5,7 +5,7 @@ import argparse
 from ray import serve
 from typing import List
 from pydantic import BaseModel
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Path
 from dotenv import load_dotenv; load_dotenv(".env")
 from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,9 +14,9 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil,
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
     QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput,
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -77,11 +77,12 @@ class VerbalVistaAssistantDeployment:
     )
     def get_indices(self) -> ListIndicesOutput:
         """
-        Lists all the indices available in the system.
+        Retrieves a list of all indices currently available in the system.
+
+        This endpoint does not require any parameters and will return a `ListIndicesOutput` object containing an array of index names.
 
         Returns:
-
-            ListIndicesOutput: Contains a list of all available indices.
+            ListIndicesOutput: An object that includes an array of the names of all available indices.
         """
         start = time.time()
         list_indices_util = ListIndicesUtil()
@@ -89,6 +90,34 @@ class VerbalVistaAssistantDeployment:
         end = time.time()
         self.logger.info(f"Finished /list/indices in {round((end - start) * 1000, 2)} ms")
         return ListIndicesOutput.parse_list(result)
+
+    @app.delete(
+        "/delete/{index_name}",
+        tags=["delete"],
+        summary="Delete given index.",
+        response_model=DeleteIndexOutput,
+    )
+    def delete_index(
+            self, index_name: str = Path(..., description="The ID of the index to be deleted")
+    ) -> DeleteIndexOutput:
+        """
+        Deletes the specified index from the system.
+
+        This endpoint will attempt to delete an index identified by the `index_name` parameter.
+        If successful, it returns a `DeleteIndexOutput` object containing the result of the deletion.
+
+        Args:
+            index_name (str): The unique identifier of the index to be deleted.
+
+        Returns:
+            DeleteIndexOutput: An object that includes the status of the deletion operation and any additional information.
+        """
+        start = time.time()
+        delete_index_util = DeleteIndexUtil()
+        result = delete_index_util.delete_index(index_dir=self.indices_dir, index_name=index_name)
+        end = time.time()
+        self.logger.info(f"Finished /delete/{index_name} in {round((end - start) * 1000, 2)} ms")
+        return DeleteIndexOutput.parse_obj(result)
 
     @app.post(
         "/query",

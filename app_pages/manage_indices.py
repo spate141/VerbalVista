@@ -2,10 +2,10 @@ import os
 import time
 import pandas as pd
 import streamlit as st
-from utils.rag_utils.rag_util import get_available_documents, index_data, delete_document
+from utils.rag_utils.rag_util import get_available_documents, index_data, delete_directory
 
 
-def render_manage_index_page(document_dir=None, indices_dir=None):
+def render_manage_index_page(document_dir: str = None, indices_dir: str = None):
     """
     This function will allow user to convert plain text into vector index or remove already created index.
     """
@@ -58,10 +58,10 @@ def render_manage_index_page(document_dir=None, indices_dir=None):
                         )
                         st.success(f"Document index {file_name} saved! Refreshing page now.")
                     elif mode == 'Delete':
-                        delete_document(
+                        _ = delete_directory(
                             selected_directory=os.path.join(indices_dir, file_name)
                         )
-                        delete_document(
+                        _ = delete_directory(
                             selected_directory=os.path.join(document_dir, file_name)
                         )
                         st.error(f"Document index {file_name} deleted! Refreshing page now.")
