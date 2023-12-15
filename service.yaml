@@ -1,7 +1,0 @@
-name: "verbal-vista-application"
-proxy_location: EveryNode
-config:
-  access:
-    use_bearer_token: False
-ray_serve_config:
-  import_path: serve:deployment

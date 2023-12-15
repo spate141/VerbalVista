@@ -212,7 +212,7 @@ class VerbalVistaAssistantDeployment:
 
         # (3) Write extracted texts to tmp file
         start = time.time()
-        tmp_document_save_path = await write_data_to_file(
+        tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_texts,
             single_file_flag=data.save_to_one_file,
@@ -288,7 +288,8 @@ class VerbalVistaAssistantDeployment:
         urls_meta = []
         for url in data.urls:
             urls_meta.append({
-                'url': url, 'description': data.url_description
+                'url': url,
+                'description': data.url_description
             })
         extracted_texts = await process_urls_util.extract_text(urls_meta)
         end = time.time()
@@ -296,7 +297,7 @@ class VerbalVistaAssistantDeployment:
 
         # (2) Write extracted text to tmp file
         start = time.time()
-        tmp_document_save_path = await write_data_to_file(
+        tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_texts,
             single_file_flag=data.save_to_one_file,
@@ -376,7 +377,7 @@ class VerbalVistaAssistantDeployment:
 
         # (2) Write extracted text to tmp file
         start = time.time()
-        tmp_document_save_path = await write_data_to_file(
+        tmp_document_save_path = write_data_to_file(
             document_dir=self.document_dir,
             full_documents=extracted_text,
             single_file_flag=data.save_to_one_file,

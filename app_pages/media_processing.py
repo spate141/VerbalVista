@@ -2,7 +2,7 @@ import streamlit as st
 from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 from utils.data_parsing_utils import write_data_to_file
-from utils.data_parsing_utils.url_parser import process_url
+from utils.data_parsing_utils.url_parser import process_url, url_to_filename
 
 
 def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_wisper_util=None, reddit_util=None):
@@ -34,7 +34,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
         if submitted:
             msg = st.toast('Processing data...')
             full_documents = []
-
+            processed_flag = False
             if uploaded_files:
                 all_files = [{
                     'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files
@@ -62,6 +62,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                         "extracted_text": extracted_text,
                         "doc_description": document_desc
                     })
+                processed_flag = True
 
             if url is not None:
                 if "reddit.com" in url:
@@ -74,10 +75,11 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     extracted_text = process_url(url, msg)
 
                 full_documents.append({
-                    "file_name": url[8:].replace("/", "-").replace('.', '-'),
+                    "file_name": url_to_filename(url),
                     "extracted_text": extracted_text,
                     "doc_description": document_desc
                 })
+                processed_flag = True
 
             if text is not None:
                 msg.toast(f'Processing TEXT data...')
@@ -87,8 +89,9 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     "extracted_text": text,
                     "doc_description": document_desc
                 })
+                processed_flag = True
 
-            else:
+            if not processed_flag:
                 st.error("You have to either upload a file, URL or enter some text!")
                 return
 

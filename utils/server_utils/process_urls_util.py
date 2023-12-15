@@ -1,7 +1,7 @@
 import asyncio
 from pydantic import BaseModel
 from typing import Any, Dict, Optional, List
-from utils.data_parsing_utils.url_parser import process_url
+from utils.data_parsing_utils.url_parser import process_url, url_to_filename
 
 
 class ProcessUrlsInput(BaseModel):
@@ -41,7 +41,7 @@ class ProcessURLsUtil:
         # Combine results with metadata
         extracted_texts = [
             {
-                "file_name": urls_meta[i]['url'][8:].replace("/", "-").replace('.', '-'),
+                "file_name": url_to_filename(urls_meta[i]['url']),
                 "extracted_text": result,
                 "doc_description": urls_meta[i]['description']
             } for i, result in enumerate(results)

@@ -8,7 +8,7 @@ def random_string_generator(k=4):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
 
 
-async def write_data_to_file(
+def write_data_to_file(
         document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False
 ):
     """
@@ -18,7 +18,7 @@ async def write_data_to_file(
     :param single_file_flag: Save as single file or multiple files flag.
     :return:
     """
-    directory_name = '_+_'.join([doc['file_name'].replace(' ', "_")[:15] for doc in full_documents])
+    directory_name = '_+_'.join([doc['file_name'].replace(' ', "_") for doc in full_documents])
     directory_name = f"{directory_name}_{random_string_generator()}"
     if single_file_flag:
         full_directory_path = os.path.join(document_dir, directory_name)

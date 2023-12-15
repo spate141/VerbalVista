@@ -1,4 +1,6 @@
+import re
 import asyncio
+import hashlib
 from selenium import webdriver
 from urllib.parse import urlparse
 from selenium.webdriver.common.by import By
@@ -101,3 +103,28 @@ async def process_url(url, msg=None):
         log_info('Parsing Normal URL')
         text = await get_webpage_text(url)
     return text
+
+
+def url_to_filename(url):
+    """
+
+    """
+    # Parse the URL
+    parsed_url = urlparse(url)
+
+    # Extract the domain
+    domain = parsed_url.netloc.split('.')[-2]  # Get the second last part of the domain
+
+    # Extract the last segment of the path
+    last_segment = parsed_url.path.split('/')
+    last_segment = [i for i in last_segment if i][-1]
+    short_segment = re.sub(r'[^a-zA-Z0-9]', '_', last_segment)  # Keep first 10 chars
+
+    # Generate a short hash for uniqueness
+    url_hash = hashlib.md5(url.encode()).hexdigest()[:4]  # Short hash for uniqueness
+
+    # Combine to form the filename
+    filename = f"{domain}_{short_segment}_{url_hash}.txt"
+
+    return filename
+
