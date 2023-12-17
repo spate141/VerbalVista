@@ -1,2 +1,2 @@
 from .generate_wordcloud import generate_wordcloud
-from .stocks_util import get_stock_data, normalize_stock_data, generate_stock_plotly_chart
+from .stocks_util import get_stock_data, normalize_stock_data, generate_stock_plotly_chart, get_portfolio_results

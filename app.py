@@ -85,6 +85,12 @@ class VerbalVista:
         """
         render_stocks_comparison_page(stock_data_dir=self.stock_data_dir)
 
+    def render_stocks_portfolio_page(self):
+        """
+        Stocks portfolio page.
+        """
+        render_stocks_portfolio_page()
+
     def render_image_generation_page(self):
         """
         Image generation page.
@@ -98,7 +104,7 @@ def main():
     APP_NAME = "VerbalVista"
     APP_VERSION = "1.7"
     APP_PAGES = [
-        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison",
+        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
         "Image Generation"
     ]
     # Render sidebar
@@ -158,6 +164,8 @@ def main():
         vv.render_document_explore_page()
     elif selected_page == 'Stocks Comparison':
         vv.render_stocks_comparison_page()
+    elif selected_page == 'Stocks Portfolio':
+        vv.render_stocks_portfolio_page()
     elif selected_page == 'Image Generation':
         vv.render_image_generation_page()
 
