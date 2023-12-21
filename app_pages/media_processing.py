@@ -1,3 +1,4 @@
+import asyncio
 import streamlit as st
 from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
@@ -72,7 +73,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     extracted_text = ' '.join(extracted_text)
                 else:
                     log_debug('Processing URL!')
-                    extracted_text = process_url(url, msg)
+                    extracted_text = asyncio.run(process_url(url, msg))
 
                 full_documents.append({
                     "file_name": url_to_filename(url),
