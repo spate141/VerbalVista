@@ -2,7 +2,7 @@ import os
 import time
 import tiktoken
 from openai import OpenAI
-from langchain.callbacks.openai_info import get_openai_token_cost_for_model
+from langchain_community.callbacks.openai_info import get_openai_token_cost_for_model
 
 from utils import log_error
 from utils.rag_utils import MAX_CONTEXT_LENGTHS, SYS_PROMPT
