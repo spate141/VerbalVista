@@ -4,7 +4,7 @@ from utils.rag_utils.rag_util import delete_directory
 
 
 class DeleteIndexOutput(BaseModel):
-    index_name = str
+    index_name: str
     status: str
 
 

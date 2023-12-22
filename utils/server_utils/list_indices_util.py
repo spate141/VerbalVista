@@ -1,5 +1,5 @@
 import os
-from pandas import Timestamp
+import pandas
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from utils.rag_utils.rag_util import get_available_indices
@@ -8,7 +8,10 @@ from utils.rag_utils.rag_util import get_available_indices
 class IndexOutput(BaseModel):
     index_name: str
     index_description: str
-    index_build_time: Timestamp
+    index_build_time: pandas._libs.tslibs.timestamps.Timestamp
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class ListIndicesOutput(BaseModel):

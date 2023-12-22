@@ -8,11 +8,11 @@ grpcio~=1.60.0
 langchain~=0.0.352
 langchain-community~=0.0.6
 numpy~=1.26.2
-openai~=1.6.0
+openai~=1.6.1
 pandas~=2.1.4
 plotly~=5.18.0
 praw~=7.7.1
-pydantic<2
+pydantic~=2.5.3
 pydub~=0.25.1
 python-docx~=1.1.0
 python-dotenv~=1.0.0
