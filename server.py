@@ -16,7 +16,8 @@ from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
     QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
     QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput,
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput,
+    AuthUtil
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -26,15 +27,20 @@ app = FastAPI(
     description="🅛🅛🅜 + Your Data = 🩶",
     version="1.7",
 )
-
-origins = ["*"]
+auth_util = AuthUtil(
+    valid_api_keys=os.getenv("VALID_API_KEYS", "").split(",")
+)
+origins = [
+    "http://127.0.0.1:8000",  # Local
+    # "https://myapp.example.com",  # Production
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -75,16 +81,20 @@ class VerbalVistaAssistantDeployment:
         summary="Returns list of available indices.",
         response_model=ListIndicesOutput,
     )
-    def get_indices(self) -> ListIndicesOutput:
+    def get_indices(self, api_key: str = Depends(auth_util.get_api_key)) -> ListIndicesOutput:
         """
         Retrieves a list of all indices currently available in the system.
 
         This endpoint does not require any parameters and will return a `ListIndicesOutput` object containing an array of index names.
 
+        Args:
+            api_key (str): APIKeyHeader
+
         Returns:
             ListIndicesOutput: An object that includes an array of the names of all available indices.
         """
         start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /get_indices")
         list_indices_util = ListIndicesUtil()
         result = list_indices_util.list_indices(indices_dir=self.indices_dir)
         end = time.time()
@@ -98,7 +108,8 @@ class VerbalVistaAssistantDeployment:
         response_model=DeleteIndexOutput,
     )
     def delete_index(
-            self, index_name: str = Path(..., description="The ID of the index to be deleted")
+            self, index_name: str = Path(..., description="The ID of the index to be deleted"),
+            api_key: str = Depends(auth_util.get_api_key)
     ) -> DeleteIndexOutput:
         """
         Deletes the specified index from the system.
@@ -108,11 +119,13 @@ class VerbalVistaAssistantDeployment:
 
         Args:
             index_name (str): The unique identifier of the index to be deleted.
+            api_key (str): APIKeyHeader
 
         Returns:
             DeleteIndexOutput: An object that includes the status of the deletion operation and any additional information.
         """
         start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /delete_index")
         delete_index_util = DeleteIndexUtil()
         result = delete_index_util.delete_index(index_dir=self.indices_dir, index_name=index_name)
         end = time.time()
@@ -125,19 +138,19 @@ class VerbalVistaAssistantDeployment:
         summary="Use index and LLMs to generate response to user's question.",
         response_model=QuestionOutput,
     )
-    def query(self, query: QuestionInput) -> QuestionOutput:
+    def query(self, query: QuestionInput, api_key: str = Depends(auth_util.get_api_key)) -> QuestionOutput:
         """
         Processes a query and returns the predicted answer.
 
         Args:
-
             query (QuestionInput): The query input containing parameters for processing.
+            api_key (str): APIKeyHeader
 
         Returns:
-
             QuestionOutput: The output containing the predicted answer.
         """
         start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /query")
         query_util = QueryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
@@ -156,7 +169,11 @@ class VerbalVistaAssistantDeployment:
         summary="Process documents and generate document index.",
         response_model=ProcessMultimediaOutput,
     )
-    async def process_multimedia(self, files: List[UploadFile] = File(...), data: ProcessMultimediaInput = Depends(ProcessMultimediaInput.as_form)) -> ProcessMultimediaOutput:
+    async def process_multimedia(
+            self, files: List[UploadFile] = File(...),
+            data: ProcessMultimediaInput = Depends(ProcessMultimediaInput.as_form),
+            api_key: str = Depends(auth_util.get_api_key)
+    ) -> ProcessMultimediaOutput:
         """
         Processes multimedia documents by indexing them and logs the operation.
 
@@ -183,12 +200,11 @@ class VerbalVistaAssistantDeployment:
         - `.eml` - Email message saved to a file in the Internet Message Format protocol.
 
         Args:
-
             files (List[UploadFile]): The list of files to be processed.
             data (ProcessMultimediaInput): Additional data for processing the document.
+            api_key (str): APIKeyHeader
 
         Returns:
-
             ProcessMultimediaOutput: The result of the document processing.
         """
 
@@ -200,6 +216,7 @@ class VerbalVistaAssistantDeployment:
 
         # (1) Read the file content
         start1 = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /process/multimedia")
         files_meta = await process_multimedia_util.read_files(files, file_description=data.file_description)
         end = time.time()
         self.logger.info(f"Finished reading `{len(files_meta)}` files in {round((end - start1) * 1000, 2)} ms")
@@ -255,7 +272,9 @@ class VerbalVistaAssistantDeployment:
         summary="Process URLs and generate URLs index.",
         response_model=ProcessUrlsOutput,
     )
-    async def process_urls(self, data: ProcessUrlsInput) -> ProcessUrlsOutput:
+    async def process_urls(
+            self, data: ProcessUrlsInput, api_key: str = Depends(auth_util.get_api_key)
+    ) -> ProcessUrlsOutput:
         """
         Extracts and processes text from the provided URLs and creates an index.
 
@@ -265,14 +284,12 @@ class VerbalVistaAssistantDeployment:
         including text extraction, file saving, and index generation.
 
         Args:
-
             data (ProcessUrlsInput): An object containing the list of URLs to be processed, along with
                                      additional data like chunk size, chunk overlap, embedding model,
                                      and a flag to determine if the extracted texts should be saved
                                      to a single file or multiple files.
-
+            api_key (str): APIKeyHeader
         Returns:
-
             ProcessUrlsOutput: An object containing the name of the generated index and metadata
                                about the indexing process. This metadata includes details like the
                                URLs processed, text extraction settings, and the configuration used
@@ -285,6 +302,7 @@ class VerbalVistaAssistantDeployment:
 
         # (1) Process URLs content and extract text
         start1 = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /process/urls")
         urls_meta = []
         for url in data.urls:
             urls_meta.append({
@@ -340,7 +358,9 @@ class VerbalVistaAssistantDeployment:
         summary="Process text and generate text index.",
         response_model=ProcessTextOutput,
     )
-    async def process_text(self, data: ProcessTextInput) -> ProcessTextOutput:
+    async def process_text(
+            self, data: ProcessTextInput, api_key: str = Depends(auth_util.get_api_key)
+    ) -> ProcessTextOutput:
         """
         Processes a given text input, creates a searchable index, and returns metadata about the process.
 
@@ -350,15 +370,14 @@ class VerbalVistaAssistantDeployment:
         text searchable or queryable.
 
         Args:
-
             data (ProcessTextInput): An object containing the text to be processed, along with additional
                                      processing parameters. These parameters include a description of the
                                      text, chunk size for indexing, chunk overlap, the embedding model to
                                      be used, and a flag to determine if the processed text should be saved
                                      to a single file or multiple files.
+            api_key (str): APIKeyHeader
 
         Returns:
-
             ProcessTextOutput: An object containing details about the generated index and the text processing.
                                This includes the name of the index, the processed text metadata (like a snippet
                                of the text and its description), and settings used for the indexing process.
@@ -368,6 +387,7 @@ class VerbalVistaAssistantDeployment:
 
         # (1) Process URLs content and extract text
         start1 = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /process/text")
         text_meta = {
             'text': data.text, 'description': data.text_description
         }

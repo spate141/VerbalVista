@@ -4,3 +4,4 @@ from .query_util import QueryUtil, QuestionInput, QuestionOutput
 from .process_text_util import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
 from .process_urls_util import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
 from .process_multimedia_util import ProcessMultimediaUtil, ProcessMultimediaInput, ProcessMultimediaOutput
+from .auth_util import AuthUtil
