@@ -3,6 +3,7 @@ import time
 import logging
 import argparse
 from ray import serve
+import multiprocessing
 from typing import List
 from pydantic import BaseModel
 from fastapi import FastAPI, status, Path
@@ -14,10 +15,9 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil, AuthUtil,
     QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput,
     QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput,
-    AuthUtil
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -459,14 +459,17 @@ class VerbalVistaAssistantDeployment:
 
 def main():
     """
-    How to start and stop server?
+    How to start and stop ray and server?
     >> ray start --head
-    >> python server.py --index_dir=../data/indices/my_index/
+    >> python server.py -vvv
+    >> python -c "from ray import serve; serve.shutdown()"
     >> ray stop
     """
+    _cpus = multiprocessing.cpu_count()
+    _num_cpus = _cpus // 2
     parser = argparse.ArgumentParser(description='Start VerbalVista Ray Server!')
     parser.add_argument('--num_replicas', type=int, default=1, help='Number of replicas.')
-    parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs.')
+    parser.add_argument('--num_cpus', type=int, default=_num_cpus, help='Number of CPUs.')
     parser.add_argument('--num_gpus', type=int, default=0, help='Number of GPUs.')
     parser.add_argument('--max_concurrent_queries', type=int, default=100, help='Max concurrent queries.')
     parser.add_argument('--health_check_period_s', type=int, default=10, help='Health check period (seconds).')
