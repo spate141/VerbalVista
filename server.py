@@ -24,8 +24,8 @@ from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionComme
 
 app = FastAPI(
     title="Inference API for VerbalVista",
-    description="🅛🅛🅜 + Your Data = 🩶",
-    version="1.7",
+    description="🅛🅛🅜 + Your Data = ♥️",
+    version="1.8",
 )
 auth_util = AuthUtil(
     valid_api_keys=os.getenv("VALID_API_KEYS", "").split(",")
