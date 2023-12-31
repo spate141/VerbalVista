@@ -68,62 +68,6 @@ class SummaryUtil:
         :param max_lexical_retrieval_chunks: Maximum chunks for lexical retrieval.
         :return: Dictionary containing the summary, topics, and metadata about the generation process.
         """
-        # generate_content_topics_query = "Generate a list of very high level topics from this text."
-        # response = self.query_agent(
-        #     query=generate_content_topics_query,
-        #     temperature=temperature,
-        #     embedding_model_name=embedding_model,
-        #     stream=False,
-        #     llm_model=llm_model,
-        #     num_chunks=max_semantic_retrieval_chunks,
-        #     lexical_search_k=max_lexical_retrieval_chunks
-        # )
-        # high_level_topics_tokens = response['completion_meta']['tokens']
-        # high_level_topics_cost = response['completion_meta']['cost']
-        #
-        # topical_result = []
-        # for topic in self.get_topics(response['answer']):
-        #     topical_query = f'Generate a short summary from the text about "{topic}" in {summary_sentences_per_topic} sentences.'
-        #     t_result = self.query_agent(
-        #         query=topical_query, temperature=temperature, embedding_model_name=embedding_model, stream=False,
-        #         llm_model=llm_model, num_chunks=max_semantic_retrieval_chunks,
-        #         lexical_search_k=max_lexical_retrieval_chunks
-        #     )
-        #     topical_result.append({
-        #         "topic": topic,
-        #         "topical_summary": t_result['answer'],
-        #         "topical_tokens": t_result['completion_meta']['tokens'],
-        #         "topical_cost": t_result['completion_meta']['cost']
-        #     })
-        #
-        # summary = '\n'.join([f"{i['topic']}: {i['topical_summary']}" for i in topical_result])
-        # completion_meta_tokens = [i['topical_tokens'] for i in topical_result] + [high_level_topics_tokens]
-        # summed_completion_meta_tokens = {
-        #     key: sum(d[key] for d in completion_meta_tokens if key in d) for key in set().union(*completion_meta_tokens)
-        # }
-        # completion_meta_cost = [i['topical_cost'] for i in topical_result] + [high_level_topics_cost]
-        # summed_completion_meta_cost = {
-        #     key: sum(d[key] for d in completion_meta_cost if key in d) for key in set().union(*completion_meta_cost)
-        # }
-        # result = {
-        #     "summary": summary,
-        #     "completion_meta": {
-        #         "llm_model": llm_model,
-        #         "embedding_model": embedding_model,
-        #         "temperature": temperature,
-        #         "tokens": {
-        #             "completion": summed_completion_meta_tokens["completion"],
-        #             "prompt": summed_completion_meta_tokens["prompt"],
-        #             "total": summed_completion_meta_tokens["total"],
-        #         },
-        #         "cost": {
-        #             "completion": summed_completion_meta_cost["completion"],
-        #             "prompt": summed_completion_meta_cost["prompt"],
-        #             "total": summed_completion_meta_cost["total"],
-        #         }
-        #     }
-        # }
-        # return result
         common_params = {
             "temperature": temperature,
             "embedding_model_name": embedding_model,
