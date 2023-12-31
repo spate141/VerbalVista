@@ -73,12 +73,12 @@ class SummaryUtil:
             "temperature": temperature,
             "embedding_model_name": embedding_model,
             "stream": False,
-            "llm_model": llm_model,
-            "num_chunks": max_semantic_retrieval_chunks,
-            "lexical_search_k": max_lexical_retrieval_chunks
+            "llm_model": llm_model
         }
         response = self.query_agent(
-            query="Generate a list of high level topics discussed in this text. Make sure the topics represent entirety of the text. List the topics in order of text content.",
+            query="Generate a list of high level topics discussed in this text. Make sure the generated topics represent entirety of the text and are unique. List the topics in order of text content.",
+            num_chunks=15,
+            lexical_search_k=0,
             **common_params
         )
         topics = self.get_topics(response['answer'])
@@ -88,6 +88,8 @@ class SummaryUtil:
         for topic in topics:
             t_result = self.query_agent(
                 query=f'Generate a very short summary from the text about "{topic}" in {num2words(summary_sentences_per_topic)} sentences.',
+                num_chunks=max_semantic_retrieval_chunks,
+                lexical_search_k=max_lexical_retrieval_chunks,
                 **common_params
             )
             topical_result.append((topic, t_result['answer']))
