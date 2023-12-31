@@ -1,6 +1,7 @@
 import os
 import re
 from pydantic import BaseModel
+from num2words import num2words
 from typing import Any, Dict, Optional
 from utils.rag_utils.agent_util import QueryAgent
 from utils.rag_utils.rag_util import load_index_and_metadata
@@ -77,7 +78,7 @@ class SummaryUtil:
             "lexical_search_k": max_lexical_retrieval_chunks
         }
         response = self.query_agent(
-            query="Generate a list of very high level topics from this text.",
+            query="Generate a list of high level topics discussed in this text. Make sure the topics represent entirity of the text. List the topics in order of text content.",
             **common_params
         )
         topics = self.get_topics(response['answer'])
@@ -86,14 +87,14 @@ class SummaryUtil:
 
         for topic in topics:
             t_result = self.query_agent(
-                query=f'Generate a short summary from the text about "{topic}" in {summary_sentences_per_topic} sentences.',
+                query=f'Generate a very short summary from the text about "{topic}" in {num2words(summary_sentences_per_topic)} sentences.',
                 **common_params
             )
             topical_result.append((topic, t_result['answer']))
             tokens = {key: tokens[key] + t_result['completion_meta']['tokens'][key] for key in tokens}
             costs = {key: costs[key] + t_result['completion_meta']['cost'][key] for key in costs}
 
-        summary = '\n'.join([f"{topic}: {summary}" for topic, summary in topical_result])
+        summary = '\n\n'.join([f"{index}. {topic}: {summary}" for index, (topic, summary) in enumerate(topical_result, 1)])
         tokens["completion"] += response['completion_meta']['tokens']["completion"]
         costs["completion"] += response['completion_meta']['cost']["completion"]
 

@@ -8,6 +8,7 @@ grpcio~=1.60.0
 langchain~=0.0.353
 langchain-community~=0.0.7
 numpy~=1.26.2
+num2words~=0.5.13
 openai~=1.6.1
 pandas~=2.1.4
 plotly~=5.18.0
