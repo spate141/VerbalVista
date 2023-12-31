@@ -75,6 +75,8 @@ class SummaryUtil:
             "stream": False,
             "llm_model": llm_model
         }
+
+        # Generate a list of topics from the given text
         response = self.query_agent(
             query="Generate a list of high level topics discussed in this text. "
                   "Make sure the generated topics represent entirety of the text and are unique. "
@@ -84,9 +86,10 @@ class SummaryUtil:
             **common_params
         )
         topics = self.get_topics(response['answer'])
+
+        # For each topic generated above, generate `n` sentences summary
         topical_result = []
         tokens, costs = {"completion": 0, "prompt": 0, "total": 0}, {"completion": 0, "prompt": 0, "total": 0}
-
         for topic in topics:
             t_result = self.query_agent(
                 query=f'Generate a very short summary from the text about "{topic}" in {num2words(summary_sentences_per_topic)} sentences.',
@@ -98,6 +101,7 @@ class SummaryUtil:
             tokens = {key: tokens[key] + t_result['completion_meta']['tokens'][key] for key in tokens}
             costs = {key: costs[key] + t_result['completion_meta']['cost'][key] for key in costs}
 
+        # Generate a final summary text and add tokens and cost meta
         summary = '\n\n'.join([
             f"{index}. {topic}: {summary}" for index, (topic, summary) in enumerate(topical_result, 1)
         ])

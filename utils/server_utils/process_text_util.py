@@ -19,13 +19,22 @@ class ProcessTextOutput(BaseModel):
 class ProcessTextUtil:
 
     def __init__(self, indices_dir: str = None, document_dir: str = None):
+        """
+        Initialize the ProcessTextUtil with directories for indices and documents.
+
+        :param indices_dir: Directory to store indices.
+        :param document_dir: Directory to store documents.
+        """
         self.indices_dir = indices_dir
         self.document_dir = document_dir
 
     @staticmethod
     async def process_text(text_meta: Dict[str, Any]):
         """
+        Asynchronously process a text based on the metadata provided.
 
+        :param text_meta: A dictionary containing 'text' and 'description'.
+        :return: A list of dictionaries with processed text information.
         """
         return [{
             "file_name": text_meta['text'][:20].replace("/", "-").replace('.', '-').replace(' ', '_'),
