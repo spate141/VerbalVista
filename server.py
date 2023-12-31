@@ -15,9 +15,9 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil, AuthUtil,
-    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput,
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput,
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil, AuthUtil, SummaryUtil,
+    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput,
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput, SummaryOutput
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -130,7 +130,7 @@ class VerbalVistaAssistantDeployment:
         result = delete_index_util.delete_index(index_dir=self.indices_dir, index_name=index_name)
         end = time.time()
         self.logger.info(f"Finished /delete/{index_name} in {round((end - start) * 1000, 2)} ms")
-        return DeleteIndexOutput.parse_obj(result)
+        return DeleteIndexOutput.model_validate(result)
 
     @app.post(
         "/query",
@@ -154,14 +154,46 @@ class VerbalVistaAssistantDeployment:
         query_util = QueryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
-        result = query_util.predict(
+        result = query_util.generate_text(
             query=query.query, temperature=query.temperature, embedding_model=query.embedding_model,
             llm_model=query.llm, max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
         end = time.time()
         self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
-        return QuestionOutput.parse_obj(result)
+        return QuestionOutput.model_validate(result)
+
+    @app.post(
+        "/summarize",
+        tags=["summary"],
+        summary="Use LLMs to generate a summary from given index.",
+        response_model=SummaryOutput,
+    )
+    def summarize(self, query: SummaryInput, api_key: str = Depends(auth_util.get_api_key)) -> SummaryOutput:
+        """
+        Summarize index.
+
+        Args:
+            query (SummaryInput): The query input containing parameters for processing.
+            api_key (str): APIKeyHeader
+
+        Returns:
+            SummaryOutput: The output containing the summary.
+        """
+        start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /query")
+        summary_util = SummaryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        end = time.time()
+        self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
+        result = summary_util.summarize_text(
+            summary_sentences_per_topic=query.summary_sentences_per_topic, temperature=query.temperature,
+            embedding_model=query.embedding_model, llm_model=query.llm,
+            max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
+            max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
+        )
+        end = time.time()
+        self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
+        return SummaryOutput.model_validate(result)
 
     @app.post(
         "/process/multimedia",
@@ -264,7 +296,7 @@ class VerbalVistaAssistantDeployment:
         }
         end = time.time()
         self.logger.info(f"Finished /process/documents in {round((end - start1) * 1000, 2)} ms")
-        return ProcessMultimediaOutput.parse_obj(result)
+        return ProcessMultimediaOutput.model_validate(result)
 
     @app.post(
         "/process/urls",
@@ -350,7 +382,7 @@ class VerbalVistaAssistantDeployment:
         }
         end = time.time()
         self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
-        return ProcessUrlsOutput.parse_obj(result)
+        return ProcessUrlsOutput.model_validate(result)
 
     @app.post(
         "/process/text",
@@ -432,7 +464,7 @@ class VerbalVistaAssistantDeployment:
         }
         end = time.time()
         self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
-        return ProcessTextOutput.parse_obj(result)
+        return ProcessTextOutput.model_validate(result)
 
     @app.get(
         "/health",

@@ -45,7 +45,7 @@ class QueryAgent:
     def get_num_tokens(self, text):
         return len(self.encoder.encode(text))
 
-    def generate_response(
+    def generate_text(
             self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
             max_retries=1, retry_interval=60, embedding_model_name="", sources=None
     ):
@@ -122,7 +122,7 @@ class QueryAgent:
         user_content = f"query: {query}\n\ncontext: {context}\n\n"
         max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
         context_length = max_context_length - self.get_num_tokens(self.system_content)
-        answer, completion_meta = self.generate_response(
+        answer, completion_meta = self.generate_text(
             llm_model=llm_model,
             temperature=temperature,
             seed=seed,

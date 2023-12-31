@@ -38,7 +38,7 @@ class QueryUtil:
             reranker=None
         )
 
-    def predict(
+    def generate_text(
             self, query: str = None, temperature: float = None, embedding_model: str = None, llm_model: str = None,
             max_semantic_retrieval_chunks: int = None, max_lexical_retrieval_chunks: int = None
     ) -> Dict[str, Any]:
