@@ -165,7 +165,7 @@ class VerbalVistaAssistantDeployment:
 
     @app.post(
         "/summarize",
-        tags=["summary"],
+        tags=["query"],
         summary="Use LLMs to generate a summary from given index.",
         response_model=SummaryOutput,
     )
