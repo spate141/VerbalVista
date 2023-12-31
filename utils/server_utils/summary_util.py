@@ -76,7 +76,9 @@ class SummaryUtil:
             "llm_model": llm_model
         }
         response = self.query_agent(
-            query="Generate a list of high level topics discussed in this text. Make sure the generated topics represent entirety of the text and are unique. List the topics in order of text content.",
+            query="Generate a list of high level topics discussed in this text. "
+                  "Make sure the generated topics represent entirety of the text and are unique. "
+                  "List the topics in chronological order of text.",
             num_chunks=15,
             lexical_search_k=0,
             **common_params
@@ -96,7 +98,9 @@ class SummaryUtil:
             tokens = {key: tokens[key] + t_result['completion_meta']['tokens'][key] for key in tokens}
             costs = {key: costs[key] + t_result['completion_meta']['cost'][key] for key in costs}
 
-        summary = '\n\n'.join([f"{index}. {topic}: {summary}" for index, (topic, summary) in enumerate(topical_result, 1)])
+        summary = '\n\n'.join([
+            f"{index}. {topic}: {summary}" for index, (topic, summary) in enumerate(topical_result, 1)
+        ])
         tokens["completion"] += response['completion_meta']['tokens']["completion"]
         costs["completion"] += response['completion_meta']['cost']["completion"]
 
