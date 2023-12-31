@@ -78,7 +78,7 @@ class SummaryUtil:
             "lexical_search_k": max_lexical_retrieval_chunks
         }
         response = self.query_agent(
-            query="Generate a list of high level topics discussed in this text. Make sure the topics represent entirity of the text. List the topics in order of text content.",
+            query="Generate a list of high level topics discussed in this text. Make sure the topics represent entirety of the text. List the topics in order of text content.",
             **common_params
         )
         topics = self.get_topics(response['answer'])
