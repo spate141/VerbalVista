@@ -24,7 +24,7 @@ from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionComme
 
 app = FastAPI(
     title="Inference API for VerbalVista",
-    description="🅛🅛🅜 + Your Data = ♥️",
+    description="🄻🄻🄼 + Your Data = ♥️",
     version="1.8",
 )
 auth_util = AuthUtil(
@@ -181,7 +181,7 @@ class VerbalVistaAssistantDeployment:
             SummaryOutput: The output containing the summary.
         """
         start = time.time()
-        self.logger.info(f"Request received api key: {api_key}. Endpoint: /query")
+        self.logger.info(f"Request received for /summarize endpoint; API Key: {api_key}")
         summary_util = SummaryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
@@ -192,7 +192,7 @@ class VerbalVistaAssistantDeployment:
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
         end = time.time()
-        self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Finished /summarize in {round((end - start) * 1000, 2)} ms")
         return SummaryOutput.model_validate(result)
 
     @app.post(

@@ -17,4 +17,4 @@ EMBEDDING_DIMENSIONS = {
 SYS_PROMPT = "Answer the query using the context provided. Be succinct. " \
 "Contexts are organized in a list of dictionaries [{'text': <context>}, {'text': <context>}, ...]. " \
 "Feel free to ignore any contexts in the list that don't seem relevant to the query. " \
-"If the question cannot be answered using the information provided answer with 'I don't know'."
+"If the question cannot be answered using the information provided, answer with 'I don't know'."
