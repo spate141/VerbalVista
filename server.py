@@ -23,7 +23,7 @@ from utils.server_utils import (
 )
 from utils.server_utils import (
     QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
-    DeleteIndexOutput, SummaryOutput
+    DeleteIndexOutput, SummaryOutput, ChatHistoryOutput
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -138,6 +138,37 @@ class VerbalVistaAssistantDeployment:
         end = time.time()
         self.logger.info(f"Finished /delete/{index_name} in {round((end - start) * 1000, 2)} ms")
         return DeleteIndexOutput.model_validate(result)
+
+    @app.get(
+        "/chat/{index_name}",
+        tags=["chat"],
+        summary="Get chat history for given index.",
+        response_model=ChatHistoryOutput,
+    )
+    def chat_history(
+            self, index_name: str = Path(..., description="The ID of the index to be deleted"),
+            api_key: str = Depends(auth_util.get_api_key)
+    ) -> ChatHistoryOutput:
+        """
+        Get the Q&A chat history for the specified index.
+
+        This endpoint will attempt to get the chat history for an index identified by the `index_name` parameter.
+        If successful, it returns a `ChatHistoryOutput` object containing the result of the chat.
+
+        Args:
+            index_name (str): The unique identifier of the index to be deleted.
+            api_key (str): APIKeyHeader
+
+        Returns:
+            ChatHistoryOutput: An object that includes the chat history of the input index.
+        """
+        start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /chat/{index_name}")
+        chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=index_name)
+        result = chat_history_util.load_chat_history()
+        end = time.time()
+        self.logger.info(f"Finished /chat/{index_name} in {round((end - start) * 1000, 2)} ms")
+        return ChatHistoryOutput.parse_list(result)
 
     @app.post(
         "/query",
