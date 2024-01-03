@@ -52,11 +52,11 @@ def render_qa_page(
                 with open(chat_history_filepath, 'rb') as f:
                     st.session_state[selected_index_path] = pickle.load(f)
             else:
-                st.session_state[selected_index_path] = {'messages': [], 'cost': []}
+                st.session_state[selected_index_path] = {'messages': [], 'meta': []}
 
         # Display chat messages from history on app rerun
         for message_item, cost_item in zip(
-                st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['cost']
+                st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['meta']
         ):
             with st.chat_message(message_item["role"], avatar=message_item["role"]):
                 st.markdown(message_item["content"])
@@ -83,7 +83,7 @@ def render_qa_page(
             st.session_state[selected_index_path]['messages'].append({
                 "role": "user", "content": prompt
             })
-            st.session_state[selected_index_path]['cost'].append(None)
+            st.session_state[selected_index_path]['meta'].append(None)
 
             # Display user message in chat message container
             with st.chat_message("user", avatar="human"):
@@ -123,7 +123,7 @@ def render_qa_page(
             st.session_state[selected_index_path]['messages'].append({
                 "role": "assistant", "content": answer
             })
-            st.session_state[selected_index_path]['cost'].append(answer_meta)
+            st.session_state[selected_index_path]['meta'].append(answer_meta)
 
             # Save conversation to local file
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")

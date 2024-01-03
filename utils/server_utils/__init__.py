@@ -6,3 +6,4 @@ from .process_text_util import ProcessTextUtil, ProcessTextInput, ProcessTextOut
 from .process_urls_util import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
 from .process_multimedia_util import ProcessMultimediaUtil, ProcessMultimediaInput, ProcessMultimediaOutput
 from .auth_util import AuthUtil
+from .chat_history_util import ChatHistoryUtil

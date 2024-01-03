@@ -15,9 +15,15 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil, AuthUtil, SummaryUtil,
-    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput,
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput, DeleteIndexOutput, SummaryOutput
+    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
+    AuthUtil, SummaryUtil, ChatHistoryUtil
+)
+from utils.server_utils import (
+    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput
+)
+from utils.server_utils import (
+    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
+    DeleteIndexOutput, SummaryOutput
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -74,6 +80,7 @@ class VerbalVistaAssistantDeployment:
         self.tmp_audio_dir = 'data/tmp_audio_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
+        self.chat_history_dir = 'data/chat_history/'
 
     @app.get(
         "/list/indices",
@@ -152,6 +159,7 @@ class VerbalVistaAssistantDeployment:
         start = time.time()
         self.logger.info(f"Request received api key: {api_key}. Endpoint: /query")
         query_util = QueryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
         result = query_util.generate_text(
@@ -159,6 +167,10 @@ class VerbalVistaAssistantDeployment:
             llm_model=query.llm, max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
+
+        # Add user & LLM messages to chat history
+        chat_history_util.save_chat(role="user", content=query.query, meta=None)
+        chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
         end = time.time()
         self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
         return QuestionOutput.model_validate(result)
@@ -183,6 +195,7 @@ class VerbalVistaAssistantDeployment:
         start = time.time()
         self.logger.info(f"Request received for /summarize endpoint; API Key: {api_key}")
         summary_util = SummaryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
         result = summary_util.summarize_text(
@@ -191,6 +204,14 @@ class VerbalVistaAssistantDeployment:
             max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
+
+        # Add user & LLM messages to chat history
+        chat_history_util.save_chat(
+            role="user",
+            content=f"Summary for index: {query.index_name} with {query.summary_sentences_per_topic} sentences per topic.",
+            meta=None
+        )
+        chat_history_util.save_chat(role="assistant", content=result['summary'], meta=result['completion_meta'])
         end = time.time()
         self.logger.info(f"Finished /summarize in {round((end - start) * 1000, 2)} ms")
         return SummaryOutput.model_validate(result)
