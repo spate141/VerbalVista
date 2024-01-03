@@ -99,13 +99,26 @@ bash manage_server.sh stop_ray
 - **Path Parameter**: `index_name` - The unique identifier of the index to be deleted.
 - **Response**: Confirmation of the deletion process, along with details of the deleted index or an error message if the index does not exist or cannot be deleted.
 
-
 #### Query
 - **Endpoint**: `/query`
 - **Method**: POST
 - **Description**: Processes a user's query using a specified index and LLM (Large Language Model). This is the core functionality for extracting insights from indexed data.
 - **Request Parameters**: Query text, LLM model, embedding model, temperature, max semantic retrieval chunks, max lexical retrieval chunks.
 - **Response**: The predicted answer to the query along with metadata.
+
+#### Summarize
+- **Endpoint**: `/summarize`
+- **Method**: POST
+- **Description**: Generate a topical summary using a specified index and LLM (Large Language Model). 
+- **Request Parameters**: Index name, Summary sentences per topic, LLM model, embedding model, temperature, max semantic retrieval chunks, max lexical retrieval chunks.
+- **Response**: The topical summary for the given index along with metadata.
+
+#### Chat History
+- **Endpoint**: `/chat/{index_name}`
+- **Method**: GET
+- **Description**: Get the Q&A chat history for the given index. 
+- **Path Parameter**: `index_name` - The unique identifier of the index to get chat history for.
+- **Response**: Chat history of the given index along with metadata.
 
 #### Process Multimedia
 - **Endpoint**: `/process/multimedia`
