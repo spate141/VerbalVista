@@ -146,7 +146,7 @@ class VerbalVistaAssistantDeployment:
         response_model=ChatHistoryOutput,
     )
     def chat_history(
-            self, index_name: str = Path(..., description="The ID of the index to be deleted"),
+            self, index_name: str = Path(..., description="The ID of the index to get chat history for."),
             api_key: str = Depends(auth_util.get_api_key)
     ) -> ChatHistoryOutput:
         """
