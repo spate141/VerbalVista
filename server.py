@@ -193,14 +193,12 @@ class VerbalVistaAssistantDeployment:
         chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
+        chat_history_util.save_chat(role="user", content=query.query, meta=None)
         result = query_util.generate_text(
             query=query.query, temperature=query.temperature, embedding_model=query.embedding_model,
             llm_model=query.llm, max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
-
-        # Add user & LLM messages to chat history
-        chat_history_util.save_chat(role="user", content=query.query, meta=None)
         chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
         end = time.time()
         self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
@@ -229,18 +227,16 @@ class VerbalVistaAssistantDeployment:
         chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
+        chat_history_util.save_chat(
+            role="user",
+            content=f"Summary for index: {query.index_name} with {query.summary_sentences_per_topic} sentences per topic.",
+            meta=None
+        )
         result = summary_util.summarize_text(
             summary_sentences_per_topic=query.summary_sentences_per_topic, temperature=query.temperature,
             embedding_model=query.embedding_model, llm_model=query.llm,
             max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
-        )
-
-        # Add user & LLM messages to chat history
-        chat_history_util.save_chat(
-            role="user",
-            content=f"Summary for index: {query.index_name} with {query.summary_sentences_per_topic} sentences per topic.",
-            meta=None
         )
         chat_history_util.save_chat(role="assistant", content=result['summary'], meta=result['completion_meta'])
         end = time.time()

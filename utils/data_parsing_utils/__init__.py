@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import string
 from typing import List, Dict
@@ -6,6 +7,11 @@ from typing import List, Dict
 
 def random_string_generator(k=4):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
+
+
+def replace_non_alphanumeric(s):
+    pattern = r'[^a-zA-Z0-9]'
+    return re.sub(pattern, '_', s)
 
 
 def write_data_to_file(
@@ -18,7 +24,7 @@ def write_data_to_file(
     :param single_file_flag: Save as single file or multiple files flag.
     :return:
     """
-    directory_name = '_+_'.join([doc['file_name'].replace(' ', "_")[:20] for doc in full_documents])
+    directory_name = '_+_'.join([replace_non_alphanumeric(doc['file_name'])[:20] for doc in full_documents])
     directory_name = f"{directory_name}_{random_string_generator()}"
     if single_file_flag:
         full_directory_path = os.path.join(document_dir, directory_name)
