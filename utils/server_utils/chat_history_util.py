@@ -1,6 +1,7 @@
 import os
 import pickle
 from datetime import datetime
+from itertools import zip_longest
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
@@ -72,6 +73,23 @@ class ChatHistoryUtil:
         with open(self.chat_history_filepath, 'wb') as f:
             pickle.dump(self.chat_session[self.index_name], f)
 
+    @staticmethod
+    def sort_chat_history(chat_history):
+        """
+        Sorts a list of chat messages in descending order based on their UTC timestamps.
+
+        :param chat_history: List of dictionaries where each dictionary represents a chat message and contains a key 'utc_timestamp'.
+        :return: A sorted list of chat messages in descending order by 'utc_timestamp'.
+        """
+        def pair_messages(iterable):
+            args = [iter(iterable)] * 2
+            return zip_longest(*args)
+
+        paired_messages = list(pair_messages(chat_history))
+        paired_messages.sort(key=lambda pair: pair[0]['utc_timestamp'], reverse=True)
+        sorted_history = [message for pair in paired_messages for message in pair if message]
+        return sorted_history
+
     def load_chat_history(self):
         """
         Retrieves and formats the chat history from a chat session indexed by 'index_name'.
@@ -103,4 +121,5 @@ class ChatHistoryUtil:
                     "content": message['content'],
                     "meta": None
                 })
-        return chat_history
+        sorted_chat_history = self.sort_chat_history(chat_history)
+        return sorted_chat_history
