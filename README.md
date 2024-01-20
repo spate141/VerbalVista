@@ -2,7 +2,7 @@
   <img align="center" src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="40%" height="40%" />
 </p>
 
-![Static Badge](https://img.shields.io/badge/VerbalVista-1.8-blue)
+![Static Badge](https://img.shields.io/badge/VerbalVista-2.0-blue)
 
 ## Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
@@ -25,12 +25,12 @@ OPENAI_API_KEY=6D6OeN8OcTeS2H6AaR4Ed
 ### Build docker image:
 ```cmd
 >> cd VerbalVista
->> docker build -t verbal_vista:1.8 .
+>> docker build -t verbal_vista:2.0 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 verbal_vista:1.8
+>> docker run -p 8501:8501 verbal_vista:2.0
 ```
 
 ## Streamlit APP
@@ -99,12 +99,12 @@ bash manage_server.sh stop_ray
 - **Path Parameter**: `index_name` - The unique identifier of the index to be deleted.
 - **Response**: Confirmation of the deletion process, along with details of the deleted index or an error message if the index does not exist or cannot be deleted.
 
-#### Query
-- **Endpoint**: `/query`
+#### Chat
+- **Endpoint**: `/chat`
 - **Method**: POST
 - **Description**: Processes a user's query using a specified index and LLM (Large Language Model). This is the core functionality for extracting insights from indexed data.
 - **Request Parameters**: Query text, LLM model, embedding model, temperature, max semantic retrieval chunks, max lexical retrieval chunks.
-- **Response**: The predicted answer to the query along with metadata.
+- **Response**: The generated answer to the query along with metadata.
 
 #### Summarize
 - **Endpoint**: `/summarize`
@@ -120,6 +120,13 @@ bash manage_server.sh stop_ray
 - **Path Parameter**: `index_name` - The unique identifier of the index to get chat history for.
 - **Response**: Chat history of the given index along with metadata.
 
+#### Talk
+- **Endpoint**: `/talk`
+- **Method**: POST
+- **Description**: Process user's query and generate response using LLM. 
+- **Request Parameters**: Query text, LLM model, temperature
+- **Response**: The generated answer to the query along with metadata.
+- 
 #### Process Multimedia
 - **Endpoint**: `/process/multimedia`
 - **Method**: POST

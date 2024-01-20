@@ -102,7 +102,7 @@ class VerbalVista:
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = "1.8"
+    APP_VERSION = "2.0"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
         "Image Generation"
