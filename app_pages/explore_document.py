@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from glob import glob
 import streamlit as st
-from spacy_streamlit import visualize_ner
+# from spacy_streamlit import visualize_ner
 from utils.other_utils import generate_wordcloud
 from utils.rag_utils.rag_util import get_available_documents
 
@@ -45,6 +45,6 @@ def render_document_explore_page(document_dir=None, indices_dir=None, nlp=None, 
                     plt = generate_wordcloud(text=doc['text'], background_color='black', colormap='Pastel1')
                     st.pyplot(plt)
 
-            for index, doc in enumerate(data):
-                doc = nlp(' '.join(doc['text'].split()))
-                visualize_ner(doc, labels=ner_labels, show_table=False, key=f"doc_{index}")
+            # for index, doc in enumerate(data):
+                # doc = nlp(' '.join(doc['text'].split()))
+                # visualize_ner(doc, labels=ner_labels, show_table=False, key=f"doc_{index}")

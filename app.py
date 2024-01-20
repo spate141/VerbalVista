@@ -1,5 +1,5 @@
 import os
-import spacy
+# import spacy
 import streamlit as st
 from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
@@ -41,8 +41,8 @@ class VerbalVista:
         self.chat_history_dir = chat_history_dir
         self.stock_data_dir = stock_data_dir
         self.generated_images_dir = generated_images_dir
-        self.nlp = spacy.load("en_core_web_sm")
-        self.ner_labels = self.nlp.get_pipe("ner").labels
+        # self.nlp = spacy.load("en_core_web_sm")
+        # self.ner_labels = self.nlp.get_pipe("ner").labels
 
     def render_media_processing_page(self):
         """
@@ -64,7 +64,7 @@ class VerbalVista:
         Document explore page.
         """
         render_document_explore_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=self.nlp, ner_labels=self.ner_labels
+            document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=None, ner_labels=None
         )
 
     def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, enable_tts=False, tts_voice=None, max_semantic_retrieval_chunks=None, max_lexical_retrieval_chunks=None):

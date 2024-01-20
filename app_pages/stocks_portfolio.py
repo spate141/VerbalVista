@@ -30,6 +30,7 @@ def render_stocks_portfolio_page():
             label=f'Company Tickers (separated by ,):', key=f"tickers_input"
         )
         companies = [i.strip().upper() for i in companies.split(',')]
+        log_debug(f'Companies: {companies}')
     with cols[1]:
         invested_amount = st.number_input("Invested amount in USD:", min_value=0, value=1000)
     with cols[2]:
