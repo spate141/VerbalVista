@@ -11,7 +11,7 @@ from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_searc
 
 class QueryAgent:
 
-    def __init__(self, system_content=SYS_PROMPT, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
+    def __init__(self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -21,7 +21,10 @@ class QueryAgent:
 
         # LLM
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.system_content = system_content
+        if system_content:
+            self.system_content = system_content
+        else:
+            self.system_content = SYS_PROMPT
         self.encoder = tiktoken.get_encoding("cl100k_base")
 
         # Vectorstore

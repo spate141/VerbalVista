@@ -5,7 +5,7 @@ from utils.rag_utils.agent_util import QueryAgent
 from utils.rag_utils.rag_util import load_index_and_metadata
 
 
-class QuestionInput(BaseModel):
+class ChatInput(BaseModel):
     query: str
     index_name: str
     llm: Optional[str] = "gpt-3.5-turbo"
@@ -15,17 +15,17 @@ class QuestionInput(BaseModel):
     max_lexical_retrieval_chunks: Optional[int] = 1
 
 
-class QuestionOutput(BaseModel):
+class ChatOutput(BaseModel):
     query: str
     answer: str
     completion_meta: Dict[str, Any]
 
 
-class QueryUtil:
+class ChatUtil:
 
     def __init__(self, indices_dir: str = None, index_name: str = None):
         """
-        Initializes the QueryUtil object by loading the FAISS index and metadata from the specified directory.
+        Initializes the ChatUtil object by loading the FAISS index and metadata from the specified directory.
 
         :param indices_dir: The directory where the indices are stored. Default is None.
         :param index_name: The name of the index to be loaded. Default is None.

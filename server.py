@@ -15,15 +15,15 @@ from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
 from utils.server_utils import (
-    QueryUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
-    AuthUtil, SummaryUtil, ChatHistoryUtil
+    ChatUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
+    AuthUtil, SummaryUtil, ChatHistoryUtil, TalkUtil
 )
 from utils.server_utils import (
-    QuestionInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput
+    ChatInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput, TalkInput
 )
 from utils.server_utils import (
-    QuestionOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
-    DeleteIndexOutput, SummaryOutput, ChatHistoryOutput
+    ChatOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
+    DeleteIndexOutput, SummaryOutput, ChatHistoryOutput, TalkOutput
 )
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
@@ -141,7 +141,7 @@ class VerbalVistaAssistantDeployment:
 
     @app.get(
         "/chat/{index_name}",
-        tags=["chat"],
+        tags=["rag_chat"],
         summary="Get chat history for given index.",
         response_model=ChatHistoryOutput,
     )
@@ -171,42 +171,42 @@ class VerbalVistaAssistantDeployment:
         return ChatHistoryOutput.parse_list(result)
 
     @app.post(
-        "/query",
-        tags=["query"],
+        "/chat",
+        tags=["rag_chat"],
         summary="Use index and LLMs to generate response to user's question.",
-        response_model=QuestionOutput,
+        response_model=ChatOutput,
     )
-    def query(self, query: QuestionInput, api_key: str = Depends(auth_util.get_api_key)) -> QuestionOutput:
+    def chat(self, query: ChatInput, api_key: str = Depends(auth_util.get_api_key)) -> ChatOutput:
         """
-        Processes a query and returns the predicted answer.
+        Processes a query and returns the generated answer using RAG.
 
         Args:
-            query (QuestionInput): The query input containing parameters for processing.
+            query (ChatInput): The query input containing parameters for processing.
             api_key (str): APIKeyHeader
 
         Returns:
-            QuestionOutput: The output containing the predicted answer.
+            ChatOutput: The output containing the predicted answer.
         """
         start = time.time()
-        self.logger.info(f"Request received api key: {api_key}. Endpoint: /query")
-        query_util = QueryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /chat")
+        chat_util = ChatUtil(indices_dir=self.indices_dir, index_name=query.index_name)
         chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
-        self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
+        self.logger.info(f"Chat agent initiated in {round((end - start) * 1000, 2)} ms")
         chat_history_util.save_chat(role="user", content=query.query, meta=None)
-        result = query_util.generate_text(
+        result = chat_util.generate_text(
             query=query.query, temperature=query.temperature, embedding_model=query.embedding_model,
             llm_model=query.llm, max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
         )
         chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
         end = time.time()
-        self.logger.info(f"Finished /query in {round((end - start) * 1000, 2)} ms")
-        return QuestionOutput.model_validate(result)
+        self.logger.info(f"Finished /chat in {round((end - start) * 1000, 2)} ms")
+        return ChatOutput.model_validate(result)
 
     @app.post(
         "/summarize",
-        tags=["query"],
+        tags=["rag_chat"],
         summary="Use LLMs to generate a summary from given index.",
         response_model=SummaryOutput,
     )
@@ -513,6 +513,34 @@ class VerbalVistaAssistantDeployment:
         end = time.time()
         self.logger.info(f"Finished /process/urls in {round((end - start1) * 1000, 2)} ms")
         return ProcessTextOutput.model_validate(result)
+
+    @app.post(
+        "/talk",
+        tags=["chat_gpt"],
+        summary="Use LLMs to generate response to user's question. More like ChatGPT!",
+        response_model=TalkOutput,
+    )
+    def talk(self, query: TalkInput, api_key: str = Depends(auth_util.get_api_key)) -> TalkOutput:
+        """
+        Processes a query and returns the generated answer using RAG.
+
+        Args:
+            query (ChatInput): The query input containing parameters for processing.
+            api_key (str): APIKeyHeader
+
+        Returns:
+            TalkOutput: The output containing the predicted answer.
+        """
+        start = time.time()
+        self.logger.info(f"Request received api key: {api_key}. Endpoint: /talk")
+        talk_util = TalkUtil()
+        # chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
+        # chat_history_util.save_chat(role="user", content=query.query, meta=None)
+        result = talk_util.generate_text(query=query.query, temperature=query.temperature, llm_model=query.llm)
+        # chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
+        end = time.time()
+        self.logger.info(f"Finished /talk in {round((end - start) * 1000, 2)} ms")
+        return TalkOutput.model_validate(result)
 
     @app.get(
         "/health",

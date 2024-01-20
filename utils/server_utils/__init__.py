@@ -1,6 +1,7 @@
 from .delete_index_util import DeleteIndexUtil, DeleteIndexOutput
 from .list_indices_util import ListIndicesUtil, ListIndicesOutput
-from .query_util import QueryUtil, QuestionInput, QuestionOutput
+from .chat_util import ChatUtil, ChatInput, ChatOutput
+from .talk_util import TalkUtil, TalkInput, TalkOutput
 from .summary_util import SummaryUtil, SummaryInput, SummaryOutput
 from .process_text_util import ProcessTextUtil, ProcessTextInput, ProcessTextOutput
 from .process_urls_util import ProcessURLsUtil, ProcessUrlsInput, ProcessUrlsOutput
