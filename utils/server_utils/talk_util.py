@@ -19,6 +19,7 @@ class TalkInput(BaseModel):
     query: str
     llm: Optional[str] = "gpt-3.5-turbo"
     temperature: Optional[float] = 0.5
+    system_prompt: Optional[str] = CHATGPT_PROMPT
 
 
 class TalkOutput(BaseModel):
@@ -29,11 +30,11 @@ class TalkOutput(BaseModel):
 
 class TalkUtil:
 
-    def __init__(self):
+    def __init__(self, system_prompt=None):
         """
         Initializes the TalkUtil object.
         """
-        self.query_agent = QueryAgent(system_content=CHATGPT_PROMPT)
+        self.query_agent = QueryAgent(system_content=system_prompt)
 
     def generate_text(self, query: str = None, temperature: float = None, llm_model: str = None) -> Dict[str, Any]:
         """
