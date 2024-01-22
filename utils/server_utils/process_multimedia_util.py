@@ -37,11 +37,7 @@ class ProcessMultimediaOutput(BaseModel):
 
 class ProcessMultimediaUtil:
 
-    def __init__(
-            self, indices_dir: str = None, document_dir: str = None, tmp_audio_dir: str = None, openai_wisper_util=None
-    ):
-        self.indices_dir = indices_dir
-        self.document_dir = document_dir
+    def __init__(self, tmp_audio_dir: str = None, openai_wisper_util=None):
         self.tmp_audio_dir = tmp_audio_dir
         self.openai_wisper_util = openai_wisper_util
 

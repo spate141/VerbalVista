@@ -252,7 +252,7 @@ def index_data(
         fn_constructor_kwargs={"model_name": embedding_model},
         batch_size=100,
         num_gpus=0,
-        compute=ActorPoolStrategy(size=1),
+        concurrency=1,
     )
 
     # Initialize the actor
@@ -264,7 +264,7 @@ def index_data(
         fn_constructor_kwargs={"faiss_actor": faiss_actor},
         batch_size=100,
         num_cpus=1,
-        compute=ActorPoolStrategy(size=1),
+        concurrency=1,
     ).count()
 
     # Save the final index and metadata

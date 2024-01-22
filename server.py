@@ -290,8 +290,7 @@ class VerbalVistaAssistantDeployment:
 
         # Initialize Process Documents Util Class
         process_multimedia_util = ProcessMultimediaUtil(
-            indices_dir=self.indices_dir, document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir,
-            openai_wisper_util=self.openai_wisper_util
+            tmp_audio_dir=self.tmp_audio_dir, openai_wisper_util=self.openai_wisper_util
         )
 
         # (1) Read the file content
