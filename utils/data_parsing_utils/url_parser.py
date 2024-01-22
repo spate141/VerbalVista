@@ -1,4 +1,6 @@
 import re
+import os
+import shutil
 import asyncio
 import hashlib
 from selenium import webdriver
@@ -63,11 +65,22 @@ def fetch_page_text(url: str) -> str:
     """
     options = Options()
     options.add_argument("--headless")  # Run in headless mode for background execution
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(url)
-    page_text = driver.find_element(By.TAG_NAME, "body").text
-    driver.quit()
-    return page_text
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--window-size=1920x1080")
+    options.add_argument("--disable-features=VizDisplayCompositor")
+    service = Service(
+        executable_path=shutil.which('chromedriver'),
+        log_output=os.path.join(os.getcwd(), 'selenium.log'),
+    )
+    # service = Service(ChromeDriverManager().install())
+    with webdriver.Chrome(service=service, options=options) as driver:
+        driver.get(url)
+        page_text = driver.find_element(By.TAG_NAME, "body").text
+        # driver.quit()
+        return page_text
 
 
 async def process_url(url, msg=None):
@@ -117,7 +130,10 @@ def url_to_filename(url):
 
     # Extract the last segment of the path
     last_segment = parsed_url.path.split('/')
-    last_segment = [i for i in last_segment if i][-1]
+    try:
+        last_segment = [i for i in last_segment if i][-1]
+    except:
+        last_segment = parsed_url.netloc
     short_segment = re.sub(r'[^a-zA-Z0-9]', '_', last_segment)  # Keep first 10 chars
 
     # Generate a short hash for uniqueness
