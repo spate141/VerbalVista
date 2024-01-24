@@ -211,8 +211,8 @@ def load_first_meta_file(directory):
 
 
 def index_data(
-        document_directory: str = None, index_directory: str = None, chunk_size: int = 600,
-        chunk_overlap: int = 30, embedding_model: str = "text-embedding-ada-002"
+    document_directory: str = None, index_directory: str = None, chunk_size: int = 600,
+    chunk_overlap: int = 30, embedding_model: str = "text-embedding-ada-002"
 ):
     """
     Indexes text data from a specified document directory and stores the index in an index directory.
@@ -227,7 +227,7 @@ def index_data(
     :param chunk_overlap: The number of characters that should overlap between consecutive chunks. Defaults to 30.
     :param embedding_model: The name of the model used for embedding the text chunks. Defaults to "text-embedding-ada-002".
     """
-
+    ray.init(ignore_reinit_error=True, include_dashboard=False)
     document_directory = Path(document_directory)
 
     # Load meta normally as there will be only one meta file
@@ -243,7 +243,9 @@ def index_data(
     chunks_ds = text_data_ds.flat_map(
         partial(
             do_some_data_chunking, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
+        ),
+        num_cpus=1,
+        num_gpus=0
     )
 
     # Embed chunks
@@ -251,7 +253,7 @@ def index_data(
         EmbedChunks,
         fn_constructor_kwargs={"model_name": embedding_model},
         batch_size=100,
-        num_gpus=0,
+        num_cpus=1,
         concurrency=1,
     )
 
@@ -271,6 +273,7 @@ def index_data(
     if not os.path.exists(index_directory):
         os.makedirs(index_directory)
     ray.get(faiss_actor.save_index.remote(index_directory))
+    ray.shutdown()
 
     # Save document meta
     doc_meta_path = os.path.join(index_directory, "doc.meta.txt")
