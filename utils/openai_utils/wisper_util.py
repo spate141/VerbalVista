@@ -124,8 +124,10 @@ class OpenAIWisperUtil:
         :return:
         """
         audio = open(audio_filepath, "rb")
-        audio_transcript = self.client.audio.transcriptions.create(model=model, file=audio)
-        return audio_transcript.text
+        response = self.client.audio.transcriptions.create(model=model, file=audio)
+        # dict_keys(['text', 'task', 'language', 'duration', 'words'])
+        audio_transcript_obj = response.model_dump()
+        return audio_transcript_obj.get("text", None)
 
     @staticmethod
     def convert_milliseconds(milliseconds: float = None):
