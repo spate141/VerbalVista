@@ -1,5 +1,6 @@
 import numpy as np
-from langchain_community.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from utils import log_info, log_debug, log_error
 
 
