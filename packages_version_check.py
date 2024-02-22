@@ -17,10 +17,18 @@ def get_latest_version_from_pypi(package_name):
     """
     Fetch the latest package version from PyPI.
     """
-    response = requests.get(f"https://pypi.org/pypi/{package_name}/json")
-    if response.ok:
-        return response.json()['info']['version']
-    else:
+    try:
+        response = requests.get(f"https://pypi.org/pypi/{package_name}/json")
+        if response.ok:
+            return response.json()['info']['version']
+        else:
+            print(f"Failed to fetch the latest version for {package_name}. Response code: {response.status_code}")
+            return None
+    except requests.exceptions.JSONDecodeError:
+        print(f"Failed to decode JSON response for {package_name}.")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred while fetching the latest version for {package_name}: {e}")
         return None
 
 
@@ -31,11 +39,13 @@ def check_for_updates(requirements_file):
     updates_available = []
     with open(requirements_file, "r") as file:
         for line in file.readlines():
-            package_name = line.split("==")[0].strip()
-            installed_version = get_installed_version(package_name)
-            latest_version = get_latest_version_from_pypi(package_name)
-            if installed_version and latest_version and installed_version != latest_version:
-                updates_available.append([package_name, installed_version, latest_version])
+            if not line.startswith("#"):
+                package_name = line.split("==")[0].strip()
+                package_name = package_name.split("[")[0].strip()
+                installed_version = get_installed_version(package_name)
+                latest_version = get_latest_version_from_pypi(package_name)
+                if installed_version and latest_version and installed_version != latest_version:
+                    updates_available.append([package_name, installed_version, latest_version])
     return updates_available
 
 
