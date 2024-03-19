@@ -13,7 +13,7 @@ def get_embedding_model(embedding_model_name, model_kwargs=None, encode_kwargs=N
     :param encode_kwargs: Encoding kwargs (i.e. {"device": "cuda", "batch_size": 100})
     :return embedding model class instance
     """
-    if embedding_model_name == "text-embedding-ada-002":
+    if embedding_model_name == "text-embedding-3-small":
         embedding_model = OpenAIEmbeddings(
             model=embedding_model_name
         )

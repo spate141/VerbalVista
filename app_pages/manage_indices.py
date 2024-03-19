@@ -20,6 +20,8 @@ def render_manage_index_page(document_dir: str = None, indices_dir: str = None):
         with cols[0]:
             st.markdown("<h6>Select Embedding Model:</h6>", unsafe_allow_html=True)
             embedding_model = st.selectbox("embedding_model:", options=[
+                "text-embedding-3-small",
+                "text-embedding-3-large",
                 "text-embedding-ada-002"
             ], index=0, label_visibility="collapsed")
         with cols[1]:

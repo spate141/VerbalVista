@@ -49,8 +49,8 @@ class QueryAgent:
         return len(self.encoder.encode(text))
 
     def generate_text(
-            self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
-            max_retries=1, retry_interval=60, embedding_model_name="", sources=None
+        self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
+        max_retries=1, retry_interval=60, embedding_model_name="", sources=None
     ):
         """Generate response from an LLM."""
         retry_count = 0
@@ -97,8 +97,8 @@ class QueryAgent:
         return None, None
 
     def __call__(
-            self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
-            embedding_model_name="text-embedding-ada-002", llm_model="gpt-3.5-turbo"
+        self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
+        embedding_model_name="text-embedding-3-small", llm_model="gpt-3.5-turbo"
     ):
 
         # Get sources and context
@@ -120,9 +120,9 @@ class QueryAgent:
             pass
 
         # Generate response
-        context = [{"text": item["text"]} for item in context_results]
+        context = '\n\n'.join([item["text"] for item in context_results])
         sources = [item["source"] for item in context_results]
-        user_content = f"query: {query}\n\ncontext: {context}\n\n"
+        user_content = f"Query:\n```{query}```\n\nContext:\n```\n{context}\n\n```"
         max_context_length = MAX_CONTEXT_LENGTHS.get(llm_model, 4096)
         context_length = max_context_length - self.get_num_tokens(self.system_content)
         answer, completion_meta = self.generate_text(

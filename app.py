@@ -12,8 +12,8 @@ from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2Spe
 class VerbalVista:
 
     def __init__(
-            self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None,
-            chat_history_dir: str = None, stock_data_dir: str = None, generated_images_dir: str = None
+        self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None,
+        chat_history_dir: str = None, stock_data_dir: str = None, generated_images_dir: str = None
     ):
 
         # Initialize all necessary classes
@@ -148,8 +148,8 @@ def main():
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
             max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
             max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
-            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"], index=4)
-            embedding_model_name = st.selectbox("Embedding Model Name", ["text-embedding-ada-002"], index=0)
+            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-turbo-preview"], index=4)
+            embedding_model_name = st.selectbox("Embedding Model Name", ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"], index=0)
             enable_tts = st.checkbox("Enable text-to-speech", value=False)
             tts_voice = "echo"
             if enable_tts:

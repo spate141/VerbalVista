@@ -8,7 +8,7 @@ from utils.data_parsing_utils.document_parser import process_audio_files, proces
 class ProcessMultimediaInput(BaseModel):
     chunk_size: Optional[int] = 600
     chunk_overlap: Optional[int] = 30
-    embedding_model: Optional[str] = "text-embedding-ada-002"
+    embedding_model: Optional[str] = "text-embedding-3-small"
     save_to_one_file: Optional[bool] = False
     file_description: Optional[str] = ""
 
@@ -17,7 +17,7 @@ class ProcessMultimediaInput(BaseModel):
         cls,
         chunk_size: int = Form(600),
         chunk_overlap: int = Form(30),
-        embedding_model: str = Form("text-embedding-ada-002"),
+        embedding_model: str = Form("text-embedding-3-small"),
         save_to_one_file: bool = Form(False),
         file_description: str = Form("")
     ):

@@ -212,7 +212,7 @@ def load_first_meta_file(directory):
 
 def index_data(
     document_directory: str = None, index_directory: str = None, chunk_size: int = 600,
-    chunk_overlap: int = 30, embedding_model: str = "text-embedding-ada-002"
+    chunk_overlap: int = 30, embedding_model: str = "text-embedding-3-small"
 ):
     """
     Indexes text data from a specified document directory and stores the index in an index directory.
@@ -225,7 +225,7 @@ def index_data(
     :param index_directory: The path where the generated index will be stored.
     :param chunk_size: The number of characters each text chunk should contain. Defaults to 600.
     :param chunk_overlap: The number of characters that should overlap between consecutive chunks. Defaults to 30.
-    :param embedding_model: The name of the model used for embedding the text chunks. Defaults to "text-embedding-ada-002".
+    :param embedding_model: The name of the model used for embedding the text chunks. Defaults to "text-embedding-3-small".
     """
     ray.init(ignore_reinit_error=True, include_dashboard=False)
     document_directory = Path(document_directory)
@@ -317,7 +317,7 @@ def load_index_and_metadata(index_directory: str = None):
 
 
 def do_some_chat_completion(
-        query: str = None, embedding_model: str = "text-embedding-ada-002", llm_model: str = "gpt-3.5-turbo",
+        query: str = None, embedding_model: str = "text-embedding-3-small", llm_model: str = "gpt-3.5-turbo",
         temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
         max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1
 ):
@@ -331,7 +331,7 @@ def do_some_chat_completion(
 
     Parameters:
     query (str): The input query string for which the chat completion is to be performed.
-    embedding_model (str): The name of the embedding model to be used for semantic retrieval. Defaults to "text-embedding-ada-002".
+    embedding_model (str): The name of the embedding model to be used for semantic retrieval. Defaults to "text-embedding-3-small".
     llm_model (str): The name of the large language model to be used for response generation. Defaults to "gpt-3.5-turbo".
     temperature (float): Controls randomness in response generation. Lower values make responses more deterministic. Defaults to 0.5.
     faiss_index: The FAISS index object used for semantic retrieval.

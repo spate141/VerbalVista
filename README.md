@@ -163,7 +163,7 @@ curl --location 'http://127.0.0.1:8000/query' \
     "query": "What is the latest research on neural networks?",
     "index_name": "generated_index_id",
     "llm": "gpt-3.5-turbo",
-    "embedding_model": "text-embedding-ada-002",
+    "embedding_model": "text-embedding-3-small",
     "temperature": 0.5,
     "max_semantic_retrieval_chunks": 5,
     "max_lexical_retrieval_chunks": 1

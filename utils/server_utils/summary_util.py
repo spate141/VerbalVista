@@ -11,7 +11,7 @@ class SummaryInput(BaseModel):
     index_name: str
     summary_sentences_per_topic: Optional[int] = 3
     llm: Optional[str] = "gpt-3.5-turbo"
-    embedding_model: Optional[str] = "text-embedding-ada-002"
+    embedding_model: Optional[str] = "text-embedding-3-small"
     temperature: Optional[float] = 0.5
     max_semantic_retrieval_chunks: Optional[int] = 5
     max_lexical_retrieval_chunks: Optional[int] = 1
