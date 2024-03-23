@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel
 from num2words import num2words
 from typing import Any, Dict, Optional
+from utils import logger
 from utils.rag_utils import MODEL_COST_PER_1K_TOKENS
 from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
 from utils.rag_utils.rag_util import load_index_and_metadata
@@ -26,7 +27,7 @@ class SummaryOutput(BaseModel):
 
 class SummaryUtil:
 
-    def __init__(self, indices_dir: str = None, index_name: str = None):
+    def __init__(self, indices_dir: str = None, index_name: str = None, server_logger=None):
         """
         Initializes a SummaryUtil instance by loading necessary indices and metadata,
         and setting up a GPTAgent for generating summary content.
@@ -42,14 +43,20 @@ class SummaryUtil:
             faiss_index=faiss_index,
             metadata_dict=metadata_dict,
             lexical_index=lexical_index,
-            reranker=None
+            reranker=None,
+            server_logger=server_logger
         )
         self.claude_agent = ClaudeAgent(
             faiss_index=faiss_index,
             metadata_dict=metadata_dict,
             lexical_index=lexical_index,
-            reranker=None
+            reranker=None,
+            server_logger=server_logger
         )
+        if server_logger:
+            self.logger = server_logger
+        else:
+            self.logger = logger
 
     @staticmethod
     def get_topics(answer):

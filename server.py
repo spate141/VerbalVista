@@ -164,7 +164,7 @@ class VerbalVistaAssistantDeployment:
         """
         start = time.time()
         self.logger.info(f"Request received api key: {api_key}. Endpoint: /chat/{index_name}")
-        chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=index_name)
+        chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=index_name, server_logger=self.logger)
         result = chat_history_util.load_chat_history()
         end = time.time()
         self.logger.info(f"Finished /chat/{index_name} in {round((end - start) * 1000, 2)} ms")
@@ -223,7 +223,7 @@ class VerbalVistaAssistantDeployment:
         """
         start = time.time()
         self.logger.info(f"Request received for /summarize endpoint; API Key: {api_key}")
-        summary_util = SummaryUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        summary_util = SummaryUtil(indices_dir=self.indices_dir, index_name=query.index_name, server_logger=self.logger)
         chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Query agent initiated in {round((end - start) * 1000, 2)} ms")
@@ -532,7 +532,7 @@ class VerbalVistaAssistantDeployment:
         """
         start = time.time()
         self.logger.info(f"Request received api key: {api_key}. Endpoint: /talk")
-        talk_util = TalkUtil()
+        talk_util = TalkUtil(system_prompt=None, server_logger=self.logger)
         # chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         # chat_history_util.save_chat(role="user", content=query.query, meta=None)
         result = talk_util.generate_text(query=query.query, temperature=query.temperature, llm_model=query.llm)

@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import zip_longest
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+from utils import logger
 
 
 class MetaData(BaseModel):
@@ -17,7 +18,7 @@ class MetaData(BaseModel):
 class Message(BaseModel):
     role: str = Field(...)
     utc_timestamp: str = Field(...)
-    content: str = Field(...)
+    content: Optional[str] = Field(...)
     meta: Optional[MetaData] = Field(default=None)
 
 
@@ -31,7 +32,7 @@ class ChatHistoryOutput(BaseModel):
 
 class ChatHistoryUtil:
 
-    def __init__(self, chat_history_dir: str = None, index_name: str = None):
+    def __init__(self, chat_history_dir: str = None, index_name: str = None, server_logger=None):
         """
         Initializes the ChatHistoryUtil object with a directory for storing chat history and
         an index name to identify it.
@@ -39,6 +40,10 @@ class ChatHistoryUtil:
         :param index_name: A unique identifier for the chat history. If None, no index name is set.
         """
         self.index_name = index_name
+        if server_logger:
+            self.logger = server_logger
+        else:
+            self.logger = logger
 
         # Initialize chat history saving mechanism
         chat_dir_path = os.path.join(chat_history_dir, self.index_name)
@@ -65,13 +70,16 @@ class ChatHistoryUtil:
         :param meta: Additional metadata associated with the message.
         """
         # Add messages to chat history
+        chat_utc_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         self.chat_session[self.index_name]['messages'].append({"role": role, "content": content})
-        self.chat_session[self.index_name]['timestamps'].append({"utc_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')})
+        self.chat_session[self.index_name]['timestamps'].append({"utc_time": chat_utc_time})
         self.chat_session[self.index_name]['meta'].append(meta)
 
         # Save conversation to local file
         with open(self.chat_history_filepath, 'wb') as f:
             pickle.dump(self.chat_session[self.index_name], f)
+
+        self.logger.debug(f'Saved chat at: {chat_utc_time}')
 
     @staticmethod
     def sort_chat_history(chat_history):
@@ -100,6 +108,7 @@ class ChatHistoryUtil:
         """
         chat_history = []
         index_chat = self.chat_session[self.index_name]
+        self.logger.debug(f'Loaded chat for index: {self.index_name}')
         for message, meta, timestamp in zip(index_chat['messages'], index_chat['meta'], index_chat['timestamps']):
             if meta:
                 chat_history.append({

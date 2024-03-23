@@ -31,12 +31,12 @@ class TalkOutput(BaseModel):
 
 class TalkUtil:
 
-    def __init__(self, system_prompt=None):
+    def __init__(self, system_prompt=None, server_logger=None):
         """
         Initializes the TalkUtil object.
         """
-        self.gpt_agent = GPTAgent(system_content=system_prompt)
-        self.claude_agent = ClaudeAgent(system_content=system_prompt)
+        self.gpt_agent = GPTAgent(system_content=system_prompt, server_logger=server_logger)
+        self.claude_agent = ClaudeAgent(system_content=system_prompt, server_logger=server_logger)
 
     def generate_text(self, query: str = None, temperature: float = None, llm_model: str = None) -> Dict[str, Any]:
         """
