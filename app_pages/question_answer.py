@@ -39,14 +39,14 @@ def render_qa_page(
         index_meta_txt = open(index_meta, 'r').read()
         index_meta_txt = ' '.join(index_meta_txt.split())
         st.markdown(
-            f"> <b>Model meta:</b> <font color='#FF7F50'><b>temperature: </b></font>{temperature}, "
-            f"<font color='#DE3163'><b>max_tokens: </b></font>{max_tokens}, "
-            f"<font color='#9A7D0A'><b>llm: </b></font>{model_name}, "
-            f"<font color='#6495ED'><b>embedding: </b></font>{indexed_data_embedding_model}, "
-            f"<font color='#229954'><b>retrieval_chunks: </b></font> semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}",
+            f"<b>Model Meta:</b> <font color='#FF7F50'><b>temperature: </b></font><i>{temperature},</i> "
+            f"<font color='#DE3163'><b>max_tokens: </b></font><i>{max_tokens},</i> "
+            f"<font color='#9A7D0A'><b>llm: </b></font><i>{model_name},</i> "
+            f"<font color='#6495ED'><b>embedding: </b></font><i>{indexed_data_embedding_model},</i> "
+            f"<font color='#229954'><b>retrieval_chunks: </b></font> <i>semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}</i>",
             unsafe_allow_html=True
         )
-        st.success(f"Description: {index_meta_txt}")
+        st.markdown(f"<h6>Data Description: <i>{index_meta_txt}...</i></h6>", unsafe_allow_html=True)
 
         chat_dir_path = os.path.join(chat_history_dir, os.path.basename(selected_index_path))
         if not os.path.exists(chat_dir_path):
