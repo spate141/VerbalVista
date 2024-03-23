@@ -3,7 +3,8 @@ import time
 import tiktoken
 from openai import OpenAI
 from anthropic import Anthropic
-from utils import log_error, log_debug
+from dotenv import load_dotenv; load_dotenv(".env")
+from utils import logger
 from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, SYS_PROMPT, get_llm_token_cost_for_model
 from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
 
@@ -15,7 +16,10 @@ class Agent:
     and placeholders for generating and preparing responses.
     The class also initializes components for lexical search, re-ranking, and semantic search.
     """
-    def __init__(self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
+    def __init__(
+        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
+        reranker=None, server_logger=None
+    ):
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -34,6 +38,12 @@ class Agent:
         # Vectorstore
         self.faiss_index = faiss_index
         self.metadata_dict = metadata_dict
+
+        # Server logger
+        if server_logger:
+            self.logger = server_logger
+        else:
+            self.logger = logger
 
     def trim(self, text, max_context_length):
         return self.encoder.decode(self.encoder.encode(text)[:max_context_length])
@@ -73,10 +83,14 @@ class GPTAgent(Agent):
     The `__call__` method orchestrates the process of embedding queries, performing semantic and lexical searches,
     potentially re-ranking results, and generating a final response based on a provided query.
     """
-    def __init__(self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
-        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker)
+    def __init__(
+        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
+        reranker=None, server_logger=None
+    ):
+        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker, server_logger)
         # Define OpenAI LLM model client
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # self.logger.debug(f'OPENAI_API_KEY: {os.getenv("OPENAI_API_KEY")}')
 
     @staticmethod
     def response_stream(response):
@@ -133,7 +147,7 @@ class GPTAgent(Agent):
                 return self.prepare_response(response=completion, stream=stream), completion_meta
 
             except Exception as e:
-                log_error(f"Exception: {e}")
+                self.logger.error(f"Exception: {e}")
                 time.sleep(retry_interval)  # default is per-minute rate limits
                 retry_count += 1
         return None, None
@@ -142,7 +156,7 @@ class GPTAgent(Agent):
         self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
         embedding_model_name="text-embedding-3-small", llm_model="gpt-3.5-turbo", max_tokens=None
     ):
-        log_debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature}')
+        self.logger.debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
         # Get sources and context
         query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
 
@@ -185,10 +199,14 @@ class GPTAgent(Agent):
 
 class ClaudeAgent(Agent):
 
-    def __init__(self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None, reranker=None):
-        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker)
+    def __init__(
+        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
+        reranker=None, server_logger=None
+    ):
+        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker, server_logger)
         # Define Anthropic LLM model client
         self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        # self.logger.debug(f'ANTHROPIC_API_KEY: {os.getenv("ANTHROPIC_API_KEY")}')
 
     @staticmethod
     def response_stream(response):
@@ -253,7 +271,7 @@ class ClaudeAgent(Agent):
                 return self.prepare_response(response=completion, stream=stream), completion_meta
 
             except Exception as e:
-                log_error(f"Exception: {e}")
+                self.logger.error(f"Exception: {e}")
                 time.sleep(retry_interval)  # default is per-minute rate limits
                 retry_count += 1
         return None, None
@@ -262,7 +280,7 @@ class ClaudeAgent(Agent):
         self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
         embedding_model_name="text-embedding-3-small", llm_model="claude-3-opus-20240229", max_tokens=None
     ):
-        log_debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature}')
+        self.logger.debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
         # Get sources and context
         query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
 

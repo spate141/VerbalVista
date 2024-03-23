@@ -25,12 +25,13 @@ class ChatOutput(BaseModel):
 
 class ChatUtil:
 
-    def __init__(self, indices_dir: str = None, index_name: str = None):
+    def __init__(self, indices_dir: str = None, index_name: str = None, server_logger=None):
         """
         Initializes the ChatUtil object by loading the FAISS index and metadata from the specified directory.
 
         :param indices_dir: The directory where the indices are stored. Default is None.
         :param index_name: The name of the index to be loaded. Default is None.
+        :param server_logger: Serve logger. Optional.
         """
         index_meta = load_index_and_metadata(index_directory=os.path.join(indices_dir, index_name))
         faiss_index = index_meta["faiss_index"]
@@ -40,13 +41,15 @@ class ChatUtil:
             faiss_index=faiss_index,
             metadata_dict=metadata_dict,
             lexical_index=lexical_index,
-            reranker=None
+            reranker=None,
+            server_logger=server_logger
         )
         self.claude_agent = ClaudeAgent(
             faiss_index=faiss_index,
             metadata_dict=metadata_dict,
             lexical_index=lexical_index,
-            reranker=None
+            reranker=None,
+            server_logger=server_logger
         )
 
     def generate_text(

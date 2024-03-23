@@ -2,6 +2,7 @@ import os
 import time
 import pickle
 import streamlit as st
+from datetime import datetime
 from utils import log_info, log_debug
 from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
@@ -59,15 +60,17 @@ def render_qa_page(
                 with open(chat_history_filepath, 'rb') as f:
                     st.session_state[selected_index_path] = pickle.load(f)
             else:
-                st.session_state[selected_index_path] = {'messages': [], 'meta': []}
+                st.session_state[selected_index_path] = {'messages': [], 'meta': [], 'timestamps': []}
 
         # Display chat messages from history on app rerun
-        for message_item, cost_item in zip(
-                st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['meta']
+        for message_item, cost_item, timestamp_item in zip(
+            st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['meta'],
+            st.session_state[selected_index_path]['timestamps']
         ):
             with st.chat_message(message_item["role"], avatar=message_item["role"]):
                 st.markdown(message_item["content"])
-                if cost_item:
+                if cost_item and timestamp_item:
+                    cost_item['utc_time'] = timestamp_item['utc_time']
                     st.json(cost_item, expanded=False)
 
         # React to user input
@@ -92,6 +95,9 @@ def render_qa_page(
                 "role": "user", "content": prompt
             })
             st.session_state[selected_index_path]['meta'].append(None)
+            st.session_state[selected_index_path]['timestamps'].append({
+                "utc_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+            })
 
             # Display user message in chat message container
             with st.chat_message("user", avatar="human"):
@@ -132,6 +138,9 @@ def render_qa_page(
                 "role": "assistant", "content": answer
             })
             st.session_state[selected_index_path]['meta'].append(answer_meta)
+            st.session_state[selected_index_path]['timestamps'].append({
+                "utc_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+            })
 
             # Save conversation to local file
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")

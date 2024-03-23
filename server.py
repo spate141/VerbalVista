@@ -189,7 +189,7 @@ class VerbalVistaAssistantDeployment:
         """
         start = time.time()
         self.logger.info(f"Request received api key: {api_key}. Endpoint: /chat")
-        chat_util = ChatUtil(indices_dir=self.indices_dir, index_name=query.index_name)
+        chat_util = ChatUtil(indices_dir=self.indices_dir, index_name=query.index_name, server_logger=self.logger)
         chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         end = time.time()
         self.logger.info(f"Chat agent initiated in {round((end - start) * 1000, 2)} ms")
@@ -612,8 +612,8 @@ def main():
 
     serve.run(
         deployment,
-        host=args.host,
-        port=args.port,
+        # host=args.host,
+        # port=args.port,
         route_prefix=args.route_prefix,
         name=args.server_name
     )
