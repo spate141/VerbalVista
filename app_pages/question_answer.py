@@ -3,12 +3,12 @@ import time
 import pickle
 import streamlit as st
 from datetime import datetime
-from utils import log_info, log_debug
+from utils import log_info, log_debug, log_error
 from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
 
 def render_qa_page(
-    temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, max_semantic_retrieval_chunks=None,
+    temperature=None, max_tokens=None, model_name=None, max_semantic_retrieval_chunks=None,
     max_lexical_retrieval_chunks=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None,
     enable_tts=False, tts_voice=None
 ):
@@ -16,14 +16,6 @@ def render_qa_page(
     This function allow user to do conversation with the data.
     """
     st.header("Q & A", divider='red')
-    st.markdown(
-        f"<font color='#FF7F50'><b>temperature: </b></font>{temperature}, "
-        f"<font color='#DE3163'><b>max_tokens: </b></font>{max_tokens}, "
-        f"<font color='#9A7D0A'><b>llm: </b></font>{model_name}, "
-        f"<font color='#6495ED'><b>embedding: </b></font>{embedding_model_name}, "
-        f"<font color='#229954'><b>retrieval_chunks: </b></font> semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}",
-        unsafe_allow_html=True
-    )
     with st.container():
         indices_df = get_available_indices(indices_dir=indices_dir)
         selected_index_path = st.selectbox(
@@ -38,10 +30,22 @@ def render_qa_page(
 
         # Initialize QA Agent and get chunks for lexical search
         agent_meta = load_index_and_metadata(selected_index_path)
-
+        try:
+            indexed_data_embedding_model = agent_meta['metadata_dict'][0]['embedding_model'][0]
+        except Exception as e:
+            log_error(e)
+            return
         index_meta = os.path.join(selected_index_path, 'doc.meta.txt')
         index_meta_txt = open(index_meta, 'r').read()
         index_meta_txt = ' '.join(index_meta_txt.split())
+        st.markdown(
+            f"> <b>Model meta:</b> <font color='#FF7F50'><b>temperature: </b></font>{temperature}, "
+            f"<font color='#DE3163'><b>max_tokens: </b></font>{max_tokens}, "
+            f"<font color='#9A7D0A'><b>llm: </b></font>{model_name}, "
+            f"<font color='#6495ED'><b>embedding: </b></font>{indexed_data_embedding_model}, "
+            f"<font color='#229954'><b>retrieval_chunks: </b></font> semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}",
+            unsafe_allow_html=True
+        )
         st.success(f"Description: {index_meta_txt}")
 
         chat_dir_path = os.path.join(chat_history_dir, os.path.basename(selected_index_path))
@@ -105,10 +109,10 @@ def render_qa_page(
 
             log_info("QA")
             result = do_some_chat_completion(
-                query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
-                faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
-                metadata_dict=agent_meta['metadata_dict'], reranker=None, max_tokens=max_tokens,
-                max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
+                query=prompt, embedding_model=indexed_data_embedding_model, llm_model=model_name,
+                temperature=temperature, faiss_index=agent_meta['faiss_index'],
+                lexical_index=agent_meta['lexical_index'], metadata_dict=agent_meta['metadata_dict'], reranker=None,
+                max_tokens=max_tokens, max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
                 max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
             )
             answer = result['answer']

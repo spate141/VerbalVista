@@ -72,15 +72,15 @@ class VerbalVista:
         )
 
     def render_qa_page(
-        self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
-        enable_tts=False, tts_voice=None, max_semantic_retrieval_chunks=None, max_lexical_retrieval_chunks=None
+        self, temperature=None, max_tokens=None, model_name=None, enable_tts=False, tts_voice=None,
+        max_semantic_retrieval_chunks=None, max_lexical_retrieval_chunks=None
     ):
         """
         Question answer page.
         """
         render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name,
-            embedding_model_name=embedding_model_name, max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
+            max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=max_lexical_retrieval_chunks,
             tx2sp_util=self.openai_t2s_util, indices_dir=self.indices_dir,
             chat_history_dir=self.chat_history_dir, enable_tts=enable_tts, tts_voice=tts_voice
@@ -148,14 +148,14 @@ def main():
             max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
             max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
             model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=4)
-            embedding_model_name = st.selectbox("Embedding Model Name", list(EMBEDDING_DIMENSIONS.keys()), index=1)
+            # embedding_model_name = st.selectbox("Embedding Model Name", list(EMBEDDING_DIMENSIONS.keys()), index=1)
             enable_tts = st.checkbox("Enable text-to-speech", value=False)
             tts_voice = "echo"
             if enable_tts:
                 tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
         vv.render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name,
-            embedding_model_name=embedding_model_name, enable_tts=enable_tts, tts_voice=tts_voice,
+            enable_tts=enable_tts, tts_voice=tts_voice,
             max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
             max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
         )

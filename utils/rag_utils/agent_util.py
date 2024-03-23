@@ -156,9 +156,15 @@ class GPTAgent(Agent):
         self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
         embedding_model_name="text-embedding-3-small", llm_model="gpt-3.5-turbo", max_tokens=None
     ):
-        self.logger.debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
+        try:
+            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model'][0]
+        except Exception as e:
+            self.logger.error(e)
+            indexed_data_embedding_model = embedding_model_name
+
         # Get sources and context
-        query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
+        query_embedding = get_query_embedding(query, embedding_model_name=indexed_data_embedding_model)
+        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -188,7 +194,7 @@ class GPTAgent(Agent):
             stream=stream,
             system_content=self.system_content,
             user_content=self.trim(user_content, context_length),
-            embedding_model_name=embedding_model_name,
+            embedding_model_name=indexed_data_embedding_model,
             sources=sources,
             max_tokens=max_tokens,
         )
@@ -280,9 +286,15 @@ class ClaudeAgent(Agent):
         self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
         embedding_model_name="text-embedding-3-small", llm_model="claude-3-opus-20240229", max_tokens=None
     ):
-        self.logger.debug(f'EMBEDDING_MODEL: {embedding_model_name} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
+        try:
+            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model'][0]
+        except Exception as e:
+            self.logger.error(e)
+            indexed_data_embedding_model = embedding_model_name
+
         # Get sources and context
-        query_embedding = get_query_embedding(query, embedding_model_name=embedding_model_name)
+        query_embedding = get_query_embedding(query, embedding_model_name=indexed_data_embedding_model)
+        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -312,7 +324,7 @@ class ClaudeAgent(Agent):
             stream=stream,
             system_content=self.system_content,
             user_content=self.trim(user_content, context_length),
-            embedding_model_name=embedding_model_name,
+            embedding_model_name=indexed_data_embedding_model,
             sources=sources,
             max_tokens=max_tokens
         )

@@ -128,6 +128,6 @@ def get_llm_token_cost_for_model(model_name: str, num_tokens: int, is_completion
 
 
 SYS_PROMPT = ("Answer the `query` using the `context` provided below. Be succinct. "
-              "Feel free to ignore any contexts in the list that don't seem relevant to the givem query. "
+              "Feel free to ignore any contexts in the list that don't seem relevant to the given query. "
               "If the question cannot be answered using the information provided, answer with 'I can't find any "
               "relevant context about {query}.")

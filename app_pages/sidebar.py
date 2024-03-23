@@ -25,7 +25,7 @@ def render_sidebar(app_name: str = None, app_version: str = None, app_pages: lis
         st.markdown(
             f"""
             <center>
-            <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="50%" height="50%"></a>
+            <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="60%" height="60%"></a>
             </br>
             </br>
             <h5 style="color: #233565">Version: {app_version}</h5>
