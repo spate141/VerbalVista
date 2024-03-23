@@ -28,19 +28,20 @@ class FaissIndexActor:
         norm = np.linalg.norm(embedding)
         return embedding / norm if norm > 0 else embedding
 
-    def add_embeddings_and_metadata(self, embeddings, texts, sources):
+    def add_embeddings_and_metadata(self, embeddings, texts, sources, embedding_model):
         """
         Add embeddings to FAISS index and metadata to metadata dictionary.
         :param embeddings: List[float numbers]
         :param texts: List of strings
         :param sources: List of strings
+        :param embedding_model: Name of the embedding model
         :return
         """
         current_index = self.index.ntotal
         for text, source, emb in zip(texts, sources, embeddings):
             normalized_emb = self.normalize_embedding(emb)
             self.index.add(np.array([normalized_emb]))
-            self.metadata_dict[current_index] = {'text': text, 'source': source}
+            self.metadata_dict[current_index] = {'text': text, 'source': source, 'embedding_model': embedding_model}
             current_index += 1
 
     def save_lexical_index(self, lexical_index_path):
@@ -79,7 +80,7 @@ class StoreResults:
     def __call__(self, batch):
         ray.get(
             self.faiss_actor.add_embeddings_and_metadata.remote(
-                batch["embeddings"], batch["text"], batch["source"]
+                batch["embeddings"], batch["text"], batch["source"], batch["embedding_model"]
             )
         )
         return {}

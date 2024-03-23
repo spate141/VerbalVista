@@ -5,6 +5,7 @@ from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
 
 from utils import log_info, log_debug, log_error
+from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, EMBEDDING_DIMENSIONS
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil
 
@@ -49,15 +50,18 @@ class VerbalVista:
         Media input and processing page.
         """
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir, openai_wisper_util=self.openai_wisper_util,
-            reddit_util=self.reddit_util
+            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir,
+            openai_wisper_util=self.openai_wisper_util, reddit_util=self.reddit_util
         )
 
     def render_manage_index_page(self):
         """
         Create/Manage/Delete document index page.
         """
-        render_manage_index_page(document_dir=self.document_dir, indices_dir=self.indices_dir)
+        render_manage_index_page(
+            document_dir=self.document_dir, indices_dir=self.indices_dir,
+            embedding_models=list(EMBEDDING_DIMENSIONS.keys())
+        )
 
     def render_document_explore_page(self):
         """
@@ -67,7 +71,10 @@ class VerbalVista:
             document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=None, ner_labels=None
         )
 
-    def render_qa_page(self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, enable_tts=False, tts_voice=None, max_semantic_retrieval_chunks=None, max_lexical_retrieval_chunks=None):
+    def render_qa_page(
+        self, temperature=None, max_tokens=None, model_name=None, embedding_model_name=None,
+        enable_tts=False, tts_voice=None, max_semantic_retrieval_chunks=None, max_lexical_retrieval_chunks=None
+    ):
         """
         Question answer page.
         """
@@ -102,13 +109,13 @@ class VerbalVista:
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = "2.1"
+    APP_VERSION = "2.2"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
         "Image Generation"
     ]
     # Render sidebar
-    openai_api_key, selected_page = render_sidebar(
+    selected_page = render_sidebar(
         app_name=APP_NAME, app_version=APP_VERSION, app_pages=APP_PAGES
     )
 
@@ -120,18 +127,10 @@ def main():
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
 
-    if not os.environ.get("OPENAI_API_KEY", None) and not openai_api_key:
+    if not os.environ.get("OPENAI_API_KEY", None) and not os.environ.get("ANTHROPIC_API_KEY", None):
         # if both env variable and explicit key is not set
-        st.error("OpenAI API key not found!")
-        log_error("No OpenAI key found!")
-    elif not os.environ.get("OPENAI_API_KEY", None) and openai_api_key:
-        # if env variable is not set but user provide explicit key
-        os.environ['OPENAI_API_KEY'] = openai_api_key
-        log_info(f"No OpenAI key found in ENV, User provided key.")
-    elif os.environ.get("OPENAI_API_KEY", None) and openai_api_key:
-        # if both env variable and explicit keys are provided
-        os.environ['OPENAI_API_KEY'] = openai_api_key
-        log_info(f"OpenAI key found in ENV & User provided key.")
+        st.error("OpenAI/Anthropic API keys not found!")
+        log_error("No OpenAI/Anthropic key found!")
 
     vv = VerbalVista(
         document_dir=document_dir, indices_dir=indices_dir,
@@ -148,8 +147,8 @@ def main():
             max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
             max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
             max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
-            model_name = st.selectbox("Model Name", ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k", "gpt-4-turbo-preview"], index=4)
-            embedding_model_name = st.selectbox("Embedding Model Name", ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"], index=0)
+            model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=4)
+            embedding_model_name = st.selectbox("Embedding Model Name", list(EMBEDDING_DIMENSIONS.keys()), index=1)
             enable_tts = st.checkbox("Enable text-to-speech", value=False)
             tts_voice = "echo"
             if enable_tts:

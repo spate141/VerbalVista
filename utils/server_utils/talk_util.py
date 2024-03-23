@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
-from utils.rag_utils.agent_util import QueryAgent
+from utils.rag_utils import MODEL_COST_PER_1K_TOKENS
+from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
 
 
 CHATGPT_PROMPT = """You are an autoregressive large language model that has been fine-tuned with instruction-tuning and RLHF. 
@@ -34,7 +35,8 @@ class TalkUtil:
         """
         Initializes the TalkUtil object.
         """
-        self.query_agent = QueryAgent(system_content=system_prompt)
+        self.gpt_agent = GPTAgent(system_content=system_prompt)
+        self.claude_agent = ClaudeAgent(system_content=system_prompt)
 
     def generate_text(self, query: str = None, temperature: float = None, llm_model: str = None) -> Dict[str, Any]:
         """
@@ -45,7 +47,16 @@ class TalkUtil:
         :param llm_model: The name of the language model to use. Default is None.
         :return: A dictionary containing the generated text and other relevant information.
         """
-        answer, completion_meta = self.query_agent.generate_text(
+        if 'gpt' in llm_model:
+            query_agent = self.gpt_agent
+        elif 'claude' in llm_model:
+            query_agent = self.claude_agent
+        else:
+            raise ValueError(
+                f"Unknown model: {llm_model}. Please provide a valid LLM model name."
+                "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
+            )
+        answer, completion_meta = query_agent.generate_text(
             user_content=query, temperature=temperature, llm_model=llm_model
         )
         result = {"query": query, "answer": answer, "completion_meta": completion_meta}

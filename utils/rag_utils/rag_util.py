@@ -9,11 +9,11 @@ from typing import Dict
 from pathlib import Path
 from functools import partial
 from ray.data import ActorPoolStrategy
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
-from utils.rag_utils import EMBEDDING_DIMENSIONS
-from utils.rag_utils.agent_util import QueryAgent
+from utils.rag_utils import EMBEDDING_DIMENSIONS, MODEL_COST_PER_1K_TOKENS
+from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
 from utils.rag_utils.indexing_util import StoreResults, FaissIndexActor
 from utils.rag_utils.embedding_util import EmbedChunks
 
@@ -317,9 +317,9 @@ def load_index_and_metadata(index_directory: str = None):
 
 
 def do_some_chat_completion(
-        query: str = None, embedding_model: str = "text-embedding-3-small", llm_model: str = "gpt-3.5-turbo",
-        temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
-        max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1
+    query: str = None, embedding_model: str = "text-embedding-3-small", llm_model: str = "gpt-3.5-turbo",
+    temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
+    max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1, max_tokens=512
 ):
     """
     Perform chat completion using a combination of semantic and lexical retrieval methods.
@@ -340,16 +340,26 @@ def do_some_chat_completion(
     reranker: An optional reranker object to reorder retrieved results based on relevance.
     max_semantic_retrieval_chunks (int): The maximum number of chunks to retrieve semantically. Defaults to 5.
     max_lexical_retrieval_chunks (int): The maximum number of chunks to retrieve lexically. Defaults to 1.
-
+    max_tokens (int): The maximum numbers of tokens a model should generate an output for.
     Returns:
     The result of the chat completion, which includes the generated response and any other relevant information.
     """
-    query_agent = QueryAgent(
-        faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
-    )
+    if 'gpt' in llm_model:
+        query_agent = GPTAgent(
+            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
+        )
+    elif 'claude' in llm_model:
+        query_agent = ClaudeAgent(
+            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
+        )
+    else:
+        raise ValueError(
+            f"Unknown model: {llm_model}. Please provide a valid LLM model name."
+            "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
+        )
     result = query_agent(
         query=query, stream=False, num_chunks=max_semantic_retrieval_chunks,
         lexical_search_k=max_lexical_retrieval_chunks, temperature=temperature,
-        embedding_model_name=embedding_model, llm_model=llm_model
+        embedding_model_name=embedding_model, llm_model=llm_model, max_tokens=max_tokens
     )
     return result

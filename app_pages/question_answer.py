@@ -7,15 +7,22 @@ from utils.rag_utils.rag_util import get_available_indices, load_index_and_metad
 
 
 def render_qa_page(
-        temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, max_semantic_retrieval_chunks=None,
-        max_lexical_retrieval_chunks=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None,
-        enable_tts=False, tts_voice=None
+    temperature=None, max_tokens=None, model_name=None, embedding_model_name=None, max_semantic_retrieval_chunks=None,
+    max_lexical_retrieval_chunks=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None,
+    enable_tts=False, tts_voice=None
 ):
     """
     This function allow user to do conversation with the data.
     """
     st.header("Q & A", divider='red')
-    st.info(f"\n\ntemperature: {temperature}, max_tokens: {max_tokens}, model_name: {model_name}, max_semantic_retrieval_chunks: {max_semantic_retrieval_chunks}, max_lexical_retrieval_chunks: {max_lexical_retrieval_chunks}")
+    st.markdown(
+        f"<font color='#FF7F50'><b>temperature: </b></font>{temperature}, "
+        f"<font color='#DE3163'><b>max_tokens: </b></font>{max_tokens}, "
+        f"<font color='#9A7D0A'><b>llm: </b></font>{model_name}, "
+        f"<font color='#6495ED'><b>embedding: </b></font>{embedding_model_name}, "
+        f"<font color='#229954'><b>retrieval_chunks: </b></font> semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}",
+        unsafe_allow_html=True
+    )
     with st.container():
         indices_df = get_available_indices(indices_dir=indices_dir)
         selected_index_path = st.selectbox(
@@ -67,18 +74,19 @@ def render_qa_page(
         prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)[:50]}...'")
 
         if prompt:
-            center_css = """
-            <style>
-            div[class*="StatusWidget"]{
-                position: fixed;
-                top: 91%;
-                left: 78%;
-                transform: translate(-50%, -50%);
-                width: 50%;
-            }
-            </style>
-            """
-            st.markdown(center_css, unsafe_allow_html=True)
+            # center_css = """
+            # <style>
+            # div[class*="StatusWidget"]{
+            #     position: fixed;
+            #     top: 91%;
+            #     left: 78%;
+            #     transform: translate(-50%, -50%);
+            #     width: 50%;
+            # }
+            # </style>
+            # """
+            # st.markdown(center_css, unsafe_allow_html=True)
+
             # Add user message to chat history
             st.session_state[selected_index_path]['messages'].append({
                 "role": "user", "content": prompt
@@ -93,7 +101,7 @@ def render_qa_page(
             result = do_some_chat_completion(
                 query=prompt, embedding_model=embedding_model_name, llm_model=model_name, temperature=temperature,
                 faiss_index=agent_meta['faiss_index'], lexical_index=agent_meta['lexical_index'],
-                metadata_dict=agent_meta['metadata_dict'], reranker=None,
+                metadata_dict=agent_meta['metadata_dict'], reranker=None, max_tokens=max_tokens,
                 max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
                 max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
             )

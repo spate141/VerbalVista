@@ -25,7 +25,7 @@ def render_sidebar(app_name: str = None, app_version: str = None, app_pages: lis
         st.markdown(
             f"""
             <center>
-            <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="70%" height="70%"></a>
+            <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="50%" height="50%"></a>
             </br>
             </br>
             <h5 style="color: #233565">Version: {app_version}</h5>
@@ -35,9 +35,10 @@ def render_sidebar(app_name: str = None, app_version: str = None, app_pages: lis
         )
         st.markdown("<center><h4><b>Select Page</b></h4></center>", unsafe_allow_html=True)
         selected_page = st.selectbox("Select function:", app_pages, label_visibility="collapsed")
-        st.markdown("<h5><b>OpenAI API Key:</b></h5>", unsafe_allow_html=True)
-        openai_api_key = st.text_input(
-            "OpenAI API Key:", key="chatbot_api_key", type="password", label_visibility="collapsed",
-            placeholder="OpenAI API Key"
-        )
-        return openai_api_key, selected_page
+        st.markdown("--------", unsafe_allow_html=True)
+        # st.markdown("<h5><b>LLM API Key:</b></h5>", unsafe_allow_html=True)
+        # llm_api_key = st.text_input(
+        #     "LLM API Key:", key="chatbot_api_key", type="password", label_visibility="collapsed",
+        #     placeholder="LLM API Key"
+        # )
+        return selected_page

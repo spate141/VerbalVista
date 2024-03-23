@@ -146,8 +146,8 @@ class VerbalVistaAssistantDeployment:
         response_model=ChatHistoryOutput,
     )
     def chat_history(
-            self, index_name: str = Path(..., description="The ID of the index to get chat history for."),
-            api_key: str = Depends(auth_util.get_api_key)
+        self, index_name: str = Path(..., description="The ID of the index to get chat history for."),
+        api_key: str = Depends(auth_util.get_api_key)
     ) -> ChatHistoryOutput:
         """
         Get the Q&A chat history for the specified index.
@@ -197,7 +197,7 @@ class VerbalVistaAssistantDeployment:
         result = chat_util.generate_text(
             query=query.query, temperature=query.temperature, embedding_model=query.embedding_model,
             llm_model=query.llm, max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
-            max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
+            max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks, max_tokens=query.max_tokens
         )
         chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
         end = time.time()
@@ -236,7 +236,7 @@ class VerbalVistaAssistantDeployment:
             summary_sentences_per_topic=query.summary_sentences_per_topic, temperature=query.temperature,
             embedding_model=query.embedding_model, llm_model=query.llm,
             max_semantic_retrieval_chunks=query.max_semantic_retrieval_chunks,
-            max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks
+            max_lexical_retrieval_chunks=query.max_lexical_retrieval_chunks, max_tokens=query.max_tokens
         )
         chat_history_util.save_chat(role="assistant", content=result['summary'], meta=result['completion_meta'])
         end = time.time()

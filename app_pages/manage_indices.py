@@ -5,7 +5,7 @@ import streamlit as st
 from utils.rag_utils.rag_util import get_available_documents, index_data, delete_directory
 
 
-def render_manage_index_page(document_dir: str = None, indices_dir: str = None):
+def render_manage_index_page(document_dir: str = None, indices_dir: str = None, embedding_models=None):
     """
     This function will allow user to convert plain text into vector index or remove already created index.
     """
@@ -19,11 +19,9 @@ def render_manage_index_page(document_dir: str = None, indices_dir: str = None):
         cols = st.columns(2)
         with cols[0]:
             st.markdown("<h6>Select Embedding Model:</h6>", unsafe_allow_html=True)
-            embedding_model = st.selectbox("embedding_model:", options=[
-                "text-embedding-3-small",
-                "text-embedding-3-large",
-                "text-embedding-ada-002"
-            ], index=0, label_visibility="collapsed")
+            embedding_model = st.selectbox(
+                "embedding_model:", options=embedding_models, index=1, label_visibility="collapsed"
+            )
         with cols[1]:
             st.markdown("<h6>Chunk Size:</h6>", unsafe_allow_html=True)
             chunk_size = st.number_input("chunk_size:", value=600, label_visibility="collapsed")
