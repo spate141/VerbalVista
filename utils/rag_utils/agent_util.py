@@ -157,7 +157,7 @@ class GPTAgent(Agent):
         embedding_model_name="text-embedding-3-small", llm_model="gpt-3.5-turbo", max_tokens=None
     ):
         try:
-            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model'][0]
+            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model']
         except Exception as e:
             self.logger.error(e)
             indexed_data_embedding_model = embedding_model_name
@@ -287,7 +287,7 @@ class ClaudeAgent(Agent):
         embedding_model_name="text-embedding-3-small", llm_model="claude-3-opus-20240229", max_tokens=None
     ):
         try:
-            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model'][0]
+            indexed_data_embedding_model = self.metadata_dict[0]['embedding_model']
         except Exception as e:
             self.logger.error(e)
             indexed_data_embedding_model = embedding_model_name

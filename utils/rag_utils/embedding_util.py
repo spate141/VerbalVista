@@ -30,6 +30,6 @@ class EmbedChunks:
         log_debug(f"Generated embeddings shape: {np.array(embeddings).shape}")
         return {
             "text": batch["text"], "source": batch["source"],
-            "embeddings": embeddings, "embedding_model": np.array([self.model_name])
+            "embeddings": embeddings, "embedding_model": np.array([self.model_name] * len(batch["text"]))
         }
 

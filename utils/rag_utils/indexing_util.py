@@ -41,7 +41,9 @@ class FaissIndexActor:
         for text, source, emb in zip(texts, sources, embeddings):
             normalized_emb = self.normalize_embedding(emb)
             self.index.add(np.array([normalized_emb]))
-            self.metadata_dict[current_index] = {'text': text, 'source': source, 'embedding_model': embedding_model}
+            self.metadata_dict[current_index] = {
+                'text': text, 'source': source, 'embedding_model': embedding_model[0]
+            }
             current_index += 1
 
     def save_lexical_index(self, lexical_index_path):
