@@ -6,7 +6,7 @@ beautifulsoup4==4.12.3
 better_profanity==0.7.0
 docx2txt==0.8
 faiss-cpu==1.8.0
-langchain-openai==0.1.0
+langchain-openai==0.1.1
 langchain-text-splitters==0.0.1
 num2words==0.5.13
 openai==1.14.2
