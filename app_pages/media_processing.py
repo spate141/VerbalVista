@@ -1,3 +1,4 @@
+import base64
 import asyncio
 import streamlit as st
 from streamlit_theme import st_theme
@@ -5,6 +6,14 @@ from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 from utils.data_parsing_utils import write_data_to_file
 from utils.data_parsing_utils.url_parser import process_url, url_to_filename
+
+
+def get_local_file_data(filepath):
+    file_ = open(filepath, "rb")
+    contents = file_.read()
+    data_url = base64.b64encode(contents).decode("utf-8")
+    file_.close()
+    return data_url
 
 
 def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_wisper_util=None, reddit_util=None):
@@ -131,6 +140,12 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                 if extracted_text:
                     st.markdown(f'{extracted_text[:1230]}...')
             else:
-                st.markdown("![Alt Text](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY25wdWh3YXFvZXIzcWRtMnIwcXl3dTk1eGF6bmczd3hiYTY2NzcxNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/No3Q2COl8SEnu/giphy.gif)")
+                # st.markdown("![Alt Text](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY25wdWh3YXFvZXIzcWRtMnIwcXl3dTk1eGF6bmczd3hiYTY2NzcxNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/No3Q2COl8SEnu/giphy.gif)")
                 # st.markdown("![A](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGxmdW1uZ3QwdGNpY2F4eDZ1OG1vcGFuOHYwczFocGJ2bXJ3bXphYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ftAyb0CG1FNAIZt4SO/giphy.gif)")
-
+                data_url = get_local_file_data('docs/loading.gif')
+                cols = st.columns([0.7, 10, 0.5])
+                with cols[1]:
+                    st.markdown(
+                        f'<a href="https://github.com/spate141/VerbalVista"><img src="data:image/gif;base64,{data_url}" alt="loading" class="center"></a>',
+                        unsafe_allow_html=True,
+                    )
