@@ -40,6 +40,44 @@ OPENAI_API_KEY=6D6OeN8OcTeS2H6AaR4Ed
 >> streamlit run app.py
 ```
 
+### Screenshots:
+
+<details>
+<summary>Process Media:</summary>
+
+![screenshot](docs/process_media.png)
+</details>
+
+<details>
+<summary>Explore Documents:</summary>
+
+![screenshot](docs/explore_documents.png)
+</details>
+
+<details>
+<summary>Manage Indices:</summary>
+
+![screenshot](docs/manage_index.png)
+</details>
+
+<details>
+<summary>Conversation:</summary>
+
+![screenshot](docs/q_and_a.png)
+</details>
+
+<details>
+<summary>Stocks:</summary>
+
+![screenshot](docs/stock_comp.png)
+</details>
+
+<details>
+<summary>Image Generation:</summary>
+
+![screenshot](docs/image_gen.png)
+</details>
+
 ## Ray Server Management Script
 
 This README provides guidance on using the `manage_server.sh` script for managing the Ray and application servers in your environment.

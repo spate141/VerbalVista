@@ -1,5 +1,6 @@
 import asyncio
 import streamlit as st
+from streamlit_theme import st_theme
 from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 from utils.data_parsing_utils import write_data_to_file
@@ -17,7 +18,8 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
     document_desc = ''
     tmp_document_save_path = ''
     button_pressed = False
-
+    # theme = st_theme()
+    # st.write(theme)
     with col1:
         with st.form('docs_processing'):
             st.markdown(f"<h6>Data description: (optional)</h6>", unsafe_allow_html=True)
@@ -130,5 +132,5 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     st.markdown(f'{extracted_text[:1230]}...')
             else:
                 st.markdown("![Alt Text](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY25wdWh3YXFvZXIzcWRtMnIwcXl3dTk1eGF6bmczd3hiYTY2NzcxNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/No3Q2COl8SEnu/giphy.gif)")
-
+                # st.markdown("![A](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGxmdW1uZ3QwdGNpY2F4eDZ1OG1vcGFuOHYwczFocGJ2bXJ3bXphYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ftAyb0CG1FNAIZt4SO/giphy.gif)")
 
