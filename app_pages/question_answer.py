@@ -27,7 +27,7 @@ def render_qa_page(
             return
 
     if selected_index_path is not None:
-
+        total_cost = 0
         # Initialize QA Agent and get chunks for lexical search
         agent_meta = load_index_and_metadata(selected_index_path)
         try:
@@ -68,7 +68,8 @@ def render_qa_page(
 
         # Display chat messages from history on app rerun
         for message_item, cost_item, timestamp_item in zip(
-            st.session_state[selected_index_path]['messages'], st.session_state[selected_index_path]['meta'],
+            st.session_state[selected_index_path]['messages'],
+            st.session_state[selected_index_path]['meta'],
             st.session_state[selected_index_path]['timestamps']
         ):
             with st.chat_message(message_item["role"], avatar=message_item["role"]):
@@ -76,23 +77,12 @@ def render_qa_page(
                 if cost_item and timestamp_item:
                     cost_item['utc_time'] = timestamp_item['utc_time']
                     st.json(cost_item, expanded=False)
+                    total_cost += cost_item['cost']['total']
 
         # React to user input
         prompt = st.chat_input(f"Start asking questions to '{os.path.basename(selected_index_path)[:50]}...'")
 
         if prompt:
-            # center_css = """
-            # <style>
-            # div[class*="StatusWidget"]{
-            #     position: fixed;
-            #     top: 91%;
-            #     left: 78%;
-            #     transform: translate(-50%, -50%);
-            #     width: 50%;
-            # }
-            # </style>
-            # """
-            # st.markdown(center_css, unsafe_allow_html=True)
 
             # Add user message to chat history
             st.session_state[selected_index_path]['messages'].append({
@@ -117,6 +107,7 @@ def render_qa_page(
             )
             answer = result['answer']
             answer_meta = result['completion_meta']
+            total_cost += answer_meta['cost']['total']
 
             # Display assistant response in chat message container
             with st.chat_message("ai", avatar="ai"):
@@ -151,3 +142,4 @@ def render_qa_page(
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
             st.rerun()
+        st.markdown(f'<b>Total Q&A Cost: <i>${round(total_cost, 4)}</i></b>', unsafe_allow_html=True)
