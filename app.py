@@ -153,6 +153,11 @@ def main():
             tts_voice = "echo"
             if enable_tts:
                 tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
+            st.markdown(
+                ':orange[:: CHECK MODEL USAGE ::]\n'
+                '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
+                '- [OpenAI](https://platform.openai.com/usage)'
+            )
         vv.render_qa_page(
             temperature=temperature, max_tokens=max_tokens, model_name=model_name,
             enable_tts=enable_tts, tts_voice=tts_voice,

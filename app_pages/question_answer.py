@@ -31,7 +31,7 @@ def render_qa_page(
         # Initialize QA Agent and get chunks for lexical search
         agent_meta = load_index_and_metadata(selected_index_path)
         try:
-            indexed_data_embedding_model = agent_meta['metadata_dict'][0]['embedding_model'][0]
+            indexed_data_embedding_model = agent_meta['metadata_dict'][0]['embedding_model']
         except Exception as e:
             log_error(e)
             return
