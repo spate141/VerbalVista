@@ -140,9 +140,11 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                 if extracted_text:
                     st.markdown(f'{extracted_text[:1230]}...')
             else:
-                # st.markdown("![Alt Text](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY25wdWh3YXFvZXIzcWRtMnIwcXl3dTk1eGF6bmczd3hiYTY2NzcxNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/No3Q2COl8SEnu/giphy.gif)")
-                # st.markdown("![A](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGxmdW1uZ3QwdGNpY2F4eDZ1OG1vcGFuOHYwczFocGJ2bXJ3bXphYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ftAyb0CG1FNAIZt4SO/giphy.gif)")
-                data_url = get_local_file_data('docs/loading.gif')
+                theme = st_theme()
+                if theme['backgroundColor'] == '#ffffff':
+                    data_url = get_local_file_data('docs/loading_white.gif')
+                else:
+                    data_url = get_local_file_data('docs/loading_black.gif')
                 cols = st.columns([0.7, 10, 0.5])
                 with cols[1]:
                     st.markdown(

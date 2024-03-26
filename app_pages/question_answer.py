@@ -142,4 +142,5 @@ def render_qa_page(
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
             st.rerun()
+
         st.markdown(f'<b>Total Q&A Cost: <i>${round(total_cost, 4)}</i></b>', unsafe_allow_html=True)
