@@ -9,7 +9,7 @@ faiss-cpu==1.8.0
 langchain-openai==0.1.1
 langchain-text-splitters==0.0.1
 num2words==0.5.13
-openai==1.14.2
+openai==1.14.3
 packaging==23.2
 pandas==2.2.1
 plotly

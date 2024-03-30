@@ -21,6 +21,10 @@ def render_sidebar(app_name: str = None, app_version: str = None, app_pages: lis
             'About': "### Welcome to VerbalVista!\nBuilt by Snehal Patel."
         }
     )
+    # SVG Editor: https://deeditor.com/
+    # Original: https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png, #233565
+    # Grey: https://i.ibb.co/GJmvgP7/download-1.png, #777777
+    # Blue: https://i.ibb.co/t4sp8k3/download.png, #0099FF
     with st.sidebar:
         st.markdown(
             f"""

@@ -83,14 +83,10 @@ class GPTAgent(Agent):
     The `__call__` method orchestrates the process of embedding queries, performing semantic and lexical searches,
     potentially re-ranking results, and generating a final response based on a provided query.
     """
-    def __init__(
-        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
-        reranker=None, server_logger=None
-    ):
-        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker, server_logger)
-        # Define OpenAI LLM model client
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        # self.logger.debug(f'OPENAI_API_KEY: {os.getenv("OPENAI_API_KEY")}')
 
     @staticmethod
     def response_stream(response):
@@ -205,14 +201,9 @@ class GPTAgent(Agent):
 
 class ClaudeAgent(Agent):
 
-    def __init__(
-        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
-        reranker=None, server_logger=None
-    ):
-        super().__init__(system_content, faiss_index, metadata_dict, lexical_index, reranker, server_logger)
-        # Define Anthropic LLM model client
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        # self.logger.debug(f'ANTHROPIC_API_KEY: {os.getenv("ANTHROPIC_API_KEY")}')
 
     @staticmethod
     def response_stream(response):
