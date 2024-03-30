@@ -127,51 +127,51 @@ def main():
     stock_data_dir = 'data/stock_data_dir/'
     generated_images_dir = 'data/generated_images/'
 
-    if not os.environ.get("OPENAI_API_KEY", None) and not os.environ.get("ANTHROPIC_API_KEY", None):
+    if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("ANTHROPIC_API_KEY"):
         # if both env variable and explicit key is not set
-        st.error("OpenAI/Anthropic API keys not found!")
+        st.error("OpenAI and Anthropic API keys not found!")
         log_error("No OpenAI/Anthropic key found!")
 
-    vv = VerbalVista(
-        document_dir=document_dir, indices_dir=indices_dir,
-        tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
-        stock_data_dir=stock_data_dir, generated_images_dir=generated_images_dir
-    )
-    if selected_page == "Media Processing":
-        vv.render_media_processing_page()
-    elif selected_page == "Manage Index":
-        vv.render_manage_index_page()
-    elif selected_page == "Q & A":
-        with st.sidebar:
-            temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
-            max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-            max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
-            max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
-            model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=4)
-            # embedding_model_name = st.selectbox("Embedding Model Name", list(EMBEDDING_DIMENSIONS.keys()), index=1)
-            enable_tts = st.checkbox("Enable text-to-speech", value=False)
-            tts_voice = "echo"
-            if enable_tts:
-                tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
-            st.markdown(
-                ':orange[:: CHECK MODEL USAGE ::]\n'
-                '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
-                '- [OpenAI](https://platform.openai.com/usage)'
-            )
-        vv.render_qa_page(
-            temperature=temperature, max_tokens=max_tokens, model_name=model_name,
-            enable_tts=enable_tts, tts_voice=tts_voice,
-            max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
-            max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
+    else:
+        vv = VerbalVista(
+            document_dir=document_dir, indices_dir=indices_dir,
+            tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
+            stock_data_dir=stock_data_dir, generated_images_dir=generated_images_dir
         )
-    elif selected_page == "Explore Document":
-        vv.render_document_explore_page()
-    elif selected_page == 'Stocks Comparison':
-        vv.render_stocks_comparison_page()
-    elif selected_page == 'Stocks Portfolio':
-        vv.render_stocks_portfolio_page()
-    elif selected_page == 'Image Generation':
-        vv.render_image_generation_page()
+        if selected_page == "Media Processing":
+            vv.render_media_processing_page()
+        elif selected_page == "Manage Index":
+            vv.render_manage_index_page()
+        elif selected_page == "Q & A":
+            with st.sidebar:
+                temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
+                max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
+                max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
+                max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
+                model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=4)
+                enable_tts = st.checkbox("Enable text-to-speech", value=False)
+                tts_voice = "echo"
+                if enable_tts:
+                    tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
+                st.markdown(
+                    ':orange[:: CHECK MODEL USAGE ::]\n'
+                    '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
+                    '- [OpenAI](https://platform.openai.com/usage)'
+                )
+            vv.render_qa_page(
+                temperature=temperature, max_tokens=max_tokens, model_name=model_name,
+                enable_tts=enable_tts, tts_voice=tts_voice,
+                max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
+                max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
+            )
+        elif selected_page == "Explore Document":
+            vv.render_document_explore_page()
+        elif selected_page == 'Stocks Comparison':
+            vv.render_stocks_comparison_page()
+        elif selected_page == 'Stocks Portfolio':
+            vv.render_stocks_portfolio_page()
+        elif selected_page == 'Image Generation':
+            vv.render_image_generation_page()
 
 
 if __name__ == '__main__':

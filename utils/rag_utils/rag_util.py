@@ -1,6 +1,5 @@
 import os
 import time
-import ray
 import glob
 import faiss
 import pickle
@@ -8,13 +7,12 @@ import pandas as pd
 from typing import Dict
 from pathlib import Path
 from functools import partial
-from ray.data import ActorPoolStrategy
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
 from utils.rag_utils import EMBEDDING_DIMENSIONS, MODEL_COST_PER_1K_TOKENS
 from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
-from utils.rag_utils.indexing_util import StoreResults, FaissIndexActor
+from utils.rag_utils.indexing_util import FaissIndex
 from utils.rag_utils.embedding_util import EmbedChunks
 
 
@@ -158,7 +156,7 @@ def do_some_data_extraction(record: Dict = None):
     return data
 
 
-def do_some_data_chunking(data, chunk_size=600, chunk_overlap=30):
+def do_some_data_chunking(data: Dict = None, chunk_size: int = 600, chunk_overlap: int = 30):
     """
     Splits the input text data into chunks of a specified size with a defined overlap between consecutive chunks.
 
@@ -227,53 +225,43 @@ def index_data(
     :param chunk_overlap: The number of characters that should overlap between consecutive chunks. Defaults to 30.
     :param embedding_model: The name of the model used for embedding the text chunks. Defaults to "text-embedding-3-small".
     """
-    ray.init(ignore_reinit_error=True, include_dashboard=False)
     document_directory = Path(document_directory)
 
     # Load meta normally as there will be only one meta file
     raw_meta = load_first_meta_file(document_directory)
 
     # Load data with ray as there could be multiple data files
-    ds = ray.data.from_items(
-        [{"path": path} for path in document_directory.rglob("*.data.txt") if not path.is_dir()]
-    )
-    text_data_ds = ds.flat_map(do_some_data_extraction)
+    ds = [{"path": path} for path in document_directory.rglob("*.data.txt") if not path.is_dir()]
+    log_debug(f"Total documents found: {len(ds)}")
+    text_data_ds = [do_some_data_extraction(record) for record in ds]
 
     # Chunk data
-    chunks_ds = text_data_ds.flat_map(
-        partial(
-            do_some_data_chunking, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        ),
-        num_cpus=1,
-        num_gpus=0
-    )
+    chunks_ds = []
+    for index, doc in enumerate(text_data_ds, 1):
+        for full_text_obj in doc:
+            text_chunks = do_some_data_chunking(full_text_obj, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            log_debug(f'Total chunks created for document-{index}: {len(text_chunks)}')
+            chunks_ds.append({
+                'text': [i['text'] for i in text_chunks],
+                'source': [i['source'] for i in text_chunks]
+            })
 
-    # Embed chunks
-    embedded_chunks = chunks_ds.map_batches(
-        EmbedChunks,
-        fn_constructor_kwargs={"model_name": embedding_model},
-        batch_size=100,
-        num_cpus=1,
-        concurrency=1,
-    )
+    # Init. EmbedChunks class with proper model name & FaissIndex class with proper embedding dimension
+    embedder_class = EmbedChunks(embedding_model)
+    faiss_index_class = FaissIndex(EMBEDDING_DIMENSIONS[embedding_model])
 
-    # Initialize the actor
-    faiss_actor = FaissIndexActor.remote(EMBEDDING_DIMENSIONS[embedding_model])
-
-    # Process batches
-    embedded_chunks.map_batches(
-        StoreResults,
-        fn_constructor_kwargs={"faiss_actor": faiss_actor},
-        batch_size=100,
-        num_cpus=1,
-        concurrency=1,
-    ).count()
+    embedded_chunks = [embedder_class(i) for i in chunks_ds]
+    _ = [
+        faiss_index_class.add_embeddings_and_metadata(
+            i['embeddings'], i['text'], i['source'], i['embedding_model']
+        ) for i in embedded_chunks
+    ]
+    log_debug(f"FAISS index generated with total embeddings: {faiss_index_class.index.ntotal}")
 
     # Save the final index and metadata
     if not os.path.exists(index_directory):
         os.makedirs(index_directory)
-    ray.get(faiss_actor.save_index.remote(index_directory))
-    ray.shutdown()
+    faiss_index_class.save_index(index_directory)
 
     # Save document meta
     doc_meta_path = os.path.join(index_directory, "doc.meta.txt")

@@ -1,14 +1,12 @@
 import os
 import re
-import ray
 import faiss
 import pickle
 import numpy as np
 from rank_bm25 import BM25Okapi
 
 
-@ray.remote
-class FaissIndexActor:
+class FaissIndex:
 
     def __init__(self, embedding_dim):
         """
@@ -73,18 +71,4 @@ class FaissIndexActor:
         self.save_lexical_index(lexical_index_path)
         with open(metadata_path, 'wb') as f:
             pickle.dump(self.metadata_dict, f)
-
-
-class StoreResults:
-    def __init__(self, faiss_actor):
-        self.faiss_actor = faiss_actor
-
-    def __call__(self, batch):
-        ray.get(
-            self.faiss_actor.add_embeddings_and_metadata.remote(
-                batch["embeddings"], batch["text"], batch["source"], batch["embedding_model"]
-            )
-        )
-        return {}
-
 

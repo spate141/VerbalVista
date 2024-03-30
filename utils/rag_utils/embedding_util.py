@@ -24,10 +24,12 @@ class EmbedChunks:
         self.embedding_model = get_embedding_model(
             embedding_model_name=self.model_name
         )
+        self.counter = 1
 
     def __call__(self, batch):
         embeddings = self.embedding_model.embed_documents(batch["text"])
-        log_debug(f"Generated embeddings shape: {np.array(embeddings).shape}")
+        log_debug(f"Generated embeddings for document-{self.counter}: {np.array(embeddings).shape}")
+        self.counter += 1
         return {
             "text": batch["text"], "source": batch["source"],
             "embeddings": embeddings, "embedding_model": np.array([self.model_name] * len(batch["text"]))
