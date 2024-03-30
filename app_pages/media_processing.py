@@ -141,7 +141,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     st.markdown(f'{extracted_text[:1230]}...')
             else:
                 theme = st_theme()
-                if theme['backgroundColor'] == '#ffffff':
+                if theme and theme['backgroundColor'] == '#ffffff':
                     data_url = get_local_file_data('docs/loading_white.gif')
                 else:
                     data_url = get_local_file_data('docs/loading_black.gif')

@@ -148,7 +148,7 @@ def main():
                 max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
                 max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
                 max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
-                model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=4)
+                model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=6)
                 enable_tts = st.checkbox("Enable text-to-speech", value=False)
                 tts_voice = "echo"
                 if enable_tts:

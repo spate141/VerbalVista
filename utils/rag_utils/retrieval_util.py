@@ -1,13 +1,14 @@
 import numpy as np
-from utils.rag_utils.embedding_util import get_embedding_model
+from utils.rag_utils.embedding_util import get_embedding_client
 
 
 def get_query_embedding(query, embedding_model_name=None):
     """
     Get query vector and return normalized query vector.
     """
-    embedding_model = get_embedding_model(embedding_model_name)
-    query_emb = np.array(embedding_model.embed_query(query))
+    embedding_client = get_embedding_client(embedding_model_name)
+    response = embedding_client.embeddings.create(input=query, model=embedding_model_name)
+    query_emb = np.array(response.data[0].embedding)
     norm = np.linalg.norm(query_emb)
     return query_emb / norm if norm > 0 else query_emb
 
