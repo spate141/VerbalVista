@@ -6,7 +6,6 @@ import pickle
 import pandas as pd
 from typing import Dict
 from pathlib import Path
-from functools import partial
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
@@ -164,6 +163,7 @@ def do_some_data_chunking(data: Dict = None, chunk_size: int = 600, chunk_overla
     each of a maximum character length defined by 'chunk_size'. The chunks can optionally overlap by a number of
     characters specified by 'chunk_overlap'. The function returns a list of dictionaries, where each dictionary
     represents a text chunk and its source information.
+    More infor: https://chunkviz.up.railway.app/
 
     :param data: A dictionary containing the keys 'text' with the full text to be chunked and 'source' with the
                  source information.
