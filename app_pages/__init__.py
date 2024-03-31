@@ -6,3 +6,10 @@ from .stocks_comparison import render_stocks_comparison_page
 from .sidebar import render_sidebar
 from .image_generation import render_image_generation_page
 from .stocks_portfolio import render_stocks_portfolio_page
+
+__all__ = [
+    "render_document_explore_page", "render_manage_index_page", "render_media_processing_page",
+    "render_qa_page", "render_stocks_comparison_page", "render_sidebar", "render_image_generation_page",
+    "render_stocks_portfolio_page"
+]
+

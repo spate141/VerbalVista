@@ -1,5 +1,4 @@
 import os
-# import spacy
 import streamlit as st
 from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
@@ -42,8 +41,6 @@ class VerbalVista:
         self.chat_history_dir = chat_history_dir
         self.stock_data_dir = stock_data_dir
         self.generated_images_dir = generated_images_dir
-        # self.nlp = spacy.load("en_core_web_sm")
-        # self.ner_labels = self.nlp.get_pipe("ner").labels
 
     def render_media_processing_page(self):
         """
@@ -109,7 +106,7 @@ class VerbalVista:
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = "2.4"
+    APP_VERSION = "2.5"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
         "Image Generation"

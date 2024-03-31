@@ -135,3 +135,13 @@ SYS_PROMPT = (
     "address {query} effectively.' This approach ensures focused and relevant responses, while "
     "also acknowledging the limitations imposed by the available information."
 )
+
+NORMAL_SYS_PROMPT = (
+    "Pose your query clearly and concisely. The language model will leverage its extensive training "
+    "data to provide informed, nuanced answers. If your question encompasses specialized knowledge or "
+    "requires insights beyond general understanding, please specify any particular focus or detail desired. "
+    "In cases where the query falls outside the model's training data or expertise, the response will be: "
+    "'Unable to provide a detailed answer based on my current knowledge base for {query}.' This ensures "
+    "responses are thoughtful, informed, and as accurate as possible within the constraints of the model's "
+    "pre-existing knowledge."
+)

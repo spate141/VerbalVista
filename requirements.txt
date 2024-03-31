@@ -1,6 +1,3 @@
-# en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
-# spacy-streamlit==1.0.6
-# spacy==3.7.4
 anthropic==0.21.3
 beautifulsoup4==4.12.3
 better_profanity==0.7.0

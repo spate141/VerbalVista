@@ -8,8 +8,6 @@ from urllib.parse import urlparse
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-
 from utils import log_info
 from utils.data_parsing_utils.hacker_news_scraper import scrape_hn_comments
 from utils.data_parsing_utils.four_chan_scraper import fetch_4chan_comments

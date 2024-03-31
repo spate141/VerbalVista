@@ -9,7 +9,7 @@ from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import log_info, log_error, log_debug
-from utils.rag_utils import EMBEDDING_DIMENSIONS, MODEL_COST_PER_1K_TOKENS
+from utils.rag_utils import EMBEDDING_DIMENSIONS, MODEL_COST_PER_1K_TOKENS, NORMAL_SYS_PROMPT
 from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
 from utils.rag_utils.indexing_util import FaissIndex
 from utils.rag_utils.embedding_util import EmbedChunks
@@ -345,9 +345,24 @@ def do_some_chat_completion(
             f"Unknown model: {llm_model}. Please provide a valid LLM model name."
             "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
         )
-    result = query_agent(
-        query=query, stream=False, num_chunks=max_semantic_retrieval_chunks,
-        lexical_search_k=max_lexical_retrieval_chunks, temperature=temperature,
-        embedding_model_name=embedding_model, llm_model=llm_model, max_tokens=max_tokens
-    )
+
+    if faiss_index and metadata_dict:
+        result = query_agent(
+            query=query, stream=False, num_chunks=max_semantic_retrieval_chunks,
+            lexical_search_k=max_lexical_retrieval_chunks, temperature=temperature,
+            embedding_model_name=embedding_model, llm_model=llm_model, max_tokens=max_tokens
+        )
+    else:
+        answer, completion_meta = query_agent.generate_text(
+            llm_model=llm_model,
+            temperature=temperature,
+            seed=42,
+            stream=False,
+            system_content=NORMAL_SYS_PROMPT,
+            user_content=query,
+            embedding_model_name=embedding_model,
+            sources=None,
+            max_tokens=max_tokens,
+        )
+        result = {"query": query, "answer": answer, "completion_meta": completion_meta}
     return result

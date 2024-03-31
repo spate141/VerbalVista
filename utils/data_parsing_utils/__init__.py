@@ -15,7 +15,7 @@ def replace_non_alphanumeric(s):
 
 
 def write_data_to_file(
-        document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False
+    document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False
 ):
     """
     Write various full documents from `full_documents` to document_dir.
