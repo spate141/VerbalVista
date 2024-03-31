@@ -11,27 +11,17 @@ from dotenv import load_dotenv; load_dotenv(".env")
 from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
+from utils.server_utils import *
 from utils.openai_utils import OpenAIWisperUtil
 from utils.rag_utils.rag_util import index_data
 from utils.data_parsing_utils import write_data_to_file
-from utils.server_utils import (
-    ChatUtil, ProcessTextUtil, ProcessURLsUtil, ProcessMultimediaUtil, ListIndicesUtil, DeleteIndexUtil,
-    AuthUtil, SummaryUtil, ChatHistoryUtil, TalkUtil
-)
-from utils.server_utils import (
-    ChatInput, ProcessTextInput, ProcessUrlsInput, ProcessMultimediaInput, SummaryInput, TalkInput
-)
-from utils.server_utils import (
-    ChatOutput, ProcessTextOutput, ProcessUrlsOutput, ProcessMultimediaOutput, ListIndicesOutput,
-    DeleteIndexOutput, SummaryOutput, ChatHistoryOutput, TalkOutput
-)
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 
 
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🄻🄻🄼 + Your Data = ♥️",
-    version="1.8",
+    version="2.4",
 )
 auth_util = AuthUtil(
     valid_api_keys=os.getenv("VALID_API_KEYS", "").split(",")
