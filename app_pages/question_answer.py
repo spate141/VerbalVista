@@ -27,6 +27,7 @@ def render_qa_page(
             return
 
     if selected_index_path is not None:
+        rerun = True
         total_cost = 0
         # Initialize QA Agent and get chunks for lexical search
         agent_meta = load_index_and_metadata(selected_index_path)
@@ -76,6 +77,11 @@ def render_qa_page(
                 st.markdown(message_item["content"])
                 if cost_item and timestamp_item:
                     cost_item['utc_time'] = timestamp_item['utc_time']
+                    st.caption(f'TOKENS: {{total: {cost_item["tokens"]["total"]}, prompt: {cost_item["tokens"]["prompt"]}, '
+                               f'completion: {cost_item["tokens"]["completion"]}}} | '
+                               f'COST: {{total: \${round(cost_item["cost"]["total"], 4)}, '
+                               f'prompt: \${round(cost_item["cost"]["prompt"], 4)}, '
+                               f'completion: \${round(cost_item["cost"]["completion"], 4)}}}')
                     st.json(cost_item, expanded=False)
                     total_cost += cost_item['cost']['total']
 
@@ -126,6 +132,7 @@ def render_qa_page(
                 message_placeholder.markdown(full_response)
                 st.json(answer_meta, expanded=False)
                 if enable_tts:
+                    rerun = False
                     st.audio(tx2sp_util.text_to_speech(text=full_response, voice=tts_voice).content)
 
             # Add assistant response to chat history
@@ -141,6 +148,7 @@ def render_qa_page(
             log_debug(f"Saving chat history to local file: {chat_history_filepath}")
             with open(chat_history_filepath, 'wb') as f:
                 pickle.dump(st.session_state[selected_index_path], f)
-            st.rerun()
+            if rerun:
+                st.rerun()
 
         st.markdown(f'<b>Total Q&A Cost: <i>${round(total_cost, 4)}</i></b>', unsafe_allow_html=True)
