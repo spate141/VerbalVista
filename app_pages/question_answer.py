@@ -40,14 +40,17 @@ def render_qa_page(
         index_meta_txt = open(index_meta, 'r').read()
         index_meta_txt = ' '.join(index_meta_txt.split())
         st.markdown(
-            f"<b>Model Meta:</b> <font color='#FF7F50'><b>temperature: </b></font><i>{temperature},</i> "
+            f"<b>LLM Setting:</b> <font color='#FF7F50'><b>temperature: </b></font><i>{temperature},</i> "
             f"<font color='#DE3163'><b>max_tokens: </b></font><i>{max_tokens},</i> "
             f"<font color='#9A7D0A'><b>llm: </b></font><i>{model_name},</i> "
             f"<font color='#6495ED'><b>embedding: </b></font><i>{indexed_data_embedding_model},</i> "
             f"<font color='#229954'><b>retrieval_chunks: </b></font> <i>semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}</i>",
             unsafe_allow_html=True
         )
-        st.markdown(f"<h6>Data Description: <i>{index_meta_txt}...</i></h6>", unsafe_allow_html=True)
+        if index_meta_txt:
+            cols = st.columns([1, 2, 1])
+            with cols[1]:
+                st.markdown(f"<h5> {index_meta_txt}... </h5>", unsafe_allow_html=True)
 
         chat_dir_path = os.path.join(chat_history_dir, os.path.basename(selected_index_path))
         if not os.path.exists(chat_dir_path):

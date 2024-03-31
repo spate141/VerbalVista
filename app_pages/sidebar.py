@@ -40,9 +40,4 @@ def render_sidebar(app_name: str = None, app_version: str = None, app_pages: lis
         st.markdown("<center><h4><b>Select Page</b></h4></center>", unsafe_allow_html=True)
         selected_page = st.selectbox("Select function:", app_pages, label_visibility="collapsed")
         st.markdown("--------", unsafe_allow_html=True)
-        # st.markdown("<h5><b>LLM API Key:</b></h5>", unsafe_allow_html=True)
-        # llm_api_key = st.text_input(
-        #     "LLM API Key:", key="chatbot_api_key", type="password", label_visibility="collapsed",
-        #     placeholder="LLM API Key"
-        # )
         return selected_page

@@ -144,20 +144,21 @@ def main():
             vv.render_manage_index_page()
         elif selected_page == "Q & A":
             with st.sidebar:
-                temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
-                max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-                max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
-                max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
-                model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=6)
-                enable_tts = st.checkbox("Enable text-to-speech", value=False)
-                tts_voice = "echo"
-                if enable_tts:
-                    tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
-                st.markdown(
-                    ':orange[:: CHECK MODEL USAGE ::]\n'
-                    '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
-                    '- [OpenAI](https://platform.openai.com/usage)'
-                )
+                with st.expander("Modify LLM Setting"):
+                    temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
+                    max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
+                    max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
+                    max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
+                    model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=6)
+                    enable_tts = st.checkbox("Enable text-to-speech", value=False)
+                    tts_voice = "echo"
+                    if enable_tts:
+                        tts_voice = st.selectbox("Select Voice", ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=1)
+                with st.expander("Check Model Usage", expanded=True):
+                    st.markdown(
+                        '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
+                        '- [OpenAI](https://platform.openai.com/usage)'
+                    )
             vv.render_qa_page(
                 temperature=temperature, max_tokens=max_tokens, model_name=model_name,
                 enable_tts=enable_tts, tts_voice=tts_voice,
