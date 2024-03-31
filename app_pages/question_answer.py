@@ -23,11 +23,9 @@ def render_qa_page(
             "Select Index:", options=data_indices, index=None,
             placeholder="Ask the LLM or select index to provide additional context!", label_visibility="collapsed"
         )
-        # if selected_index_path is None:
-        #     st.error("Select index first!")
-        #     return
 
     if selected_index_path is not None:
+        # Chat with RAG index
         rerun = True
         total_cost = 0
         # Initialize QA Agent and get chunks for lexical search
@@ -156,6 +154,7 @@ def render_qa_page(
         st.markdown(f'<b>Total Q&A Cost: <i>${round(total_cost, 4)}</i></b>', unsafe_allow_html=True)
 
     else:
+        # Chat with LLM directly!
         st.markdown(
             f"<b>LLM Setting:</b> <font color='#FF7F50'><b>temperature: </b></font><i>{temperature},</i> "
             f"<font color='#DE3163'><b>max_tokens: </b></font><i>{max_tokens},</i> "

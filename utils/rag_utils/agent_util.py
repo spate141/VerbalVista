@@ -16,6 +16,7 @@ class Agent:
     and placeholders for generating and preparing responses.
     The class also initializes components for lexical search, re-ranking, and semantic search.
     """
+
     def __init__(
         self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
         reranker=None, server_logger=None
@@ -160,7 +161,10 @@ class GPTAgent(Agent):
 
         # Get sources and context
         query_embedding = get_query_embedding(query, embedding_model_name=indexed_data_embedding_model)
-        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
+        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | '
+                          f'LLM_MODEL: {llm_model} | '
+                          f'TEMP: {temperature} | '
+                          f'NUM_CHUNKS: {num_chunks}')
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -226,21 +230,9 @@ class ClaudeAgent(Agent):
         while retry_count <= max_retries:
             try:
                 completion = self.client.messages.create(
-                    model=llm_model,
-                    temperature=temperature,
-                    stream=stream,
-                    system=system_content,
-                    max_tokens=max_tokens,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": user_content
-                                }
-                            ]
-                        },
+                    model=llm_model, temperature=temperature, stream=stream, system=system_content,
+                    max_tokens=max_tokens, messages=[
+                        {"role": "user", "content": [{"type": "text", "text": user_content}]},
                     ],
                 )
                 _completion_cost = get_llm_token_cost_for_model(
@@ -285,7 +277,10 @@ class ClaudeAgent(Agent):
 
         # Get sources and context
         query_embedding = get_query_embedding(query, embedding_model_name=indexed_data_embedding_model)
-        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | LLM_MODEL: {llm_model} | TEMP: {temperature} | NUM_CHUNKS: {num_chunks}')
+        self.logger.debug(f'EMBEDDING_MODEL: {indexed_data_embedding_model} | '
+                          f'LLM_MODEL: {llm_model} | '
+                          f'TEMP: {temperature} | '
+                          f'NUM_CHUNKS: {num_chunks}')
 
         # {id, distance, text, source}
         context_results = do_semantic_search(
@@ -322,4 +317,3 @@ class ClaudeAgent(Agent):
         # Result
         result = {"query": query, "answer": answer, "completion_meta": completion_meta}
         return result
-

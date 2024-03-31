@@ -522,10 +522,12 @@ class VerbalVistaAssistantDeployment:
         """
         start = time.time()
         self.logger.info(f"Request received api key: {api_key}. Endpoint: /talk")
-        talk_util = TalkUtil(system_prompt=None, server_logger=self.logger)
+        talk_util = TalkUtil(server_logger=self.logger)
         # chat_history_util = ChatHistoryUtil(chat_history_dir=self.chat_history_dir, index_name=query.index_name)
         # chat_history_util.save_chat(role="user", content=query.query, meta=None)
-        result = talk_util.generate_text(query=query.query, temperature=query.temperature, llm_model=query.llm)
+        result = talk_util.talk_with_llm(
+            query=query.query, temperature=query.temperature, llm_model=query.llm, max_tokens=query.max_tokens
+        )
         # chat_history_util.save_chat(role="assistant", content=result['answer'], meta=result['completion_meta'])
         end = time.time()
         self.logger.info(f"Finished /talk in {round((end - start) * 1000, 2)} ms")

@@ -307,7 +307,8 @@ def load_index_and_metadata(index_directory: str = None):
 def do_some_chat_completion(
     query: str = None, embedding_model: str = "text-embedding-3-small", llm_model: str = "gpt-3.5-turbo",
     temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
-    max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1, max_tokens=512
+    max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1, max_tokens=512,
+    system_prompt: str = None, server_logger=None
 ):
     """
     Perform chat completion using a combination of semantic and lexical retrieval methods.
@@ -334,11 +335,13 @@ def do_some_chat_completion(
     """
     if 'gpt' in llm_model:
         query_agent = GPTAgent(
-            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
+            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker,
+            system_content=system_prompt, server_logger=server_logger
         )
     elif 'claude' in llm_model:
         query_agent = ClaudeAgent(
-            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker
+            faiss_index=faiss_index, metadata_dict=metadata_dict, lexical_index=lexical_index, reranker=reranker,
+            system_content=system_prompt, server_logger=server_logger
         )
     else:
         raise ValueError(
@@ -353,12 +356,16 @@ def do_some_chat_completion(
             embedding_model_name=embedding_model, llm_model=llm_model, max_tokens=max_tokens
         )
     else:
+        if system_prompt:
+            system_content = system_prompt
+        else:
+            system_content = NORMAL_SYS_PROMPT
         answer, completion_meta = query_agent.generate_text(
             llm_model=llm_model,
             temperature=temperature,
             seed=42,
             stream=False,
-            system_content=NORMAL_SYS_PROMPT,
+            system_content=system_content,
             user_content=query,
             embedding_model_name=embedding_model,
             sources=None,
