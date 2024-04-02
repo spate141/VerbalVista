@@ -65,7 +65,7 @@ class VerbalVista:
         Document explore page.
         """
         render_document_explore_page(
-            document_dir=self.document_dir, indices_dir=self.indices_dir, nlp=None, ner_labels=None
+            document_dir=self.document_dir, indices_dir=self.indices_dir
         )
 
     def render_qa_page(
