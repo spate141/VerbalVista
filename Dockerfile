@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip && rm -rf /root/.cache/pip
 
 # Copy the .env file into the container at /app
-COPY .env ./
+#COPY .env ./
 
 # Copy the rest of your application into the container at /app
 COPY . .
