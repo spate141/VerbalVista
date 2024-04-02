@@ -158,13 +158,12 @@ def render_qa_page(
         st.markdown(
             f"<b>LLM Setting:</b> <font color='#FF7F50'><b>temperature: </b></font><i>{temperature},</i> "
             f"<font color='#DE3163'><b>max_tokens: </b></font><i>{max_tokens},</i> "
-            f"<font color='#9A7D0A'><b>llm: </b></font><i>{model_name},</i> "
-            f"<font color='#229954'><b>retrieval_chunks: </b></font> <i>semantic: {max_semantic_retrieval_chunks}, lexical: {max_lexical_retrieval_chunks}</i>",
+            f"<font color='#9A7D0A'><b>llm: </b></font><i>{model_name}</i>",
             unsafe_allow_html=True
         )
         rerun = True
         total_cost = 0
-        embedding_model = 'text-embedding-3-small'
+        # embedding_model = 'text-embedding-3-small'
         now = datetime.now()
         formatted_date_time = now.strftime('%m%d%Y')
         selected_index_path = f'chat-{formatted_date_time}'
@@ -219,11 +218,9 @@ def render_qa_page(
 
             log_info("Normal Chat")
             result = do_some_chat_completion(
-                query=prompt, embedding_model=embedding_model, llm_model=model_name,
-                temperature=temperature, faiss_index=None,
-                lexical_index=None, metadata_dict=None, reranker=None,
-                max_tokens=max_tokens, max_semantic_retrieval_chunks=max_semantic_retrieval_chunks,
-                max_lexical_retrieval_chunks=max_lexical_retrieval_chunks
+                query=prompt, llm_model=model_name, temperature=temperature, max_tokens=max_tokens,
+                embedding_model='', faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
+                max_semantic_retrieval_chunks=0, max_lexical_retrieval_chunks=0
             )
             answer = result['answer']
             answer_meta = result['completion_meta']
