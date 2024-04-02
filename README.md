@@ -30,13 +30,13 @@ VALID_API_KEYS='KEY1,KEY2,...,KEYn
 
 ### Build docker image:
 ```cmd
->> cd VerbalVista
->> docker build -t verbal_vista:2.6.2 .
+>> cd /path/to/VerbalVista
+>> docker build -t verbalvista:2.6.2 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 verbal_vista:2.6.2
+>> docker run -p 8501:8501 --env-file /path/to/your/envfile/.env verbalvista:2.6.2
 ```
 
 ## Streamlit APP
