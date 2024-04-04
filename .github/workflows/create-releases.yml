@@ -44,7 +44,7 @@ jobs:
           fi
           
           # Construct the new version tag
-          NEW_TAG="v$NEW_MAJOR.$NEW_MINOR"
+          NEW_TAG="$NEW_MAJOR.$NEW_MINOR"
           echo "New version: $NEW_TAG"
           echo "::set-output name=NEW_VERSION::$NEW_TAG"
         env:
@@ -82,7 +82,7 @@ jobs:
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.calc_version.outputs.NEW_VERSION }}
-          release_name: ${{ steps.calc_version.outputs.NEW_VERSION }}
+          release_name: v${{ steps.calc_version.outputs.NEW_VERSION }}
           body: 'Changelog: https://github.com/${{ github.repository }}/compare/${{ steps.calc_version.outputs.OLD_VERSION }}...${{ steps.calc_version.outputs.NEW_VERSION }}'
           draft: false
           prerelease: false
