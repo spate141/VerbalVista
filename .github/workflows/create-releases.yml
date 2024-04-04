@@ -1,0 +1,60 @@
+name: Create releases
+on:
+  schedule:
+    - cron: '0 5 * * *' # every day at 5am UTC
+#  push:
+#    branches:
+#      - main
+
+jobs:
+  release:
+    name: release
+    if: github.ref == 'refs/heads/main' && github.repository == 'spate141/VerbalVista'
+    runs-on: ubuntu-latest
+    environment: publish
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Calculate new version
+        id: calc_version
+        run: |
+          # Fetch the latest release tag from the GitHub API
+          LATEST_TAG=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          
+          echo "Latest tag: $LATEST_TAG"
+          echo "::set-output name=OLD_VERSION::$LATEST_TAG"
+          
+          # Assuming the tag is in the format vM.N, split it to get M and N
+          IFS='.' read -ra VERSION <<< "${LATEST_TAG//v/}"
+          MAJOR=${VERSION[0]}
+          MINOR=${VERSION[1]}
+          
+          # Check if the minor version is 9, then increment the major version and reset minor to 0
+          if [ "$MINOR" -eq 9 ]; then
+            NEW_MAJOR=$(($MAJOR + 1))
+            NEW_MINOR=0
+          else
+            # Otherwise, simply increment the minor version
+            NEW_MAJOR=$MAJOR
+            NEW_MINOR=$(($MINOR + 1))
+          fi
+          
+          # Construct the new version tag
+          NEW_TAG="v$NEW_MAJOR.$NEW_MINOR"
+          echo "New version: $NEW_TAG"
+          echo "::set-output name=NEW_VERSION::$NEW_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.calc_version.outputs.NEW_VERSION }}
+          release_name: Release ${{ steps.calc_version.outputs.NEW_VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
