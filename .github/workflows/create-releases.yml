@@ -3,9 +3,6 @@ on:
   schedule:
     - cron: '0 5 * * *' # every day at 5am UTC
   workflow_dispatch:
-#  push:
-#    branches:
-#      - main
 
 jobs:
   release:
@@ -50,11 +47,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Fetch latest commit SHA on main
+        id: latest_commit
+        run: |
+          LATEST_COMMIT_SHA=$(git rev-parse HEAD)
+          echo "Latest commit SHA on main: $LATEST_COMMIT_SHA"
+          echo "::set-output name=SHA::$LATEST_COMMIT_SHA"
+
+      - name: Fetch commit SHA for last release tag
+        id: last_release_commit
+        run: |
+          LAST_RELEASE_TAG_SHA=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/git/ref/tags/${{ steps.calc_version.outputs.OLD_VERSION }} | jq -r '.object.sha')
+          echo "Last release tag SHA: $LAST_RELEASE_TAG_SHA"
+          echo "::set-output name=SHA::$LAST_RELEASE_TAG_SHA"
+        
+      - name: Check if new release is needed
+        id: check_release
+        run: |
+          if [ "${{ steps.latest_commit.outputs.SHA }}" == "${{ steps.last_release_commit.outputs.SHA }}" ]; then
+            echo "No changes since the last release. Skipping new release creation."
+            echo "::set-output name=NEED_RELEASE::false"
+          else
+            echo "Changes detected. Proceeding with new release creation."
+            echo "::set-output name=NEED_RELEASE::true"
+          fi
+
       - name: Create GitHub Release
+        if: steps.check_release.outputs.NEED_RELEASE == 'true'
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.calc_version.outputs.NEW_VERSION }}
           release_name: Release ${{ steps.calc_version.outputs.NEW_VERSION }}
+          body: 'Changelog: https://github.com/${{ github.repository }}/compare/${{ steps.calc_version.outputs.OLD_VERSION }}...${{ steps.calc_version.outputs.NEW_VERSION }}'
           draft: false
           prerelease: false
         env:
