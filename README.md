@@ -2,7 +2,7 @@
   <img align="center" src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="40%" height="40%" />
 </p>
 
-![Static Badge](https://img.shields.io/badge/VerbalVista-2.6.2-blue) [![Docker Image CI](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml)
+![Static Badge](https://img.shields.io/badge/VerbalVista-2.7-blue) [![Docker Image CI](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml)
 
 ## Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
@@ -31,12 +31,12 @@ VALID_API_KEYS='KEY1,KEY2,...,KEYn
 ### Build docker image:
 ```cmd
 >> cd /path/to/VerbalVista
->> docker build -t verbalvista:2.6.2 .
+>> docker build -t verbalvista:2.7 .
 ```
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 --env-file /path/to/your/envfile/.env verbalvista:2.6.2
+>> docker run -p 8501:8501 --env-file /path/to/your/envfile/.env verbalvista:2.7
 ```
 
 ## Streamlit APP
