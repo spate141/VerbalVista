@@ -37,8 +37,8 @@ class ProcessMultimediaOutput(BaseModel):
 
 class ProcessMultimediaUtil:
 
-    def __init__(self, tmp_audio_dir: str = None, openai_wisper_util=None):
-        self.tmp_audio_dir = tmp_audio_dir
+    def __init__(self, tmp_dir: str = None, openai_wisper_util=None):
+        self.tmp_dir = tmp_dir
         self.openai_wisper_util = openai_wisper_util
 
     @staticmethod
@@ -75,7 +75,7 @@ class ProcessMultimediaUtil:
             file_desc = file_meta['description']
             if file_name.endswith(('.m4a', '.mp3', '.wav', '.webm', '.mp4', '.mpga', '.mpeg')):
                 extracted_text = process_audio_files(
-                    tmp_audio_dir=self.tmp_audio_dir, file_meta=file_meta, openai_wisper_util=self.openai_wisper_util
+                    tmp_dir=self.tmp_dir, file_meta=file_meta, openai_wisper_util=self.openai_wisper_util
                 )
             elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
                 extracted_text = process_document_files(file_meta=file_meta)

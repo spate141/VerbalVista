@@ -15,17 +15,23 @@ def replace_non_alphanumeric(s):
 
 
 def write_data_to_file(
-    document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False
+    document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False,
+    save_dir_name: str = None
 ):
     """
     Write various full documents from `full_documents` to document_dir.
-    :param document_dir: "data/past_surveys/"
+    :param document_dir: "data/documents/"
     :param full_documents: [{"file_name": "file_name", "full_document": "full_document"}]
     :param single_file_flag: Save as single file or multiple files flag.
+    :param save_dir_name: Name of the saved directory.
     :return:
     """
-    directory_name = '_+_'.join([replace_non_alphanumeric(doc['file_name'])[:20] for doc in full_documents])
-    directory_name = f"{directory_name}_{random_string_generator()}"
+    if not save_dir_name:
+        directory_name = '_+_'.join([replace_non_alphanumeric(doc['file_name'])[:20] for doc in full_documents])
+        directory_name = f"{directory_name}_{random_string_generator()}"
+    else:
+        directory_name = save_dir_name
+
     if single_file_flag:
         full_directory_path = os.path.join(document_dir, directory_name)
         os.makedirs(full_directory_path, exist_ok=True)
@@ -42,6 +48,7 @@ def write_data_to_file(
             file.write(full_data_text)
         with open(full_meta_file_path, 'w') as file:
             file.write(full_meta_text)
+
     else:
         file_names = [doc['file_name'].replace(' ', "_") for doc in full_documents]
         full_texts = [doc['extracted_text'] for doc in full_documents]

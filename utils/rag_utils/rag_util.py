@@ -4,7 +4,7 @@ import glob
 import faiss
 import pickle
 import pandas as pd
-from typing import Dict
+from typing import Dict, List
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -137,7 +137,7 @@ def delete_directory(selected_directory: str = None):
         return False
 
 
-def do_some_data_extraction(record: Dict = None):
+def do_some_data_extraction(directory_filepaths: List[Dict] = None):
     """
     Extracts text data from a file specified in the given record.
 
@@ -145,13 +145,15 @@ def do_some_data_extraction(record: Dict = None):
     list of dictionaries. Each dictionary contains two key-value pairs: 'source' with the name of the file, and 'text'
     with the content of the file.
 
-    :param record: A dictionary containing the key 'path' that holds a Path object pointing to the target text file.
+    :param directory_filepaths: A list of dictionaries containing the key 'path' that holds a Path object pointing to the target text file.
     :return: A list containing a single dictionary with 'source' set to the filename and 'text' set to the file content.
     """
-    filename = record["path"].name
-    with open(record["path"], "r", encoding="utf-8") as f:
-        text = f.read()
-    data = [{"source": filename, "text": text}]
+    data = []
+    for record in directory_filepaths:
+        filename = record["path"].name
+        with open(record["path"], "r", encoding="utf-8") as f:
+            text = f.read()
+        data.append([{"source": filename, "text": text}])
     return data
 
 
@@ -231,17 +233,19 @@ def index_data(
     raw_meta = load_first_meta_file(document_directory)
 
     # Load data with ray as there could be multiple data files
-    ds = [{"path": path} for path in document_directory.rglob("*.data.txt") if not path.is_dir()]
-    log_debug(f"Total documents found: {len(ds)}")
-    text_data_ds = [do_some_data_extraction(record) for record in ds]
+    directory_filepaths = [{
+        "path": path
+    } for path in document_directory.rglob("*.data.txt") if not path.is_dir()]
+    log_debug(f"Total documents found: {len(directory_filepaths)}")
+    directory_document_objects = do_some_data_extraction(directory_filepaths)
 
     # Chunk data
-    chunks_ds = []
-    for index, doc in enumerate(text_data_ds, 1):
+    directory_document_chunks = []
+    for index, doc in enumerate(directory_document_objects, 1):
         for full_text_obj in doc:
             text_chunks = do_some_data_chunking(full_text_obj, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
             log_debug(f'Total chunks created for document-{index}: {len(text_chunks)}')
-            chunks_ds.append({
+            directory_document_chunks.append({
                 'text': [i['text'] for i in text_chunks],
                 'source': [i['source'] for i in text_chunks]
             })
@@ -250,11 +254,11 @@ def index_data(
     embedder_class = EmbedChunks(embedding_model)
     faiss_index_class = FaissIndex(EMBEDDING_DIMENSIONS[embedding_model])
 
-    embedded_chunks = [embedder_class(i) for i in chunks_ds]
+    directory_document_chunks_embeddings = [embedder_class(i) for i in directory_document_chunks]
     _ = [
         faiss_index_class.add_embeddings_and_metadata(
             i['embeddings'], i['text'], i['source'], i['embedding_model']
-        ) for i in embedded_chunks
+        ) for i in directory_document_chunks_embeddings
     ]
     log_debug(f"FAISS index generated with total embeddings: {faiss_index_class.index.ntotal}")
 

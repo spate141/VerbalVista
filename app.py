@@ -12,7 +12,7 @@ from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2Spe
 class VerbalVista:
 
     def __init__(
-        self, document_dir: str = None, tmp_audio_dir: str = None, indices_dir: str = None,
+        self, document_dir: str = None, tmp_dir: str = None, indices_dir: str = None,
         chat_history_dir: str = None, stock_data_dir: str = None, generated_images_dir: str = None
     ):
 
@@ -28,7 +28,7 @@ class VerbalVista:
 
         # Create relevant directories
         for directory_path in [
-            document_dir, indices_dir, tmp_audio_dir, chat_history_dir, stock_data_dir, generated_images_dir
+            document_dir, indices_dir, tmp_dir, chat_history_dir, stock_data_dir, generated_images_dir
         ]:
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
@@ -37,7 +37,7 @@ class VerbalVista:
         # Initialize common variables, models
         self.document_dir = document_dir
         self.indices_dir = indices_dir
-        self.tmp_audio_dir = tmp_audio_dir
+        self.tmp_dir = tmp_dir
         self.chat_history_dir = chat_history_dir
         self.stock_data_dir = stock_data_dir
         self.generated_images_dir = generated_images_dir
@@ -47,7 +47,7 @@ class VerbalVista:
         Media input and processing page.
         """
         render_media_processing_page(
-            document_dir=self.document_dir, tmp_audio_dir=self.tmp_audio_dir,
+            document_dir=self.document_dir, tmp_dir=self.tmp_dir,
             openai_wisper_util=self.openai_wisper_util, reddit_util=self.reddit_util
         )
 
@@ -106,7 +106,7 @@ class VerbalVista:
 
 def main():
     APP_NAME = "VerbalVista"
-    APP_VERSION = "3.0"
+    APP_VERSION = "3.1"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
         "Image Generation"
@@ -118,7 +118,7 @@ def main():
 
     # Project local cache directories
     document_dir = 'data/documents/'
-    tmp_audio_dir = 'data/tmp_audio_dir/'
+    tmp_dir = 'data/tmp_dir/'
     indices_dir = 'data/indices/'
     chat_history_dir = 'data/chat_history/'
     stock_data_dir = 'data/stock_data_dir/'
@@ -132,7 +132,7 @@ def main():
     else:
         vv = VerbalVista(
             document_dir=document_dir, indices_dir=indices_dir,
-            tmp_audio_dir=tmp_audio_dir, chat_history_dir=chat_history_dir,
+            tmp_dir=tmp_dir, chat_history_dir=chat_history_dir,
             stock_data_dir=stock_data_dir, generated_images_dir=generated_images_dir
         )
         if selected_page == "Media Processing":

@@ -117,7 +117,7 @@ def process_document_files(file_meta: Dict[str, Any] = None) -> str:
     return extracted_text
 
 
-def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None) -> str:
+def process_audio_files(tmp_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None) -> str:
     """
     Process each audio file, do speech-to-text and extract transcript for each audio
     and return processed data with metadata.
@@ -127,14 +127,14 @@ def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = N
     file = file_meta['file']
 
     # Save the uploaded file to the specified directory
-    tmp_audio_save_path = os.path.join(tmp_audio_dir, file_name)
+    tmp_audio_save_path = os.path.join(tmp_dir, file_name)
     log_debug(f"tmp_save_path: {tmp_audio_save_path}")
     with open(tmp_audio_save_path, "wb") as f:
         f.write(file.getvalue())
 
     # Generate audio chunks
     audio_chunks_files, file_size_mb, file_duration_in_ms = openai_wisper_util.generate_audio_chunks(
-        audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_audio_dir
+        audio_filepath=tmp_audio_save_path, max_audio_size=25, tmp_dir=tmp_dir
     )
 
     # Get transcript for all chunks
@@ -148,8 +148,8 @@ def process_audio_files(tmp_audio_dir: str = None, file_meta: Dict[str, Any] = N
 
     # Remove tmp audio files
     log_debug(f"Removing tmp audio files")
-    for file_name in os.listdir(tmp_audio_dir):
-        file_path = os.path.join(tmp_audio_dir, file_name)
+    for file_name in os.listdir(tmp_dir):
+        file_path = os.path.join(tmp_dir, file_name)
         if os.path.isfile(file_path):
             os.remove(file_path)
 

@@ -21,7 +21,7 @@ from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionComme
 app = FastAPI(
     title="Inference API for VerbalVista",
     description="🄻🄻🄼 + Your Data = ♥️",
-    version="3.0",
+    version="3.1",
 )
 auth_util = AuthUtil(
     valid_api_keys=os.getenv("VALID_API_KEYS", "").split(",")
@@ -67,7 +67,7 @@ class VerbalVistaAssistantDeployment:
             client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
             user_agent=os.getenv('REDDIT_USER_AGENT')
         )
-        self.tmp_audio_dir = 'data/tmp_audio_dir/'
+        self.tmp_dir = 'data/tmp_dir/'
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
         self.chat_history_dir = 'data/chat_history/'
@@ -280,7 +280,7 @@ class VerbalVistaAssistantDeployment:
 
         # Initialize Process Documents Util Class
         process_multimedia_util = ProcessMultimediaUtil(
-            tmp_audio_dir=self.tmp_audio_dir, openai_wisper_util=self.openai_wisper_util
+            tmp_dir=self.tmp_dir, openai_wisper_util=self.openai_wisper_util
         )
 
         # (1) Read the file content

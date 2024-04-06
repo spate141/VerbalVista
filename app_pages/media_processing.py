@@ -1,3 +1,5 @@
+import os
+import shutil
 import base64
 import asyncio
 import streamlit as st
@@ -6,6 +8,7 @@ from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
 from utils.data_parsing_utils import write_data_to_file
 from utils.data_parsing_utils.url_parser import process_url, url_to_filename
+from utils.data_parsing_utils.code_parser import CodeParser
 
 
 def get_local_file_data(filepath):
@@ -16,7 +19,7 @@ def get_local_file_data(filepath):
     return data_url
 
 
-def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_wisper_util=None, reddit_util=None):
+def render_media_processing_page(document_dir=None, tmp_dir=None, openai_wisper_util=None, reddit_util=None):
     """
     This function will extract plain text from variety of media including video, audio, pdf and lots more.
     """
@@ -44,6 +47,10 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
             url = st.text_input("Enter URL:", placeholder='https://YOUR_URL', label_visibility="collapsed")
             url = None if len(url) == 0 else url
 
+            st.markdown("<h6>Clone GitHub Repo (.git):</h6>", unsafe_allow_html=True)
+            github_url = st.text_input("Enter .git URL:", placeholder='https://github.com/ORG/REPO.git', label_visibility="collapsed")
+            github_url = None if len(github_url) == 0 else github_url
+
             st.markdown("<h6>Copy/Paste text:</h6>", unsafe_allow_html=True)
             text = st.text_area("Paste text:", placeholder='YOUR TEXT', label_visibility="collapsed")
             text = None if len(text) == 0 else text
@@ -54,6 +61,8 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                 msg = st.toast('Processing data...')
                 full_documents = []
                 processed_flag = False
+                repo_name = None
+
                 if uploaded_files:
                     all_files = [{
                         'name': file.name, 'type': file.type, 'size': file.size, 'file': file} for file in uploaded_files
@@ -68,7 +77,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                             msg.toast(f'Processing audio/video data...')
                             with st.spinner('Transcribing audio. Please wait.'):
                                 extracted_text = process_audio_files(
-                                    tmp_audio_dir=tmp_audio_dir, file_meta=file_meta, openai_wisper_util=openai_wisper_util
+                                    tmp_dir=tmp_dir, file_meta=file_meta, openai_wisper_util=openai_wisper_util
                                 )
 
                         elif file_name.endswith(('.pdf', '.docx', '.txt', '.eml')):
@@ -100,6 +109,26 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                     })
                     processed_flag = True
 
+                if github_url is not None:
+                    msg.toast(f'Processing GitHub repo...')
+                    cp = CodeParser()
+                    code_directory, repo_description, repo_name = cp.clone_or_update_repo(
+                        tmp_dir=tmp_dir, git_repo_url=github_url
+                    )
+                    all_files = cp.find_code_files(
+                        code_dir=code_directory, allowed_file_extensions=['.py', '.md']
+                    )
+                    full_documents = cp.extract_code(
+                        code_filepaths=all_files, repo_description=repo_description
+                    )
+                    extracted_text = f"{github_url}\n\n{repo_description}..."
+                    if os.path.exists(code_directory) and os.path.isdir(code_directory):
+                        try:
+                            shutil.rmtree(code_directory)
+                        except Exception as e:
+                            raise f"Error: Failed to remove {code_directory}. Reason: {e}"
+                    processed_flag = True
+
                 if text is not None:
                     msg.toast(f'Processing TEXT data...')
                     log_debug('Processing Text!')
@@ -126,6 +155,7 @@ def render_media_processing_page(document_dir=None, tmp_audio_dir=None, openai_w
                         document_dir=document_dir,
                         full_documents=full_documents,
                         single_file_flag=single_file_flag,
+                        save_dir_name=repo_name if repo_name else None
                     )
                     # st.success(f"Document saved: {tmp_document_save_path}")
 
