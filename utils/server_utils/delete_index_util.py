@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Any
 from pydantic import BaseModel
 from utils.rag_utils.rag_util import delete_directory
 
@@ -11,20 +12,12 @@ class DeleteIndexOutput(BaseModel):
 class DeleteIndexUtil:
     """
     Utility class for deleting an index.
-
-    Methods:
-        delete_index(index_dir: str = None, index_name: str = None) -> DeleteIndexOutput:
-            Deletes the directory associated with a given index and returns the status.
-
-            :param index_dir: The base directory where the index is located. Optional.
-            :param index_name: The name of the index to be deleted. Optional.
-            :return: An instance of DeleteIndexOutput containing the index_name and deletion status.
     """
     def __init__(self):
         pass
 
     @staticmethod
-    def delete_index(index_dir: str = None, index_name: str = None):
+    def delete_index(index_dir: str = None, index_name: str = None) -> Dict[str, Any]:
         """
         Static method to delete the directory associated with a given index.
 

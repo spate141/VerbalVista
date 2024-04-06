@@ -2,22 +2,38 @@ import os
 import requests
 from openai import OpenAI
 from datetime import datetime
+from typing import List, Optional, Literal
 from utils import log_debug
 
 
 class OpenAIDalleUtil:
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: Optional[str] = None) -> None:
+        """
+        Initializes the OpenAI DALL·E utility with the provided API key.
+
+        :param api_key: The API key for authenticating requests to OpenAI's DALL·E service.
+        """
         self.client = OpenAI(api_key=api_key)
 
     def generate_image(
-            self,
-            prompt: str = None,
-            image_size: str = None,
-            images_to_generate: int = None,
-            generated_images_dir: str = None,
-            model_name: str = "dall-e-3"
-    ):
+        self,
+        prompt: str = None,
+        image_size: Literal["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"] = "1024x1024",
+        images_to_generate: int = 1,
+        generated_images_dir: str = None,
+        model_name: str = "dall-e-3"
+    ) -> List[str]:
+        """
+        Generates images based on the given prompt using OpenAI's DALL·E and saves them to the specified directory.
+
+        :param prompt: The prompt to generate images for.
+        :param image_size: The size of the generated images, one of the specified resolutions.
+        :param images_to_generate: The number of images to generate.
+        :param generated_images_dir: The directory to save the generated images.
+        :param model_name: The name of the DALL·E model to use. Defaults to "dall-e-3".
+        :return: A list of filepaths for the generated images.
+        """
 
         # call the OpenAI API
         generation_response = self.client.images.generate(

@@ -1,16 +1,25 @@
 import pandas as pd
 import streamlit as st
+from typing import Dict
 from datetime import date
 from utils import log_debug
 from utils.other_utils import get_stock_data, normalize_stock_data, generate_stock_plotly_chart
 
 
-def render_stock_cards(company_name, company_info, final_investment, invested_amount):
+def render_stock_cards(
+    company_name: str,
+    company_info: Dict[str, float],
+    final_investment: float,
+    invested_amount: float
+) -> None:
     """
-    :param company_name: Company Name
-    :param company_info: Dictionary of different information.
-    :param final_investment: Final invested amount on the end date.
-    :param invested_amount: Initial invested amount on start date.
+    Renders individual stock cards in Streamlit displaying various financial metrics and performance indicators
+    for a given company.
+
+    :param company_name: Name of the company.
+    :param company_info: Dictionary containing various information about the company, such as current price, target prices, and 52-week high and low.
+    :param final_investment: The value of the investment at the end date based on stock performance.
+    :param invested_amount: The initial amount invested in the stock.
     """
     c1_cols = st.columns(6)
     with c1_cols[0]:
@@ -27,9 +36,13 @@ def render_stock_cards(company_name, company_info, final_investment, invested_am
         st.metric("52-Week LOW", f"${company_info['fiftyTwoWeekLow']:,}")
 
 
-def render_stocks_comparison_page(stock_data_dir=None):
+def render_stocks_comparison_page(stock_data_dir: str = None) -> None:
     """
-    Render stock comparison page.
+    Renders a Streamlit page for comparing the performance of different stocks. Users can input the number of
+    companies, company tickers, invested amount, start and end dates, and select the trendline type for
+    comparison. The page displays individual stock cards for each company and a comparative plot of the investments over time.
+
+    :param stock_data_dir: Directory where stock data is stored. Used to fetch historical stock data.
     """
     st.header('Stock Performance Comparison', divider='red')
     current_date = date.today()

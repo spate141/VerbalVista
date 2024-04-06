@@ -1,18 +1,31 @@
 import aiohttp
 import asyncio
+from typing import List
 from bs4 import BeautifulSoup
 from utils import log_debug, log_info
 
 
-async def scrape_hn_comments(url):
-    """Scrape comments from a Hacker News post, handling pagination."""
+async def scrape_hn_comments(url: str) -> List[str]:
+    """
+    Asynchronously scrapes comments from a Hacker News post, handling pagination if necessary.
+
+    :param url: The URL of the Hacker News post to scrape comments from.
+    :return: A list of comments as strings.
+    """
     async with aiohttp.ClientSession() as session:
         comments = await scrape_comments_from_page(session, url, 1)
     return comments
 
 
-async def scrape_comments_from_page(session, url, page_number):
-    """Scrape comments from a single page and follow pagination."""
+async def scrape_comments_from_page(session: aiohttp.ClientSession, url: str, page_number: int) -> List[str]:
+    """
+    Recursively scrapes comments from a given page of a Hacker News post and follows pagination links.
+
+    :param session: The aiohttp.ClientSession object to make HTTP requests.
+    :param url: The URL of the current page to scrape comments from.
+    :param page_number: The current page number, used for logging and recursive pagination.
+    :return: A list of comments from the current page, combined with comments from subsequent pages if 'more comments' link exists.
+    """
     comments = []
     try:
         async with session.get(url) as response:

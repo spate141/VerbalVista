@@ -1,10 +1,23 @@
 from glob import glob
 import streamlit as st
+from typing import Optional, Callable
 
 
-def render_image_generation_page(generated_images_dir=None, image_generation_util=None):
+def render_image_generation_page(
+    generated_images_dir: Optional[str] = None, image_generation_util: Optional[Callable] = None
+) -> None:
     """
+    Renders a page in a Streamlit application for generating and displaying images using a specified AI model.
+    Users can enter a prompt, select a model and image size, and specify the number of images to generate.
+    The function displays the generated images and the total cost based on the selected options.
+    Previously generated images in the specified directory are also displayed.
 
+    :param generated_images_dir: Optional; the directory where generated images are stored. Defaults to None.
+    :param image_generation_util: Optional; a utility function provided for image generation. This function should
+                                  accept parameters for the prompt, image size, number of images to generate,
+                                  directory for storing generated images, and model name. It should return a list of
+                                  file paths for the generated images. Defaults to None.
+    :return: None
     """
     st.header('Image Generation with DALL·E', divider='blue')
     image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}

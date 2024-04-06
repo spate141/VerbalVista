@@ -3,6 +3,7 @@ import shutil
 import base64
 import asyncio
 import streamlit as st
+from typing import Optional
 from streamlit_theme import st_theme
 from utils import log_info, log_debug, log_error
 from utils.data_parsing_utils.document_parser import process_audio_files, process_document_files
@@ -11,17 +12,33 @@ from utils.data_parsing_utils.url_parser import process_url, url_to_filename
 from utils.data_parsing_utils.code_parser import CodeParser
 
 
-def get_local_file_data(filepath):
-    file_ = open(filepath, "rb")
-    contents = file_.read()
+def get_local_file_data(filepath: str) -> str:
+    """
+    Reads a local file and returns its contents encoded as a base64 URL.
+
+    :param filepath: The path to the file to be read.
+    :return: A string containing the base64 URL of the file's contents.
+    """
+    with open(filepath, "rb") as file_:
+        contents = file_.read()
     data_url = base64.b64encode(contents).decode("utf-8")
-    file_.close()
     return data_url
 
 
-def render_media_processing_page(document_dir=None, tmp_dir=None, openai_wisper_util=None, reddit_util=None):
+def render_media_processing_page(
+    document_dir: Optional[str] = None, tmp_dir: Optional[str] = None,
+    openai_wisper_util: Optional[object] = None, reddit_util: Optional[object] = None
+) -> None:
     """
-    This function will extract plain text from variety of media including video, audio, pdf and lots more.
+    Renders a Streamlit page for processing various types of media including audio, video, PDFs, text, and URLs
+    to extract plain text. Supports processing through file upload, URL input, GitHub repository cloning,
+    or direct text input.
+
+    :param document_dir: The directory where processed documents should be stored.
+    :param tmp_dir: A temporary directory used for processing files.
+    :param openai_wisper_util: Utility object for processing audio files using OpenAI's Whisper model.
+    :param reddit_util: Utility object for fetching comments from Reddit URLs.
+    :return: None
     """
     supported_formats = ['m4a', 'mp3', 'wav', 'webm', 'mp4', 'mpg', 'mpeg', 'docx', 'pdf', 'txt', 'eml']
     st.header("Process Media", divider='violet')

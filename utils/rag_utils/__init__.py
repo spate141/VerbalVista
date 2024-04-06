@@ -76,16 +76,14 @@ def standardize_model_name(
     is_completion: bool = False,
 ) -> str:
     """
-    Standardize the model name to a format that can be used in the OpenAI API.
+    Standardizes the model name to a format recognizable by the OpenAI API, accounting for variations
+    in naming conventions related to fine-tuning and model versions.
 
-    Args:
-        model_name: Model name to standardize.
-        is_completion: Whether the model is used for completion or not.
-            Defaults to False.
-
-    Returns:
-        Standardized model name.
-
+    :param model_name: The original model name string as provided by the user or application.
+    :param is_completion: A boolean flag indicating whether the model is being used for a completion task.
+                          Adjusts the returned model name to include a "-completion" suffix if True.
+                          Defaults to False for tasks other than completions.
+    :return: A string containing the standardized model name.
     """
     model_name = model_name.lower()
     if ".ft-" in model_name:
@@ -107,16 +105,13 @@ def standardize_model_name(
 
 def get_llm_token_cost_for_model(model_name: str, num_tokens: int, is_completion: bool = False) -> float:
     """
-    Get the cost in USD for a given model and number of tokens.
+    Calculates the cost in USD for using a specific LLM model based on the number of tokens processed.
 
-    Args:
-        model_name: Name of the model
-        num_tokens: Number of tokens.
-        is_completion: Whether the model is used for completion or not.
-            Defaults to False.
-
-    Returns:
-        Cost in USD.
+    :param model_name: The name of the LLM model. The function attempts to standardize this name before calculating costs.
+    :param num_tokens: The number of tokens to be processed by the model. Costs are calculated per 1,000 tokens.
+    :param is_completion: Indicates if the model is being used for a completion task. Affects the standardization
+                          of the model name. Defaults to False.
+    :return: The calculated cost in USD for the operation based on the specified model and number of tokens.
     """
     model_name = standardize_model_name(model_name, is_completion=is_completion)
     if model_name not in MODEL_COST_PER_1K_TOKENS:

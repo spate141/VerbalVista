@@ -2,29 +2,41 @@ import os
 import re
 import random
 import string
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
-def random_string_generator(k=4):
+def random_string_generator(k: int = 4) -> str:
+    """Generates a random string of uppercase ASCII letters and digits.
+
+    :param k: The length of the string to generate. Defaults to 4.
+    :return: A random string of length k.
+    """
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
 
 
-def replace_non_alphanumeric(s):
+def replace_non_alphanumeric(s: str) -> str:
+    """Replaces all non-alphanumeric characters in a string with underscores.
+
+    :param s: The string to process.
+    :return: The processed string with non-alphanumeric characters replaced.
+    """
     pattern = r'[^a-zA-Z0-9]'
     return re.sub(pattern, '_', s)
 
 
 def write_data_to_file(
-    document_dir: str = None, full_documents: List[Dict[str, str]] = None, single_file_flag: bool = False,
-    save_dir_name: str = None
-):
-    """
-    Write various full documents from `full_documents` to document_dir.
-    :param document_dir: "data/documents/"
-    :param full_documents: [{"file_name": "file_name", "full_document": "full_document"}]
-    :param single_file_flag: Save as single file or multiple files flag.
-    :param save_dir_name: Name of the saved directory.
-    :return:
+        document_dir: Optional[str] = None,
+        full_documents: Optional[List[Dict[str, str]]] = None,
+        single_file_flag: bool = False,
+        save_dir_name: Optional[str] = None
+) -> str:
+    """Writes document data to files in a specified directory, either as a single file or multiple files.
+
+    :param document_dir: The base directory to save files.
+    :param full_documents: A list of dictionaries containing document data, where each dictionary includes the file name and the document's full text.
+    :param single_file_flag: If True, saves all documents into a single file; otherwise, saves each document as a separate file.
+    :param save_dir_name: Custom name for the directory where files will be saved. If not provided, a name is generated automatically.
+    :return: The name of the directory where files were saved.
     """
     if not save_dir_name:
         directory_name = '_+_'.join([replace_non_alphanumeric(doc['file_name'])[:20] for doc in full_documents])

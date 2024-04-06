@@ -3,6 +3,7 @@ import time
 import tiktoken
 from openai import OpenAI
 from anthropic import Anthropic
+from typing import Tuple, Generator, Optional, Any, Dict, List
 from dotenv import load_dotenv; load_dotenv(".env")
 from utils import logger
 from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, SYS_PROMPT, get_llm_token_cost_for_model
@@ -11,16 +12,24 @@ from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_searc
 
 class Agent:
     """
-    The `Agent` class serves as a base class for agents that can generate text responses using language models.
-    It includes methods for trimming text to a maximum context length, getting the number of tokens in a text,
-    and placeholders for generating and preparing responses.
-    The class also initializes components for lexical search, re-ranking, and semantic search.
+    Initializes components essential for generating text responses using language models. This includes
+    managing lexical search, re-ranking, semantic search, and handling of system and user content.
     """
 
     def __init__(
-        self, system_content=None, faiss_index=None, metadata_dict=None, lexical_index=None,
-        reranker=None, server_logger=None
-    ):
+        self, system_content: Optional[str] = None, faiss_index: Optional[Any] = None,
+        metadata_dict: Optional[dict] = None, lexical_index: Optional[Any] = None,
+        reranker: Optional[Any] = None, server_logger: Optional[logger] = None
+    ) -> None:
+        """
+        Initializes an agent with necessary components and configurations for text generation and search.
+        :param system_content: Initial content or prompts used by the system for generating responses.
+        :param faiss_index: FAISS index for semantic search.
+        :param metadata_dict: Metadata dictionary containing information relevant to the semantic search.
+        :param lexical_index: Lexical index for text-based search and matching.
+        :param reranker: Reranker component for adjusting the order of search results based on additional criteria.
+        :param server_logger: Logger for capturing server-side events and errors.
+        """
 
         # Lexical search
         self.lexical_index = lexical_index
@@ -46,65 +55,115 @@ class Agent:
         else:
             self.logger = logger
 
-    def trim(self, text, max_context_length):
+    def trim(self, text: str, max_context_length: int) -> str:
+        """
+        Trims the text to a specified maximum context length.
+        :param text: Text to be trimmed.
+        :param max_context_length: Maximum number of tokens allowed in the context.
+        :return: Trimmed text.
+        """
         return self.encoder.decode(self.encoder.encode(text)[:max_context_length])
 
-    def get_num_tokens(self, text):
+    def get_num_tokens(self, text: str) -> int:
+        """
+        Computes the number of tokens in the given text.
+        :param text: Text for which to calculate the token count.
+        :return: Number of tokens in the text.
+        """
         return len(self.encoder.encode(text))
 
     @staticmethod
-    def response_stream(response):
+    def response_stream(response: Any) -> Generator[str, None, None]:
+        """
+        Streams responses from a language model. To be implemented by subclasses.
+        """
         raise "Sub-class should implement this!"
 
-    def prepare_response(self, response, stream):
+    def prepare_response(self, response: Any, stream: bool) -> str:
+        """
+        Prepares the response from the language model for delivery. To be implemented by subclasses.
+        :param response: The raw response from the language model.
+        :param stream: Boolean flag indicating whether the response should be streamed.
+        :return: Prepared text response for delivery.
+        """
         if stream:
             raise "Sub-class should implement this!"
         else:
             raise "Sub-class should implement this!"
 
     def generate_text(
-        self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
-        max_retries=1, retry_interval=60, embedding_model_name="", sources=None, max_tokens=None
-    ):
-        """Generate response from an LLM."""
+        self, llm_model: str, temperature: float = 0.5, seed: int = 42, stream: bool = False,
+        system_content: str = "", user_content: str = "", max_retries: int = 1,
+        retry_interval: int = 60, embedding_model_name: str = "", sources: Optional[List[str]] = None,
+        max_tokens: Optional[int] = None
+    ) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+        """
+        Generates text based on model parameters. To be implemented by subclasses.
+        :param llm_model: The specific language model to use for text generation.
+        :param temperature: Controls the randomness in the output generation. Higher values result in more varied outputs.
+        :param seed: Random seed for generating deterministic outputs. Useful for debugging or repeatable outputs.
+        :param stream: If True, the method streams the response, yielding partial outputs as they are generated.
+        :param system_content: System-level content or prompts that guide the generation.
+        :param user_content: User-specific content or queries that the response should address.
+        :param max_retries: Number of retries in case of failures or rate limiting.
+        :param retry_interval: Time to wait between retries, in seconds.
+        :param embedding_model_name: Name of the embedding model used for semantic search or context embedding.
+        :param sources: Optional list of sources or additional context information for the generation.
+        :param max_tokens: Maximum number of tokens to generate in the response.
+        :return: A tuple containing the generated text and metadata about the generation process.
+        """
         raise "Sub-class should implement this!"
 
     def __call__(
-        self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
-        embedding_model_name="EMBEDDING_MODEL_NAME", llm_model="LLM_MODEL_NAME", max_tokens=None
-    ):
+        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "EMBEDDING_MODEL_NAME",
+        llm_model: str = "LLM_MODEL_NAME", max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Processes a query to generate a response. To be implemented by subclasses.
+        """
         raise "Sub-class should implement this!"
 
 
 class GPTAgent(Agent):
     """
-    The `GPTAgent` class inherits from `Agent` and is specialized in handling interactions with OpenAI's LLMs.
-    It initializes an OpenAI client and implements methods for streaming responses, preparing responses,
-    and generating text with retry logic.
-    The `__call__` method orchestrates the process of embedding queries, performing semantic and lexical searches,
-    potentially re-ranking results, and generating a final response based on a provided query.
+    Specializes `Agent` for handling interactions with OpenAI's language models. Implements methods for
+    generating text, streaming responses, and preparing responses.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
+        """
+        Initializes a GPTAgent with configurations for OpenAI's client.
+        """
         super().__init__(**kwargs)
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     @staticmethod
-    def response_stream(response):
+    def response_stream(response: Any) -> Generator[str, None, None]:
+        """
+        Implements streaming of responses from OpenAI's language models.
+        """
         for chunk in response:
             yield chunk.choices[0].delta.content
 
-    def prepare_response(self, response, stream):
+    def prepare_response(self, response: Any, stream: bool) -> str:
+        """
+        Prepares a response from OpenAI's language model for delivery.
+        """
         if stream:
             return self.response_stream(response)
         else:
             return response.choices[-1].message.content
 
     def generate_text(
-        self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
-        max_retries=1, retry_interval=60, embedding_model_name="", sources=None, max_tokens=None
-    ):
-        """Generate response from an LLM."""
+        self, llm_model: str, temperature: float = 0.5, seed: int = 42, stream: bool = False,
+        system_content: str = "", user_content: str = "", max_retries: int = 1,
+        retry_interval: int = 60, embedding_model_name: str = "", sources: Optional[List[str]] = None,
+        max_tokens: Optional[int] = None
+    ) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+        """
+        Generates text responses using OpenAI's language models with retry logic.
+        """
         retry_count = 0
         while retry_count <= max_retries:
             try:
@@ -150,9 +209,13 @@ class GPTAgent(Agent):
         return None, None
 
     def __call__(
-        self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
-        embedding_model_name="text-embedding-3-small", llm_model="gpt-3.5-turbo", max_tokens=None
-    ):
+        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "text-embedding-3-small",
+        llm_model: str = "gpt-3.5-turbo", max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Orchestrates the process of generating a response to a query using OpenAI's language models.
+        """
         try:
             indexed_data_embedding_model = self.metadata_dict[0]['embedding_model']
         except Exception as e:
@@ -204,28 +267,45 @@ class GPTAgent(Agent):
 
 
 class ClaudeAgent(Agent):
+    """
+    Inherits from `Agent` and specializes in handling interactions with Anthropic's Claude language models.
+    Implements methods for streaming responses, preparing responses, and generating text with retry logic.
+    """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
+        """
+        Initializes a ClaudeAgent with configurations for Anthropic's client.
+        """
         super().__init__(**kwargs)
         self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     @staticmethod
-    def response_stream(response):
+    def response_stream(response: Any) -> Generator[str, None, None]:
+        """
+        Implements streaming of responses from Anthropic's Claude models.
+        """
         for chunk in response:
             if chunk.type == 'content_block_delta':
                 yield chunk.delta.text
 
-    def prepare_response(self, response, stream):
+    def prepare_response(self, response: Any, stream: bool) -> str:
+        """
+        Prepares a response from Anthropic's Claude model for delivery.
+        """
         if stream:
             return self.response_stream(response)
         else:
             return response.content[-1].text
 
     def generate_text(
-        self, llm_model, temperature=0.5, seed=42, stream=False, system_content="", user_content="",
-        max_retries=1, retry_interval=60, embedding_model_name="", sources=None, max_tokens=None
-    ):
-        """Generate response from an LLM."""
+        self, llm_model: str, temperature: float = 0.5, seed: int = 42, stream: bool = False,
+        system_content: str = "", user_content: str = "", max_retries: int = 1,
+        retry_interval: int = 60, embedding_model_name: str = "", sources: Optional[List[str]] = None,
+        max_tokens: Optional[int] = None
+    ) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+        """
+        Generates text responses using Anthropic's Claude models with retry logic.
+        """
         retry_count = 0
         while retry_count <= max_retries:
             try:
@@ -266,9 +346,13 @@ class ClaudeAgent(Agent):
         return None, None
 
     def __call__(
-        self, query, num_chunks=5, stream=False, lexical_search_k=1, temperature=0.5, seed=42,
-        embedding_model_name="text-embedding-3-small", llm_model="claude-3-opus-20240229", max_tokens=None
-    ):
+        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "text-embedding-3-small",
+        llm_model: str = "claude-3-opus-20240229", max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Orchestrates the process of generating a response to a query using Anthropic's Claude models.
+        """
         try:
             indexed_data_embedding_model = self.metadata_dict[0]['embedding_model']
         except Exception as e:

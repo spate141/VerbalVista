@@ -6,13 +6,11 @@ from utils import log_info, log_debug, log_error
 
 async def scrape_youtube_video_transcript(youtube_url: str) -> str:
     """
-    Fetch the English transcript of a YouTube video given its URL.
+    Asynchronously retrieves the English transcript of a YouTube video given its URL. If the transcript
+    is not available due to the video not having one or transcripts being disabled, logs an error message.
 
-    Args:
-    youtube_url (str): URL of the YouTube video.
-
-    Returns:
-    str: The English transcript of the video.
+    :param youtube_url: The full URL of the YouTube video.
+    :return: A string containing the English transcript of the video or an empty string if the transcript is unavailable.
     """
     video_id = extract_video_id(youtube_url)  # This function is synchronous
 
@@ -28,13 +26,12 @@ async def scrape_youtube_video_transcript(youtube_url: str) -> str:
 
 def extract_video_id(youtube_url: str) -> str:
     """
-    Extract the video ID from a YouTube URL.
+    Extracts the video ID from a given YouTube URL using regular expressions. Supports standard YouTube URLs
+    and shortened youtu.be URLs.
 
-    Args:
-    youtube_url (str): URL of the YouTube video.
-
-    Returns:
-    str: The extracted video ID.
+    :param youtube_url: The full URL of the YouTube video.
+    :return: The extracted video ID as a string.
+    :raises ValueError: If the video ID cannot be extracted from the URL.
     """
     match = re.search(r"(?<=v=)[^&#]+", youtube_url)
     match = match or re.search(r"(?<=be/)[^&#]+", youtube_url)

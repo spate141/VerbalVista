@@ -1,12 +1,19 @@
 import re
 import aiohttp
+from typing import List
 from bs4 import BeautifulSoup
 from better_profanity import profanity
 
 
-async def fetch_4chan_comments(url, purge_bad_words=True):
+async def fetch_4chan_comments(url: str, purge_bad_words: bool = True) -> List[str]:
     """
+    Asynchronously fetches comments from a 4chan thread and returns a list of cleaned comments.
 
+    This function removes post IDs and optionally censors profanity found in the comments.
+
+    :param url: The URL of the 4chan thread to fetch comments from.
+    :param purge_bad_words: Whether to censor profanity in the comments. Defaults to True.
+    :return: A list of cleaned comments from the thread.
     """
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:

@@ -6,18 +6,22 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from utils import log_debug
 
 
-def get_stock_data(ticker, start, end, data_dir=None):
+def get_stock_data(
+    ticker: str, start: str, end: str, data_dir: Optional[str] = None
+) -> Tuple[pd.Series, Dict[str, Any]]:
     """
-    Get stock ticker data using YFinance library for given date range.
-    :param ticker: stock ticker
-    :param start: start date
-    :param end: end date
-    :param data_dir: Stock save data dir
-    :return Pandas series
+    Fetches stock data for a given ticker within the specified date range. If the data has already been fetched
+    and saved, it loads from the saved CSV and JSON files; otherwise, it fetches from YFinance and saves.
+
+    :param ticker: The stock ticker symbol.
+    :param start: The start date for the data fetch in 'YYYY-MM-DD' format.
+    :param end: The end date for the data fetch in 'YYYY-MM-DD' format.
+    :param data_dir: Directory path to save and load the fetched data. If None, it defaults to the current directory.
+    :return: A tuple containing the stock data as a Pandas Series and stock info as a dictionary.
     """
     csv_file_path = os.path.join(data_dir, f"{ticker}_{start}_{end}.csv")
     json_file_path = os.path.join(data_dir, f"{ticker}_{start}_{end}.json")
@@ -38,24 +42,29 @@ def get_stock_data(ticker, start, end, data_dir=None):
     return stock_data, stock_info
 
 
-def normalize_stock_data(data):
+def normalize_stock_data(data: pd.Series) -> pd.Series:
     """
-    Normalize stock data
-    :param data: Pandas series
-    :return Normalized series
+    Normalizes the stock data to show the percentage change from the first data point.
+
+    :param data: A Pandas Series containing stock data.
+    :return: A Pandas Series with the normalized data.
     """
     return (data / data.iloc[0] - 1) * 100
 
 
-def generate_stock_plotly_chart(companies, companies_investments, trendline_type=None, start_date=None, end_date=None):
+def generate_stock_plotly_chart(
+    companies: List[str], companies_investments: List[pd.Series], trendline_type: Optional[str] = None,
+    start_date: Optional[str] = None, end_date: Optional[str] = None
+) -> go.Figure:
     """
-    Generate line chart using Plotly.
-    :param companies: List of company stock tickers
-    :param companies_investments: List of companies' invested amounts as series
-    :param trendline_type: Chart trend-line type
-    :param start_date: Start date
-    :param end_date: End date
-    :return Plotly figure
+    Generates a line chart for the given companies' investments using Plotly.
+
+    :param companies: A list of company stock tickers.
+    :param companies_investments: A list of Pandas Series, each representing the normalized investment values for a company.
+    :param trendline_type: Optional; type of trendline to display. Supports 'linear' and 'exponential'.
+    :param start_date: The start date for the chart. Used in the chart title.
+    :param end_date: The end date for the chart. Used in the chart title.
+    :return: A Plotly figure object containing the generated chart.
     """
     fig = make_subplots(rows=1, cols=1)
     for company, investments in zip(companies, companies_investments):
@@ -111,8 +120,20 @@ def generate_stock_plotly_chart(companies, companies_investments, trendline_type
     return fig
 
 
-def validate_inputs(stock_symbols: List[str], start_date: str, end_date: Optional[str],
-                    investment_amount: float, investment_percentages: Optional[List[float]] = None) -> Dict:
+def validate_inputs(
+    stock_symbols: List[str], start_date: str, end_date: Optional[str], investment_amount: float,
+    investment_percentages: Optional[List[float]] = None
+) -> Dict[str, Any]:
+    """
+    Validates the input parameters for the stock data retrieval and analysis functions.
+
+    :param stock_symbols: A list of stock ticker symbols.
+    :param start_date: Start date for data retrieval in 'YYYY-MM-DD' format.
+    :param end_date: End date for data retrieval in 'YYYY-MM-DD' format. If None, defaults to today's date.
+    :param investment_amount: Total amount to be invested across the stock symbols.
+    :param investment_percentages: Optional; a list of percentages representing how the investment amount is distributed among the stock symbols.
+    :return: A dictionary with validated and processed input data.
+    """
     # Validate stock symbols
     if not stock_symbols or not all(isinstance(symbol, str) for symbol in stock_symbols):
         raise ValueError("Stock symbols must be a non-empty list of strings.")
@@ -165,12 +186,12 @@ def validate_inputs(stock_symbols: List[str], start_date: str, end_date: Optiona
 
 def retrieve_stock_data(stock_symbols: List[str], start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
     """
-    Retrieves stock data for given symbols between start and end dates.
+    Retrieves historical stock data for the given symbols from Yahoo Finance API.
 
-    :param stock_symbols: List of stock symbols.
-    :param start_date: Start date as a datetime.date object.
-    :param end_date: End date as a datetime.date object.
-    :return: DataFrame with stock prices on start and end dates.
+    :param stock_symbols: A list of stock ticker symbols.
+    :param start_date: The start date for data retrieval.
+    :param end_date: The end date for data retrieval.
+    :return: A DataFrame with stock prices for the given symbols on start and end dates.
     """
     start_date_str = start_date.strftime("%Y-%m-%d")
     end_date_str = end_date.strftime("%Y-%m-%d")
@@ -207,15 +228,15 @@ def retrieve_stock_data(stock_symbols: List[str], start_date: datetime.date, end
 
 
 def distribute_investment(
-        stock_symbols: List[str], investment_amount: float, investment_percentages: List[float] = None
+    stock_symbols: List[str], investment_amount: float, investment_percentages: Optional[List[float]] = None
 ) -> Dict[str, float]:
     """
-    Distributes the investment amount among the given stock symbols.
+    Distributes the total investment amount among the given stock symbols according to specified percentages.
 
-    :param stock_symbols: List of stock symbols.
+    :param stock_symbols: A list of stock ticker symbols.
     :param investment_amount: Total amount to be invested.
-    :param investment_percentages: Optional list of percentages to invest in each stock.
-    :return: Dictionary with stock symbols and their allocated investment amounts.
+    :param investment_percentages: A list of percentages specifying how to distribute the investment amount among the stock symbols.
+    :return: A dictionary mapping each stock symbol to its allocated investment amount.
     """
     if investment_percentages:
         # Distribute investment based on provided percentages
@@ -231,16 +252,18 @@ def distribute_investment(
 
 
 def get_portfolio_results(
-        stock_symbols: List[str], start_date: str, end_date: Optional[str], investment_amount: float,
-        investment_percentages: Optional[List[float]] = None
+    stock_symbols: List[str], start_date: str, end_date: Optional[str], investment_amount: float,
+    investment_percentages: Optional[List[float]] = None
 ) -> Dict[str, Any]:
     """
-    Presents the results of the investment analysis.
-    :param stock_symbols:
-    :param start_date:
-    :param end_date:
-    :param investment_amount:
-    :param investment_percentages:
+    Analyzes the investment results for the given stock portfolio over the specified period.
+
+    :param stock_symbols: A list of stock ticker symbols.
+    :param start_date: The start date for the investment period.
+    :param end_date: The end date for the investment period.
+    :param investment_amount: The total amount invested in the portfolio.
+    :param investment_percentages: Optional; percentages specifying how the investment amount is distributed among the stocks.
+    :return: A dictionary with the analysis results, including individual stock performances and total portfolio value change.
     """
 
     # Validate input

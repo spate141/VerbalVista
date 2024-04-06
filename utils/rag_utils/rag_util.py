@@ -187,7 +187,7 @@ def do_some_data_chunking(data: Dict = None, chunk_size: int = 600, chunk_overla
     return [{"text": chunk.page_content, "source": chunk.metadata["source"]} for chunk in chunks]
 
 
-def load_first_meta_file(directory):
+def load_first_meta_file(directory: str):
     """
     Load the content of the first .meta.txt file found in the given directory.
 

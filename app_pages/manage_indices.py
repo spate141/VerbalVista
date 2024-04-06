@@ -2,12 +2,23 @@ import os
 import time
 import pandas as pd
 import streamlit as st
+from typing import Optional, List
 from utils.rag_utils.rag_util import get_available_documents, index_data, delete_directory
 
 
-def render_manage_index_page(document_dir: str = None, indices_dir: str = None, embedding_models=None):
+def render_manage_index_page(
+    document_dir: Optional[str] = None, indices_dir: Optional[str] = None, embedding_models: Optional[List[str]] = None
+) -> None:
     """
-    This function will allow user to convert plain text into vector index or remove already created index.
+    Renders a page in a Streamlit application that allows users to manage (create or delete) document indices.
+    Users can select to create an index for documents using a specified embedding model and chunk size,
+    or delete an existing index. The function also displays a list of available documents and their indices.
+
+    :param document_dir: Optional; the directory where documents are stored. Defaults to None.
+    :param indices_dir: Optional; the directory where document indices are stored. Defaults to None.
+    :param embedding_models: Optional; a list of embedding model names available for creating document indices.
+                             Defaults to None.
+    :return: None
     """
     st.header("Manage Index", divider='green')
     st.markdown("<h6>Select Mode:</h6>", unsafe_allow_html=True)

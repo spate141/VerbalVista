@@ -2,24 +2,27 @@ import os
 import fnmatch
 import requests
 import subprocess
-from typing import List, Dict
+from typing import List, Dict, Optional
 from urllib.parse import urlparse
 from utils import log_error, log_debug, log_info
 
 
 class CodeParser:
     """
-    This class will clone the repo, go through all files and extract the code and save it into
-    respective FILENAME.EXTENSION.data.txt file in `data/documents/REPO_NAME` directory.
+    Handles cloning or updating a git repository, finding code files within it based on specified extensions,
+    reading code from those files, and extracting metadata such as the repository's description from GitHub.
     """
 
     @staticmethod
-    def find_code_files(code_dir: str = None, allowed_file_extensions: List[str] = ('.py', '.md')) -> List[str]:
+    def find_code_files(code_dir: Optional[str] = None, allowed_file_extensions: List[str] = ['.py', '.md']) -> List[
+        str]:
         """
-        Fetch all code file paths from the given directory that match the given file extensions.
-        :param code_dir:
-        :param allowed_file_extensions: A list of file extensions to match.
-        :return list of str: A list of paths to files that match the given extensions.
+        Identifies and returns a list of file paths within a given directory (and its subdirectories)
+        that match a set of file extensions.
+
+        :param code_dir: The directory within which to search for code files.
+        :param allowed_file_extensions: A list of strings representing file extensions to include in the search.
+        :return: A list of strings, each representing a full path to a matching file.
         """
         matching_files = []
         for root, dirs, files in os.walk(code_dir):
@@ -28,13 +31,13 @@ class CodeParser:
                     matching_files.append(os.path.join(root, filename))
         return matching_files
 
-    def clone_or_update_repo(self, tmp_dir: str = None, git_repo_url: str = None):
+    def clone_or_update_repo(self, tmp_dir: Optional[str] = None, git_repo_url: Optional[str] = None) -> Dict[str, str]:
         """
-        Given the GitHub repo URL, this will clone the repo locally into a subdirectory
-        within self.code_dir named after the repo, unless it already exists, in which case
-        it updates the repo with 'git pull'.
-        :param tmp_dir: Tmp directory
-        :param git_repo_url: Repo URL
+        Clones a git repository to a temporary directory, or updates it if it already exists.
+
+        :param tmp_dir: The temporary directory to clone the repository into.
+        :param git_repo_url: The URL of the git repository.
+        :return: A dictionary containing the path to the cloned repository, its description, and its name.
         """
         # Get the GitHub repo description
         repo_description = self.get_repo_description(git_repo_url)
@@ -65,25 +68,23 @@ class CodeParser:
         return target_dir, repo_description, repo_name
 
     @staticmethod
-    def read_code(filepath: str = None) -> str:
+    def read_code(filepath: Optional[str] = None) -> str:
         """
-        Read the code from file and return full text as string.
-        :param filepath: Path of the file.
-        :return: file content as string format
+        Reads and returns the content of a file.
+
+        :param filepath: The path to the file.
+        :return: The content of the file as a string.
         """
         with open(filepath, 'r') as f:
             return f.read()
 
     @staticmethod
-    def get_repo_description(git_repo_url):
+    def get_repo_description(git_repo_url: str) -> Optional[str]:
         """
-        Fetches the description of a GitHub repository given its .git URL.
+        Retrieves the description of a GitHub repository given its URL.
 
-        Parameters:
-        - git_repo_url (str): The full .git URL of the GitHub repository.
-
-        Returns:
-        - str: The repository description, or None if not found.
+        :param git_repo_url: The URL of the git repository.
+        :return: The description of the repository, or None if the repository does not exist or the description could not be fetched.
         """
         # Parse the provided URL
         parsed_url = urlparse(git_repo_url)
@@ -106,7 +107,14 @@ class CodeParser:
             print(f"Failed to fetch repository data: {response.status_code}")
             return None
 
-    def extract_code(self, code_filepaths: List[str] = None, repo_description: str = None) -> List[Dict[str, str]]:
+    def extract_code(self, code_filepaths: Optional[List[str]] = None, repo_description: Optional[str] = None) -> List[Dict[str, str]]:
+        """
+        Reads the content from a list of file paths and assembles it into a structured format.
+
+        :param code_filepaths: A list of file paths from which to read code.
+        :param repo_description: A description of the repository, to be included with each piece of code.
+        :return: A list of dictionaries, each containing a file name, its content, and a repository description.
+        """
         full_documents = []
         for code_file in code_filepaths:
             code_txt = self.read_code(code_file)

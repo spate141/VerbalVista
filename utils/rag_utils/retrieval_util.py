@@ -1,10 +1,18 @@
+import faiss
 import numpy as np
+from rank_bm25 import BM25Okapi
+from typing import Optional, Dict, List, Union
 from utils.rag_utils.embedding_util import get_embedding_client
 
 
-def get_query_embedding(query, embedding_model_name=None):
+def get_query_embedding(query: str, embedding_model_name: Optional[str] = None) -> np.ndarray:
     """
-    Get query vector and return normalized query vector.
+    Retrieves the embedding vector for a given query string using a specified embedding model.
+    The resulting query embedding is normalized to unit length.
+
+    :param query: The query string to be embedded.
+    :param embedding_model_name: The name of the embedding model to use. If None, a default model is selected.
+    :return: A normalized numpy array representing the query's embedding vector.
     """
     embedding_client = get_embedding_client(embedding_model_name)
     response = embedding_client.embeddings.create(input=query, model=embedding_model_name)
@@ -13,9 +21,19 @@ def get_query_embedding(query, embedding_model_name=None):
     return query_emb / norm if norm > 0 else query_emb
 
 
-def do_semantic_search(query_embedding, faiss_index, metadata_dict, k=5):
+def do_semantic_search(
+        query_embedding: np.ndarray, faiss_index: faiss.IndexFlatIP, metadata_dict: Dict[int, Dict[str, str]],
+        k: int = 5
+) -> List[Dict[str, Union[int, float, str]]]:
     """
-    Use FAISS index and search for top-k most similar chunks with query embedding.
+    Performs a semantic search using a FAISS index to find the top-k most semantically similar embeddings to a given query embedding.
+    Results are enriched with metadata from the metadata dictionary.
+
+    :param query_embedding: The embedding vector of the query.
+    :param faiss_index: The FAISS index that contains embeddings to search against.
+    :param metadata_dict: A dictionary mapping embedding indices to their metadata.
+    :param k: The number of top results to return.
+    :return: A list of dictionaries, each representing a search result with id, distance, text, and source.
     """
     # Searching the FAISS index
     D, I = faiss_index.search(np.array([query_embedding]), k)
@@ -34,9 +52,18 @@ def do_semantic_search(query_embedding, faiss_index, metadata_dict, k=5):
     return semantic_context
 
 
-def do_lexical_search(lexical_index, query, metadata_dict, k):
+def do_lexical_search(
+        lexical_index: BM25Okapi, query: str, metadata_dict: Dict[int, Dict[str, str]], k: int
+) -> List[Dict[str, Union[int, str, float]]]:
     """
-    Do the lexical search for query and chunks and return top-k most matched chunks
+    Conducts a lexical search for a given query against indexed documents, returning the top-k most relevant results.
+    Results are based on BM25 scoring.
+
+    :param lexical_index: The BM25Okapi index containing document tokens for lexical search.
+    :param query: The query string to search for.
+    :param metadata_dict: A dictionary mapping document indices to their metadata.
+    :param k: The number of top results to return.
+    :return: A list of dictionaries, each representing a search result with id, text, source, and BM25 score.
     """
     # preprocess query
     query_tokens = query.lower().split()

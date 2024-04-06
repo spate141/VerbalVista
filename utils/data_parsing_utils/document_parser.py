@@ -4,15 +4,16 @@ import email
 import docx2txt
 from io import BytesIO
 from pypdf import PdfReader
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from utils import log_error, log_debug
 
 
 def parse_docx(file: BytesIO) -> str:
     """
-    Parse word file and return content as string of text.
-    :param file: Word file
-    :return:
+    Parses DOCX (Word) files and returns their content as a string.
+
+    :param file: A BytesIO object containing the DOCX file.
+    :return: Text content of the DOCX file.
     """
     text = docx2txt.process(file)
     # Remove multiple newlines
@@ -22,9 +23,10 @@ def parse_docx(file: BytesIO) -> str:
 
 def parse_pdf(file: BytesIO) -> str:
     """
-    Parse pdf file and return content as string of text.
-    :param file: PDF file
-    :return:
+    Parses PDF files and returns their content as a string.
+
+    :param file: A BytesIO object containing the PDF file.
+    :return: Text content of the PDF file.
     """
     pdf = PdfReader(file)
     output = []
@@ -43,9 +45,10 @@ def parse_pdf(file: BytesIO) -> str:
 
 def parse_txt(file: BytesIO) -> str:
     """
-    Parse text file and return content as string of text.
-    :param file: Normal text file
-    :return:
+    Parses TXT files and returns their content as a string.
+
+    :param file: A BytesIO object containing the TXT file.
+    :return: Text content of the TXT file.
     """
     text = file.read().decode("utf-8")
     # Remove multiple newlines
@@ -53,10 +56,12 @@ def parse_txt(file: BytesIO) -> str:
     return text
 
 
-def parse_email(file: BytesIO):
+def parse_email(file: BytesIO) -> Optional[str]:
     """
+    Parses EML (Email) files and returns their content as a string.
 
-    :param file:
+    :param file: A BytesIO object containing the EML file.
+    :return: Text content of the EML file or None if an error occurs.
     """
     try:
         # Read the email file
@@ -91,10 +96,12 @@ def parse_email(file: BytesIO):
     return text
 
 
-def process_document_files(file_meta: Dict[str, Any] = None) -> str:
+def process_document_files(file_meta: Dict[str, Any]) -> str:
     """
-    Given a list of different types of documents; extract the text from it
-    and return extracted text.
+    Processes document files based on their extension and returns the extracted text.
+
+    :param file_meta: Metadata about the file including its name and the BytesIO object (`file`).
+    :return: Extracted text from the document.
     """
     file_name = file_meta['name']
     file = file_meta['file']
@@ -117,10 +124,14 @@ def process_document_files(file_meta: Dict[str, Any] = None) -> str:
     return extracted_text
 
 
-def process_audio_files(tmp_dir: str = None, file_meta: Dict[str, Any] = None, openai_wisper_util=None) -> str:
+def process_audio_files(tmp_dir: str, file_meta: Dict[str, Any], openai_wisper_util: Any) -> str:
     """
-    Process each audio file, do speech-to-text and extract transcript for each audio
-    and return processed data with metadata.
+    Processes audio files, converting speech to text using a specified utility (e.g., OpenAI's Whisper).
+
+    :param tmp_dir: The directory to temporarily save audio files.
+    :param file_meta: Metadata about the file including its name and the BytesIO object (`file`).
+    :param openai_wisper_util: The utility to use for speech-to-text conversion.
+    :return: Transcribed text from the audio file.
     """
 
     file_name = file_meta['name']

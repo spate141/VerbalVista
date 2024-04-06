@@ -3,6 +3,7 @@ import os
 import shutil
 import asyncio
 import hashlib
+from typing import Optional
 from selenium import webdriver
 from urllib.parse import urlparse
 from selenium.webdriver.common.by import By
@@ -14,22 +15,37 @@ from utils.data_parsing_utils.four_chan_scraper import fetch_4chan_comments
 from utils.data_parsing_utils.youtube_scraper import scrape_youtube_video_transcript
 
 
-def is_youtube_url(url):
-    """Check if the URL is a valid YouTube URL."""
+def is_youtube_url(url: str) -> bool:
+    """
+    Checks if the given URL is a valid YouTube URL.
+
+    :param url: URL to check.
+    :return: True if the URL is a YouTube URL, False otherwise.
+    """
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.lower()
     return domain in ['www.youtube.com', 'youtube.com', 'youtu.be', "youtu.be", "m.youtube.com"]
 
 
-def is_hacker_news_url(url):
-    """Check if the URL is a valid Hacker News URL."""
+def is_hacker_news_url(url: str) -> bool:
+    """
+    Checks if the given URL is a valid Hacker News URL.
+
+    :param url: URL to check.
+    :return: True if the URL is a Hacker News URL, False otherwise.
+    """
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.lower()
     return domain in ['news.ycombinator.com']
 
 
-def is_4chan_url(url):
-    """Check if the URL is a 4chan URL."""
+def is_4chan_url(url: str) -> bool:
+    """
+    Checks if the given URL is a valid 4chan URL.
+
+    :param url: URL to check.
+    :return: True if the URL is a 4chan URL, False otherwise.
+    """
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.lower()
     return domain in ['boards.4chan.org', 'boards.4channel.org']
@@ -37,13 +53,10 @@ def is_4chan_url(url):
 
 async def get_webpage_text(url: str) -> str:
     """
-    Fetch the text content of a webpage given its URL using Selenium.
+    Asynchronously fetches the text content of a webpage given its URL using Selenium.
 
-    Args:
-    url (str): URL of the webpage.
-
-    Returns:
-    str: The text content of the webpage.
+    :param url: URL of the webpage.
+    :return: The text content of the webpage.
     """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
@@ -53,13 +66,10 @@ async def get_webpage_text(url: str) -> str:
 
 def fetch_page_text(url: str) -> str:
     """
-    Synchronous function to fetch the text content of a webpage using Selenium.
+    Fetches the text content of a webpage given its URL using Selenium in a synchronous manner.
 
-    Args:
-    url (str): URL of the webpage.
-
-    Returns:
-    str: The text content of the webpage.
+    :param url: URL of the webpage.
+    :return: The text content of the webpage.
     """
     options = Options()
     options.add_argument("--headless")  # Run in headless mode for background execution
@@ -81,12 +91,13 @@ def fetch_page_text(url: str) -> str:
         return page_text
 
 
-async def process_url(url, msg=None):
+async def process_url(url: str, msg: Optional[Any] = None) -> str:
     """
+    Processes the given URL to fetch comments or content based on the type of the URL (Hacker News, 4chan, YouTube, or other).
 
-    :param url: URL
-    :param msg: Streamlit toast message object
-    :return:
+    :param url: The URL to process.
+    :param msg: Optional message object for displaying toast notifications.
+    :return: Extracted text content or comments from the URL.
     """
     if is_hacker_news_url(url):
         if msg:
@@ -116,9 +127,12 @@ async def process_url(url, msg=None):
     return text
 
 
-def url_to_filename(url):
+def url_to_filename(url: str) -> str:
     """
+    Converts a URL to a sanitized filename, incorporating parts of the domain and path, and a short hash for uniqueness.
 
+    :param url: The URL to convert.
+    :return: A sanitized filename string.
     """
     # Parse the URL
     parsed_url = urlparse(url)

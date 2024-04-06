@@ -1,13 +1,22 @@
 from PIL import Image
 import streamlit as st
+from typing import Optional, List
 
 
-def render_sidebar(app_name: str = None, app_version: str = None, app_pages: list = None):
+def render_sidebar(
+    app_name: Optional[str] = None,
+    app_version: Optional[str] = None,
+    app_pages: Optional[List[str]] = None
+) -> str:
     """
-    Render app sidebar.
-    :param app_name: Streamlit application name.
-    :param app_version: Streamlit application version.
-    :param app_pages: Streamlit application pages.
+    Renders the sidebar for a Streamlit application, including the application's logo, name, version, and
+    navigation for different pages within the app. It also provides links for help, bug reporting, and about
+    information.
+
+    :param app_name: Optional; The name of the Streamlit application.
+    :param app_version: Optional; The version of the Streamlit application.
+    :param app_pages: Optional; A list of pages (as strings) available for navigation in the app.
+    :return: The name of the selected page from the sidebar.
     """
     page_icon = Image.open('docs/logo-white.png')
     st.set_page_config(

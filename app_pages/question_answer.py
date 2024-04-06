@@ -3,17 +3,40 @@ import time
 import pickle
 import streamlit as st
 from datetime import datetime
+from typing import Optional, Any
 from utils import log_info, log_debug, log_error
 from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
 
 def render_qa_page(
-    temperature=None, max_tokens=None, model_name=None, max_semantic_retrieval_chunks=None,
-    max_lexical_retrieval_chunks=None, tx2sp_util=None, indices_dir=None, chat_history_dir=None,
-    enable_tts=False, tts_voice=None
-):
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    model_name: Optional[str] = None,
+    max_semantic_retrieval_chunks: Optional[int] = None,
+    max_lexical_retrieval_chunks: Optional[int] = None,
+    tx2sp_util: Optional[Any] = None,
+    indices_dir: Optional[str] = None,
+    chat_history_dir: Optional[str] = None,
+    enable_tts: bool = False,
+    tts_voice: Optional[str] = None
+) -> None:
     """
-    This function allow user to do conversation with the data.
+    Renders a Streamlit page for question and answer interactions using a language model (LLM).
+    The page allows users to interact with the model by providing prompts. It also supports text-to-speech
+    (TTS) for the responses and keeps a history of the conversation. The function is capable of handling
+    interactions with indexed documents for context-enhanced responses.
+
+    :param temperature: Controls randomness in the response generation. Lower values make responses more predictable.
+    :param max_tokens: The maximum number of tokens to generate in the response.
+    :param model_name: The name of the language model to use for generating responses.
+    :param max_semantic_retrieval_chunks: The maximum number of document chunks to retrieve semantically.
+    :param max_lexical_retrieval_chunks: The maximum number of document chunks to retrieve lexically.
+    :param tx2sp_util: Utility object for text-to-speech conversion.
+    :param indices_dir: Directory where indexed documents are stored.
+    :param chat_history_dir: Directory to store chat history.
+    :param enable_tts: If True, enables text-to-speech for the responses.
+    :param tts_voice: The voice ID or model to use for text-to-speech.
+    :return: None
     """
     st.header("Ask the LLM!", divider='red')
     with st.container():

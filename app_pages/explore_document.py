@@ -2,13 +2,20 @@ import os
 import pandas as pd
 from glob import glob
 import streamlit as st
+from typing import Optional
 from utils.other_utils import generate_wordcloud
 from utils.rag_utils.rag_util import get_available_documents
 
 
-def render_document_explore_page(document_dir=None, indices_dir=None):
+def render_document_explore_page(document_dir: Optional[str] = None, indices_dir: Optional[str] = None) -> None:
     """
-    This function will allow user to explore plain text to better understand the data.
+    Renders a page in a Streamlit application for exploring documents. This page allows users to select documents
+    from a list (based on a directory of documents and an index directory), view the document text, and generate
+    a word cloud for visual analysis.
+
+    :param document_dir: Optional; the directory where documents are stored. Defaults to None.
+    :param indices_dir: Optional; the directory where document indices are stored. Defaults to None.
+    :return: None
     """
     st.header('Explore Document', divider='blue')
     with st.form('explore_document'):

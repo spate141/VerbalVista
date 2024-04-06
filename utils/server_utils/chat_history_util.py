@@ -3,7 +3,7 @@ import pickle
 from datetime import datetime
 from itertools import zip_longest
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from utils import logger
 
 
@@ -34,10 +34,13 @@ class ChatHistoryUtil:
 
     def __init__(self, chat_history_dir: str = None, index_name: str = None, server_logger=None):
         """
-        Initializes the ChatHistoryUtil object with a directory for storing chat history and
-        an index name to identify it.
-        :param chat_history_dir: The base directory where chat histories are stored. If None, no directory is set.
-        :param index_name: A unique identifier for the chat history. If None, no index name is set.
+        Initializes the ChatHistoryUtil instance for managing chat histories, including loading and saving chat sessions.
+        Chat sessions are stored as pickle files named after the index name within the specified chat history directory.
+
+        :param chat_history_dir: Directory where chat histories are stored. Each chat history is saved in a subdirectory
+                                 named after its index name.
+        :param index_name: Unique identifier for the chat session. Used to name the subdirectory and pickle file.
+        :param server_logger: Logger for recording chat session events. If not provided, a default logger is used.
         """
         self.index_name = index_name
         if server_logger:
@@ -63,11 +66,13 @@ class ChatHistoryUtil:
 
     def save_chat(self, role: str = None, content: str = None, meta=None):
         """
-        Saves a single chat message along with its metadata to the chat history.
+        Appends a chat message and its metadata to the chat session and saves the updated chat history to disk.
 
-        :param role: The role of the entity sending the message (e.g., 'user', 'assistant')
-        :param content: The content of the message.
-        :param meta: Additional metadata associated with the message.
+        :param role: The role of the message sender (e.g., 'user', 'assistant'). Used for distinguishing between
+                     different participants in the chat.
+        :param content: The text content of the message.
+        :param meta: Additional metadata associated with the message. This can include information such as the language
+                     model used, generation parameters, and response metrics.
         """
         # Add messages to chat history
         chat_utc_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
@@ -82,12 +87,13 @@ class ChatHistoryUtil:
         self.logger.debug(f'Saved chat at: {chat_utc_time}')
 
     @staticmethod
-    def sort_chat_history(chat_history):
+    def sort_chat_history(chat_history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Sorts a list of chat messages in descending order based on their UTC timestamps.
+        Sorts chat messages based on their timestamps to ensure the chat history is presented in chronological order.
 
-        :param chat_history: List of dictionaries where each dictionary represents a chat message and contains a key 'utc_timestamp'.
-        :return: A sorted list of chat messages in descending order by 'utc_timestamp'.
+        :param chat_history: A list of chat messages, where each message is represented by a dictionary containing
+                             at least the UTC timestamp key.
+        :return: The sorted list of chat messages in chronological order.
         """
         def pair_messages(iterable):
             args = [iter(iterable)] * 2
@@ -98,13 +104,13 @@ class ChatHistoryUtil:
         sorted_history = [message for pair in paired_messages for message in pair if message]
         return sorted_history
 
-    def load_chat_history(self):
+    def load_chat_history(self) -> List[Dict[str, Union[str, Any]]]:
         """
-        Retrieves and formats the chat history from a chat session indexed by 'index_name'.
+        Loads and returns the chat history for the current index name from the stored pickle file. The chat history is
+        returned as a sorted list of messages, each with its role, content, timestamp, and optional metadata.
 
-        :return: A list of dictionaries, each representing a message with its associated metadata.
-        Each dictionary contains the sender's role, message content, and optional metadata such as
-        model used, temperature for generation, tokens, and cost if available.
+        :return: A list of dictionaries representing the chat history. Each dictionary includes the sender's role,
+                 message content, timestamp, and, if available, metadata such as model details and generation parameters.
         """
         chat_history = []
         index_chat = self.chat_session[self.index_name]

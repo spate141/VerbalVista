@@ -1,15 +1,19 @@
 import pandas as pd
 import streamlit as st
+from typing import List
 from datetime import date
 from utils import log_debug
 from utils.other_utils import get_portfolio_results
 
 
-def render_stock_cards(company_name, value_end, invested_amount):
+def render_stock_cards(company_name: str, value_end: float, invested_amount: float) -> None:
     """
-    :param company_name: Company Name
-    :param value_end: Final invested amount on the end date.
-    :param invested_amount: Initial invested amount on start date.
+    Renders a Streamlit card displaying the financial performance of a single company within a stock portfolio.
+    The card shows the company name, the final value of the investment, and the profit or loss.
+
+    :param company_name: The name of the company.
+    :param value_end: The final value of the investment in the company at the end of the period.
+    :param invested_amount: The initial amount invested in the company at the start of the period.
     """
     c1_cols = st.columns(1)
     with c1_cols[0]:
@@ -18,9 +22,12 @@ def render_stock_cards(company_name, value_end, invested_amount):
         )
 
 
-def render_stocks_portfolio_page():
+def render_stocks_portfolio_page() -> None:
     """
-    Render stock portfolio page.
+    Renders a Streamlit page for users to compare the performance of a portfolio of stocks.
+    Users input a list of company tickers, an investment amount, a start date, and an end date.
+    The function calculates and displays the overall portfolio performance and the individual performance of each stock.
+
     """
     st.header('Stock Performance Comparison', divider='red')
     current_date = date.today()
