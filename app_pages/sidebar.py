@@ -7,7 +7,7 @@ def render_sidebar(
     app_name: Optional[str] = None,
     app_version: Optional[str] = None,
     app_pages: Optional[List[str]] = None
-) -> str:
+):
     """
     Renders the sidebar for a Streamlit application, including the application's logo, name, version, and
     navigation for different pages within the app. It also provides links for help, bug reporting, and about

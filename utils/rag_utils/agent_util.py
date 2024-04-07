@@ -19,7 +19,7 @@ class Agent:
     def __init__(
         self, system_content: Optional[str] = None, faiss_index: Optional[Any] = None,
         metadata_dict: Optional[dict] = None, lexical_index: Optional[Any] = None,
-        reranker: Optional[Any] = None, server_logger: Optional[logger] = None
+        reranker: Optional[Any] = None, server_logger=None
     ) -> None:
         """
         Initializes an agent with necessary components and configurations for text generation and search.

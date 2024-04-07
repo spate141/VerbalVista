@@ -3,7 +3,7 @@ import os
 import shutil
 import asyncio
 import hashlib
-from typing import Optional
+from typing import Optional, Any
 from selenium import webdriver
 from urllib.parse import urlparse
 from selenium.webdriver.common.by import By
