@@ -1,5 +1,6 @@
 from PIL import Image
 import streamlit as st
+from streamlit_theme import st_theme
 from typing import Optional, List
 
 
@@ -32,20 +33,32 @@ def render_sidebar(
     )
     # SVG Editor: https://deeditor.com/
     # Original: https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png, #233565
-    # Grey: https://i.ibb.co/GJmvgP7/download-1.png, #777777
-    # Blue: https://i.ibb.co/t4sp8k3/download.png, #0099FF
+    theme = st_theme(key='logo')
     with st.sidebar:
-        st.markdown(
-            f"""
-            <center>
-            <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="60%" height="60%"></a>
-            </br>
-            </br>
-            <h5 style="color: #233565">Version: {app_version}</h5>
-            </center>
-            """,
-            unsafe_allow_html=True
-        )
+        if theme and theme['backgroundColor'] == '#ffffff':
+            st.markdown(
+                f"""
+                <center>
+                <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="60%" height="60%"></a>
+                </br>
+                </br>
+                <h5 style="color: #233565">Version: {app_version}</h5>
+                </center>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"""
+                <center>
+                <a href="https://github.com/spate141/VerbalVista"><img src="https://i.ibb.co/RDxw3DZ/logo-white.png" width="60%" height="60%"></a>
+                </br>
+                </br>
+                <h5 style="color: #ffffff">Version: {app_version}</h5>
+                </center>
+                """,
+                unsafe_allow_html=True
+            )
         st.markdown("<center><h4><b>Select Page</b></h4></center>", unsafe_allow_html=True)
         selected_page = st.selectbox("Select function:", app_pages, label_visibility="collapsed")
         st.markdown("--------", unsafe_allow_html=True)

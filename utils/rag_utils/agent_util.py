@@ -79,7 +79,7 @@ class Agent:
         """
         raise "Sub-class should implement this!"
 
-    def prepare_response(self, response: Any, stream: bool) -> str:
+    def prepare_response(self, response: Any, stream: bool):
         """
         Prepares the response from the language model for delivery. To be implemented by subclasses.
         :param response: The raw response from the language model.
@@ -100,7 +100,7 @@ class Agent:
         """
         Generates text based on model parameters. To be implemented by subclasses.
         :param llm_model: The specific language model to use for text generation.
-        :param temperature: Controls the randomness in the output generation. Higher values result in more varied outputs.
+        :param temperature: Controls randomness in the output generation. Higher values result in more varied outputs.
         :param seed: Random seed for generating deterministic outputs. Useful for debugging or repeatable outputs.
         :param stream: If True, the method streams the response, yielding partial outputs as they are generated.
         :param system_content: System-level content or prompts that guide the generation.

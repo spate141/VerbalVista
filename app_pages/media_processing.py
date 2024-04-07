@@ -47,8 +47,6 @@ def render_media_processing_page(
     document_desc = ''
     tmp_document_save_path = ''
     button_pressed = False
-    # theme = st_theme()
-    # st.write(theme)
     with col1:
         with st.form('docs_processing'):
             st.markdown(f"<h6>Data description: (optional)</h6>", unsafe_allow_html=True)
