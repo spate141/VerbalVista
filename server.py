@@ -575,7 +575,7 @@ def main():
     parser.add_argument('--health_check_timeout_s', type=int, default=30, help='Health check timeout (seconds).')
     parser.add_argument('--graceful_shutdown_timeout_s', type=int, default=20, help='Graceful shutdown timeout (seconds).')
     parser.add_argument('--graceful_shutdown_wait_loop_s', type=int, default=2, help='Graceful shutdown wait loop (seconds).')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='Host address.')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host address.')
     parser.add_argument('--port', type=int, default=8000, help='Port number.')
     parser.add_argument('--route_prefix', type=str, default='/', help='Route prefix.')
     parser.add_argument('--server_name', type=str, default='verbal_vista', help='Server name.')
@@ -595,17 +595,18 @@ def main():
         name="VerbalVistaServer",
         num_replicas=args.num_replicas,
         ray_actor_options={"num_cpus": args.num_cpus, "num_gpus": args.num_gpus},
-        max_concurrent_queries=args.max_concurrent_queries,
+        max_ongoing_requests=args.max_concurrent_queries,
         health_check_period_s=args.health_check_period_s,
         health_check_timeout_s=args.health_check_timeout_s,
         graceful_shutdown_timeout_s=args.graceful_shutdown_timeout_s,
         graceful_shutdown_wait_loop_s=args.graceful_shutdown_wait_loop_s
     ).bind(logging_level=logging_level)
 
+    serve.start(
+        http_options={'host': '0.0.0.0'}
+    )
     serve.run(
         deployment,
-        # host=args.host,
-        # port=args.port,
         route_prefix=args.route_prefix,
         name=args.server_name
     )

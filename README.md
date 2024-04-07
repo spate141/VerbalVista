@@ -36,7 +36,9 @@ VALID_API_KEYS='KEY1,KEY2,...,KEYn
 
 ### Start the docker image:
 ```cmd
->> docker run -p 8501:8501 --env-file /path/to/your/envfile/.env verbalvista:3.1
+>> docker run -p 8501:8501 -p 8265:8265 -p 8000:8000 -p 6379:6379 \
+--env-file .env \
+verbalvista:3.1
 ```
 
 ## Streamlit APP

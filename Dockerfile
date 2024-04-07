@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim as base
 
 # Set the working directory in the container
 WORKDIR /app
@@ -13,23 +13,24 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip && rm -rf /root/.cache/pip
+# Upgrade pip and install Python dependencies in a single step, then clean up cache
+# COPY only the files needed for pip install to leverage Docker's cache
+COPY requirements.txt /app/
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && rm -rf /root/.cache/pip
 
-# Copy the .env file into the container at /app
-#COPY .env ./
+# Now copy the rest of your application
+COPY . /app
 
-# Copy the rest of your application into the container at /app
-COPY . .
+# Make sure start.sh is executable
+RUN chmod +x /app/entrypoint_start.sh
 
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt && rm -rf /root/.cache/pip
-
-# Expose the port Streamlit will run on
+# Expose necessary ports
 EXPOSE 8265 8000 8501 6379
 
 # Health check for the container
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
-# Define entrypoint and default command to run the app
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Define the default command to run the app
+CMD ["./entrypoint_start.sh"]

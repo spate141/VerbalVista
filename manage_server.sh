@@ -22,7 +22,7 @@ usage() {
 # Function to start Ray server
 start_ray() {
     echo "Starting Ray server..."
-    ray start --head
+    ray start --head --dashboard-host=0.0.0.0
 }
 
 # Function to start the application server with optional verbosity
