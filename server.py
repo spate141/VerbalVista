@@ -71,6 +71,12 @@ class VerbalVistaAssistantDeployment:
         self.document_dir = 'data/documents/'
         self.indices_dir = 'data/indices/'
         self.chat_history_dir = 'data/chat_history/'
+        for directory_path in [
+            self.document_dir, self.indices_dir, self.tmp_dir, self.chat_history_dir
+        ]:
+            if not os.path.exists(directory_path):
+                os.makedirs(directory_path)
+                self.logger.debug(f"Directory '{directory_path}' created successfully.")
 
     @app.get(
         "/list/indices",

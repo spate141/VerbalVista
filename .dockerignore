@@ -1,3 +1,4 @@
 data/
-logfile.log
+*.log
 packages.txt
+*.env
