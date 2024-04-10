@@ -23,69 +23,62 @@ def render_image_understanding_page(
     :param image_understanding_util: Optional; GPT4 Vision to understand image.
     :return: None
     """
-    st.header('Image Generation with DALL·E', divider='blue')
-    image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}
-    with st.form('image_generation'):
-        cols = st.columns([1, 0.4, 0.2, 0.2])
-        with cols[0]:
+    cols = st.columns([1, 1])
+    with cols[0]:
+        st.header('Image Generation with DALL·E', divider='blue')
+        image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}
+        with st.form('image_generation'):
             prompt = st.text_area("Enter prompt:")
-        with cols[1]:
             model_name = st.selectbox("Select model:", options=["dall-e-3", "dall-e-2"], index=0)
-        with cols[2]:
             image_size = st.selectbox("Image size:", options=['1024x1024', '1024x1792', '1792x1024'], index=0)
-        with cols[3]:
             images_to_generate = st.number_input("Images:", value=1, min_value=1, max_value=10)
 
-        submitted = st.form_submit_button("Generate!", type="primary")
-        if submitted:
-            generated_image_filepaths = image_generation_util.generate_image(
-                prompt=prompt, image_size=image_size, images_to_generate=images_to_generate,
-                generated_images_dir=generated_images_dir, model_name=model_name
-            )
-            st.markdown(
-                f"Total cost: <b>${round(image_cost[image_size] * images_to_generate, 2)}</b>",
-                unsafe_allow_html=True
-            )
-            st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
+            submitted = st.form_submit_button("Generate!", type="primary")
+            if submitted:
+                generated_image_filepaths = image_generation_util.generate_image(
+                    prompt=prompt, image_size=image_size, images_to_generate=images_to_generate,
+                    generated_images_dir=generated_images_dir, model_name=model_name
+                )
+                st.markdown(
+                    f"Total cost: <b>${round(image_cost[image_size] * images_to_generate, 2)}</b>",
+                    unsafe_allow_html=True
+                )
+                st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
 
-    st.divider()
-    st.header('Image Understanding with GPT4', divider='blue')
-    with st.form('image_understanding'):
-        cols = st.columns([0.4, 0.5, 0.2])
-        with cols[0]:
+    with cols[1]:
+        st.header('Image Understanding with GPT4', divider='green')
+        with st.form('image_understanding'):
             prompt = st.text_area("Enter Question:", value="What’s in this image?")
-        with cols[1]:
             image = st.file_uploader('Upload Image:')
-        with cols[2]:
             max_tokens = int(st.number_input('Max Tokens:', value=512))
 
-        submitted = st.form_submit_button("Explain!", type="primary")
-        if submitted:
-            image_bytes = base64.b64encode(image.read()).decode('utf-8')
-            response = image_understanding_util.analyze_image(
-                image_bytes, prompt=prompt, max_tokens=max_tokens, streamlit_origin=True
-            )
-            passed = False
-            try:
-                response_content = response['choices'][0]['message']['content']
-                passed = True
-            except:
-                response_content = response
-
-            cols = st.columns([0.2, 1, 1, 0.2])
-            with cols[1]:
-                if passed:
-                    message_placeholder = st.empty()
-                    full_response = ""
-                    for chunk in response_content.split():
-                        full_response += chunk + " "
-                        time.sleep(0.03)
-                        message_placeholder.markdown(full_response + "▌")
-                    message_placeholder.markdown(full_response)
-                else:
-                    st.json(response_content)
-            with cols[2]:
-                st.image(image, use_column_width=True)
+            submitted = st.form_submit_button("Explain!", type="primary")
+            if submitted:
+                image_bytes = base64.b64encode(image.read()).decode('utf-8')
+                response = image_understanding_util.analyze_image(
+                    image_bytes, prompt=prompt, max_tokens=max_tokens, streamlit_origin=True
+                )
+                passed = False
+                try:
+                    response_content = response['choices'][0]['message']['content']
+                    passed = True
+                except:
+                    response_content = response
+                st.markdown("<h6>> Model think...</h6>", unsafe_allow_html=True)
+                cols = st.columns([0.2, 1, 1, 0.2])
+                with cols[1]:
+                    if passed:
+                        message_placeholder = st.empty()
+                        full_response = ""
+                        for chunk in response_content.split():
+                            full_response += chunk + " "
+                            time.sleep(0.03)
+                            message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(full_response)
+                    else:
+                        st.json(response_content)
+                with cols[2]:
+                    st.image(image, use_column_width=True)
 
     st.divider()
 
@@ -94,3 +87,4 @@ def render_image_understanding_page(
         all_images_filepath = glob(f"{generated_images_dir}/*.png")
         st.subheader(f'Previously generated images: {len(all_images_filepath)}', divider='red')
         st.image(all_images_filepath)
+
