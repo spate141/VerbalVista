@@ -130,8 +130,8 @@ def main():
     APP_NAME = "VerbalVista"
     APP_VERSION = "3.3"
     APP_PAGES = [
-        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
-        "Image Understanding"
+        "Media Processing", "Explore Document", "Manage Index", "Q & A", "Imagination!",
+        "Stocks Comparison", "Stocks Portfolio",
     ]
     # Render sidebar
     selected_page = render_sidebar(
@@ -190,7 +190,7 @@ def main():
             vv.render_stocks_comparison_page()
         elif selected_page == 'Stocks Portfolio':
             vv.render_stocks_portfolio_page()
-        elif selected_page == 'Image Understanding':
+        elif selected_page == 'Imagination!':
             vv.render_image_understanding_page()
 
 
