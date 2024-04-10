@@ -6,7 +6,7 @@ from dotenv import load_dotenv; load_dotenv()
 from utils import log_info, log_debug, log_error
 from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, EMBEDDING_DIMENSIONS
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
-from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil
+from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil, OpenAIGPT4ImageAnalysisUtil
 
 
 class VerbalVista:
@@ -31,6 +31,7 @@ class VerbalVista:
         self.openai_wisper_util = OpenAIWisperUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.openai_t2s_util = OpenAIText2SpeechUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.openai_dalle_util = OpenAIDalleUtil(api_key=os.getenv("OPENAI_API_KEY"))
+        self.openai_img_understanding_util = OpenAIGPT4ImageAnalysisUtil(api_key=os.getenv("OPENAI_API_KEY"))
         self.reddit_util = RedditSubmissionCommentsFetcher(
             client_id=os.getenv('REDDIT_CLIENT_ID'),
             client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
@@ -114,12 +115,14 @@ class VerbalVista:
         """
         render_stocks_portfolio_page()
 
-    def render_image_generation_page(self):
+    def render_image_understanding_page(self):
         """
-        Image generation page.
+        Image understanding page.
         """
-        render_image_generation_page(
-            generated_images_dir=self.generated_images_dir, image_generation_util=self.openai_dalle_util
+        render_image_understanding_page(
+            generated_images_dir=self.generated_images_dir,
+            image_generation_util=self.openai_dalle_util,
+            image_understanding_util=self.openai_img_understanding_util
         )
 
 
@@ -128,7 +131,7 @@ def main():
     APP_VERSION = "3.2"
     APP_PAGES = [
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Stocks Comparison", "Stocks Portfolio",
-        "Image Generation"
+        "Image Understanding"
     ]
     # Render sidebar
     selected_page = render_sidebar(
@@ -187,8 +190,8 @@ def main():
             vv.render_stocks_comparison_page()
         elif selected_page == 'Stocks Portfolio':
             vv.render_stocks_portfolio_page()
-        elif selected_page == 'Image Generation':
-            vv.render_image_generation_page()
+        elif selected_page == 'Image Understanding':
+            vv.render_image_understanding_page()
 
 
 if __name__ == '__main__':
