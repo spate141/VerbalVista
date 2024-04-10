@@ -160,6 +160,12 @@ def main():
         if selected_page == "Media Processing":
             vv.render_media_processing_page()
         elif selected_page == "Manage Index":
+            with st.sidebar:
+                with st.expander("Check Model Usage", expanded=True):
+                    st.markdown(
+                        '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
+                        '- [OpenAI](https://platform.openai.com/usage)'
+                    )
             vv.render_manage_index_page()
         elif selected_page == "Q & A":
             with st.sidebar:
@@ -191,6 +197,12 @@ def main():
         elif selected_page == 'Stocks Portfolio':
             vv.render_stocks_portfolio_page()
         elif selected_page == 'Imagination!':
+            with st.sidebar:
+                with st.expander("Check Model Usage", expanded=True):
+                    st.markdown(
+                        '- [Anthropic](https://console.anthropic.com/settings/usage)\n'
+                        '- [OpenAI](https://platform.openai.com/usage)'
+                    )
             vv.render_image_understanding_page()
 
 
