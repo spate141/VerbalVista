@@ -60,9 +60,3 @@ class OpenAIGPT4ImageAnalysisUtil:
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=self.headers, json=payload)
         return response.json()
 
-# Example usage
-# api_key = "YOUR_OPENAI_API_KEY"
-# image_analyzer = OpenAIGPT4ImageAnalysisUtil(api_key=api_key)
-# image_path = "path_to_your_image.jpg"
-# analysis_result = image_analyzer.analyze_image(image_path)
-# print(analysis_result)
