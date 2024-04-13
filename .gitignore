@@ -166,4 +166,3 @@ cython_debug/
 /tmp_dir/
 /documents/
 
-.streamlit/secrets.toml
