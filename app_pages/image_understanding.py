@@ -26,25 +26,26 @@ def render_image_understanding_page(
     cols = st.columns([1, 1])
     with cols[0]:
         st.header('Image Generation with DALL·E', divider='blue')
-        image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}
+        image_cost = {"standard": {'1024x1024': 0.040, '1024x1792': 0.080, '1792x1024': 0.080},
+                      "hd": {'1024x1024': 0.080, '1024x1792': 0.120, '1792x1024': 0.120}}
         with st.form('image_generation'):
             prompt = st.text_area("Enter Prompt:", placeholder="Whatever your mind can imagine!")
             model_name = st.selectbox("Select model:", options=["dall-e-3", "dall-e-2"], index=0)
             image_size = st.selectbox("Image size:", options=['1024x1024', '1024x1792', '1792x1024'], index=0)
-            images_to_generate = st.number_input("Images:", value=1, min_value=1, max_value=10)
+            image_quality = st.selectbox("Image quality:", options=['Standard', 'HD'], index=0).lower()
             btn_cols = st.columns([2, 2, 1])
             with btn_cols[1]:
                 submitted = st.form_submit_button("Generate!", type="primary")
             if submitted:
-                generated_image_filepaths = image_generation_util.generate_image(
-                    prompt=prompt, image_size=image_size, images_to_generate=images_to_generate,
-                    generated_images_dir=generated_images_dir, model_name=model_name
+                generated_image_filepath = image_generation_util.generate_image(
+                    prompt=prompt, image_size=image_size, generated_images_dir=generated_images_dir,
+                    model_name=model_name, image_quality=image_quality
                 )
                 st.markdown(
-                    f"Total cost: <b>${round(image_cost[image_size] * images_to_generate, 2)}</b>",
+                    f"Total cost: <b>${round(image_cost[image_quality][image_size], 2)}</b>",
                     unsafe_allow_html=True
                 )
-                st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
+                st.image(generated_image_filepath, caption=prompt)
 
     with cols[1]:
         st.header('Image Understanding with GPT-4', divider='green')
