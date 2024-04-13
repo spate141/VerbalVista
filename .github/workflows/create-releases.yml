@@ -93,7 +93,7 @@ jobs:
           release_name: v${{ steps.calc_version.outputs.NEW_VERSION }}
           body: |
             **Changelog:** 
-            - https://github.com/${{ github.repository }}/compare/${{ steps.calc_version.outputs.OLD_VERSION }}...${{ steps.calc_version.outputs.NEW_VERSION }}
+            https://github.com/${{ github.repository }}/compare/${{ steps.calc_version.outputs.OLD_VERSION }}...${{ steps.calc_version.outputs.NEW_VERSION }}
             
             **Commits:**
             ${{ steps.commits_between.outputs.COMMIT_DIFF }}
