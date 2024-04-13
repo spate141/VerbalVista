@@ -165,3 +165,5 @@ cython_debug/
 /indices/
 /tmp_dir/
 /documents/
+
+.streamlit/secrets.toml
