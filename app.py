@@ -1,4 +1,5 @@
 import os
+import hmac
 import streamlit as st
 from app_pages import *
 from dotenv import load_dotenv; load_dotenv()
@@ -7,6 +8,31 @@ from utils import log_info, log_debug, log_error
 from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, EMBEDDING_DIMENSIONS
 from utils.data_parsing_utils.reddit_comment_parser import RedditSubmissionCommentsFetcher
 from utils.openai_utils import OpenAIDalleUtil, OpenAIWisperUtil, OpenAIText2SpeechUtil, OpenAIGPT4ImageAnalysisUtil
+
+
+def check_password():
+    """
+    Returns `True` if the user had the correct password.
+    """
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
+            st.session_state["password_correct"] = True
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password.
+    st.markdown("<h2>🔐 Enter your password:</h2>", unsafe_allow_html=True)
+    st.text_input(
+        "Password", type="password", on_change=password_entered, key="password", label_visibility='collapsed'
+    )
+    if "password_correct" in st.session_state:
+        st.error("❗️Password Incorrect ❗️")
+    return False
 
 
 class VerbalVista:
@@ -133,6 +159,11 @@ def main():
         "Media Processing", "Explore Document", "Manage Index", "Q & A", "Imagination!",
         "Stocks Comparison", "Stocks Portfolio",
     ]
+
+    # Check password
+    if not check_password():
+        st.stop()
+
     # Render sidebar
     selected_page = render_sidebar(
         app_name=APP_NAME, app_version=APP_VERSION, app_pages=APP_PAGES

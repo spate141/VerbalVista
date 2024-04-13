@@ -28,12 +28,13 @@ def render_image_understanding_page(
         st.header('Image Generation with DALL·E', divider='blue')
         image_cost = {'256x256': 0.016, '512x512': 0.018, '1024x1024': 0.020}
         with st.form('image_generation'):
-            prompt = st.text_area("Enter prompt:")
+            prompt = st.text_area("Enter Prompt:", placeholder="Whatever your mind can imagine!")
             model_name = st.selectbox("Select model:", options=["dall-e-3", "dall-e-2"], index=0)
             image_size = st.selectbox("Image size:", options=['1024x1024', '1024x1792', '1792x1024'], index=0)
             images_to_generate = st.number_input("Images:", value=1, min_value=1, max_value=10)
-
-            submitted = st.form_submit_button("Generate!", type="primary")
+            btn_cols = st.columns([2, 2, 1])
+            with btn_cols[1]:
+                submitted = st.form_submit_button("Generate!", type="primary")
             if submitted:
                 generated_image_filepaths = image_generation_util.generate_image(
                     prompt=prompt, image_size=image_size, images_to_generate=images_to_generate,
@@ -46,13 +47,14 @@ def render_image_understanding_page(
                 st.image(generated_image_filepaths, caption=[prompt]*images_to_generate)
 
     with cols[1]:
-        st.header('Image Understanding with GPT4', divider='green')
+        st.header('Image Understanding with GPT-4', divider='green')
         with st.form('image_understanding'):
-            prompt = st.text_area("Enter Question:", value="What’s in this image?")
+            prompt = st.text_area("Enter Question:", value="What’s in this image?", height=145)
             image = st.file_uploader('Upload Image:')
             max_tokens = int(st.number_input('Max Tokens:', value=512))
-
-            submitted = st.form_submit_button("Explain!", type="primary")
+            btn_cols = st.columns([2, 2, 1])
+            with btn_cols[1]:
+                submitted = st.form_submit_button("Explain!", type="primary")
             if submitted:
                 image_bytes = base64.b64encode(image.read()).decode('utf-8')
                 response = image_understanding_util.analyze_image(

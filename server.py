@@ -10,6 +10,7 @@ from fastapi import FastAPI, status, Path
 from dotenv import load_dotenv; load_dotenv(".env")
 from fastapi import UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from utils.server_utils import *
 from utils.openai_utils import OpenAIWisperUtil
@@ -37,6 +38,10 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
+)
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=4000
 )
 
 
