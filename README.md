@@ -2,7 +2,7 @@
   <img align="center" src="https://i.ibb.co/6FQPs5C/verbal-vista-blue-transparent.png" width="37%" height="37%" />
 </p>
 
-![Static Badge](https://img.shields.io/badge/VerbalVista-233565) [![Docker Image CI](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml) [![Create releases](https://github.com/spate141/VerbalVista/actions/workflows/create-releases.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/create-releases.yml)
+[![Static Badge](https://img.shields.io/badge/VerbalVista-233565)](https://github.com/spate141/VerbalVista/) [![Docker Image CI](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/docker-image.yml) [![Create releases](https://github.com/spate141/VerbalVista/actions/workflows/create-releases.yml/badge.svg)](https://github.com/spate141/VerbalVista/actions/workflows/create-releases.yml)
 
 ## Streamlit Cloud:
 - [VerbalVista](https://verbalvista.streamlit.app/)
