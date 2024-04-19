@@ -136,8 +136,8 @@ def main():
     ]
 
     # Check password
-    if not check_password():
-        st.stop()
+    # if not check_password():
+    #     st.stop()
 
     # Render sidebar
     selected_page = render_sidebar(
@@ -178,8 +178,14 @@ def main():
                 with st.expander("Modify LLM Setting"):
                     temperature = st.number_input("Temperature", value=0.5, min_value=0.0, max_value=1.0)
                     max_tokens = st.number_input("Max Tokens", value=512, min_value=0, max_value=4000)
-                    max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999)
-                    max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
+                    all_chunks = st.checkbox("All Content", value=False)
+                    if all_chunks:
+                        _ = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999, disabled=True)
+                        _ = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999, disabled=True)
+                        max_semantic_retrieval_chunks, max_lexical_retrieval_chunks = None, None
+                    else:
+                        max_semantic_retrieval_chunks = st.number_input("Max Semantic Chunks", value=5, min_value=1, max_value=9999999, disabled=False)
+                        max_lexical_retrieval_chunks = st.number_input("Max Lexical Chunks", value=1, min_value=1, max_value=9999999)
                     model_name = st.selectbox("Model Name", list(LLM_MAX_CONTEXT_LENGTHS.keys()), index=6)
                     enable_tts = st.checkbox("Enable text-to-speech", value=False)
                     tts_voice = "echo"

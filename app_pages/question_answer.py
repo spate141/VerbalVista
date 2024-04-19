@@ -3,7 +3,7 @@ import time
 import pickle
 import streamlit as st
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from utils import log_info, log_debug, log_error
 from utils.rag_utils.rag_util import get_available_indices, load_index_and_metadata, do_some_chat_completion
 
@@ -12,8 +12,8 @@ def render_qa_page(
     temperature: Optional[float] = None,
     max_tokens: Optional[int] = None,
     model_name: Optional[str] = None,
-    max_semantic_retrieval_chunks: Optional[int] = None,
-    max_lexical_retrieval_chunks: Optional[int] = None,
+    max_semantic_retrieval_chunks: Union[int, None] = None,
+    max_lexical_retrieval_chunks: Union[int, None] = None,
     tx2sp_util: Optional[Any] = None,
     indices_dir: Optional[str] = None,
     chat_history_dir: Optional[str] = None,

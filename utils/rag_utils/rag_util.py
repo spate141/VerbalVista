@@ -4,7 +4,7 @@ import glob
 import faiss
 import pickle
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Union
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -311,8 +311,8 @@ def load_index_and_metadata(index_directory: str = None):
 def do_some_chat_completion(
     query: str = None, embedding_model: str = "text-embedding-3-small", llm_model: str = "gpt-3.5-turbo",
     temperature: float = 0.5, faiss_index=None, lexical_index=None, metadata_dict=None, reranker=None,
-    max_semantic_retrieval_chunks: int = 5, max_lexical_retrieval_chunks: int = 1, max_tokens=512,
-    system_prompt: str = None, server_logger=None
+    max_semantic_retrieval_chunks: Union[int, None] = 5, max_lexical_retrieval_chunks: Union[int, None] = 1,
+    max_tokens=512, system_prompt: str = None, server_logger=None
 ):
     """
     Perform chat completion using a combination of semantic and lexical retrieval methods.

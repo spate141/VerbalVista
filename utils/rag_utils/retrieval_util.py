@@ -81,3 +81,19 @@ def do_lexical_search(
     } for i in indices]
     return lexical_context
 
+
+def do_no_search(
+        metadata_dict: Dict[int, Dict[str, str]]
+) -> List[Dict[str, Union[int, str, float]]]:
+    """
+    Do no search and just return all the content.
+    """
+    all_context = []
+    for index, data_object in metadata_dict.items():
+        all_context.append({
+            "id": index,
+            "text": data_object['text'],
+            "source": data_object['source']
+        })
+    return all_context
+

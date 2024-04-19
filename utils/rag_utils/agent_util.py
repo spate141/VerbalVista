@@ -3,11 +3,11 @@ import time
 import tiktoken
 from openai import OpenAI
 from anthropic import Anthropic
-from typing import Tuple, Generator, Optional, Any, Dict, List
+from typing import Tuple, Generator, Optional, Any, Dict, List, Union
 from dotenv import load_dotenv; load_dotenv(".env")
 from utils import logger
 from utils.rag_utils import LLM_MAX_CONTEXT_LENGTHS, SYS_PROMPT, get_llm_token_cost_for_model
-from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search
+from utils.rag_utils.retrieval_util import get_query_embedding, do_lexical_search, do_semantic_search, do_no_search
 
 
 class Agent:
@@ -115,7 +115,7 @@ class Agent:
         raise "Sub-class should implement this!"
 
     def __call__(
-        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        self, query: str, num_chunks: Union[int, None] = 5, stream: bool = False, lexical_search_k: Union[int, None] = 1,
         temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "EMBEDDING_MODEL_NAME",
         llm_model: str = "LLM_MODEL_NAME", max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
@@ -209,7 +209,7 @@ class GPTAgent(Agent):
         return None, None
 
     def __call__(
-        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        self, query: str, num_chunks: Union[int, None] = 5, stream: bool = False, lexical_search_k: Union[int, None] = 1,
         temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "text-embedding-3-small",
         llm_model: str = "gpt-3.5-turbo", max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
@@ -229,16 +229,21 @@ class GPTAgent(Agent):
                           f'TEMP: {temperature} | '
                           f'NUM_CHUNKS: {num_chunks}')
 
-        # {id, distance, text, source}
-        context_results = do_semantic_search(
-            query_embedding, self.faiss_index, self.metadata_dict, k=num_chunks
-        )
+        # When user wants all data in prompt
+        if num_chunks is None and lexical_search_k is None:
+            context_results = do_no_search(self.metadata_dict)
 
-        # Add lexical search results
-        if self.lexical_index:
-            lexical_context = do_lexical_search(self.lexical_index, query, self.metadata_dict, lexical_search_k)
-            # Insert after <lexical_search_k> worth of semantic results
-            context_results[lexical_search_k:lexical_search_k] = lexical_context
+        else:
+            # {id, distance, text, source}
+            context_results = do_semantic_search(
+                query_embedding, self.faiss_index, self.metadata_dict, k=num_chunks
+            )
+
+            # Add lexical search results
+            if self.lexical_index:
+                lexical_context = do_lexical_search(self.lexical_index, query, self.metadata_dict, lexical_search_k)
+                # Insert after <lexical_search_k> worth of semantic results
+                context_results[lexical_search_k:lexical_search_k] = lexical_context
 
         # Rerank
         if self.reranker:
@@ -346,7 +351,7 @@ class ClaudeAgent(Agent):
         return None, None
 
     def __call__(
-        self, query: str, num_chunks: int = 5, stream: bool = False, lexical_search_k: int = 1,
+        self, query: str, num_chunks: Union[int, None] = 5, stream: bool = False, lexical_search_k: Union[int, None] = 1,
         temperature: float = 0.5, seed: int = 42, embedding_model_name: str = "text-embedding-3-small",
         llm_model: str = "claude-3-opus-20240229", max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
@@ -366,16 +371,22 @@ class ClaudeAgent(Agent):
                           f'TEMP: {temperature} | '
                           f'NUM_CHUNKS: {num_chunks}')
 
-        # {id, distance, text, source}
-        context_results = do_semantic_search(
-            query_embedding, self.faiss_index, self.metadata_dict, k=num_chunks
-        )
+        # When user wants all data in prompt
+        if num_chunks is None and lexical_search_k is None:
+            self.logger.debug('Using full context in prompt.')
+            context_results = do_no_search(self.metadata_dict)
 
-        # Add lexical search results
-        if self.lexical_index:
-            lexical_context = do_lexical_search(self.lexical_index, query, self.metadata_dict, lexical_search_k)
-            # Insert after <lexical_search_k> worth of semantic results
-            context_results[lexical_search_k:lexical_search_k] = lexical_context
+        else:
+            # {id, distance, text, source}
+            context_results = do_semantic_search(
+                query_embedding, self.faiss_index, self.metadata_dict, k=num_chunks
+            )
+
+            # Add lexical search results
+            if self.lexical_index:
+                lexical_context = do_lexical_search(self.lexical_index, query, self.metadata_dict, lexical_search_k)
+                # Insert after <lexical_search_k> worth of semantic results
+                context_results[lexical_search_k:lexical_search_k] = lexical_context
 
         # Rerank
         if self.reranker:
