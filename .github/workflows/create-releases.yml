@@ -63,14 +63,14 @@ jobs:
       - name: Fetch Commits Between Releases
         id: commits_between
         run: |
-          if git rev-parse "v${{ steps.calc_version.outputs.OLD_VERSION }}" >/dev/null 2>&1; then
-            COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" "v${{ steps.calc_version.outputs.OLD_VERSION }}"..HEAD --date=short)
+          if git rev-parse "${{ steps.calc_version.outputs.OLD_VERSION }}" >/dev/null 2>&1; then
+            COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" "${{ steps.calc_version.outputs.OLD_VERSION }}"..HEAD --date=short)
             if [ -z "$COMMIT_DIFF" ]; then
               echo "No new commits found."
               COMMIT_DIFF="No new commits since last release."
             fi
           else
-            echo "Tag v${{ steps.calc_version.outputs.OLD_VERSION }} does not exist."
+            echo "Tag ${{ steps.calc_version.outputs.OLD_VERSION }} does not exist."
             COMMIT_DIFF="Previous version tag not found."
           fi
           echo "::set-output name=COMMIT_DIFF::$COMMIT_DIFF"
