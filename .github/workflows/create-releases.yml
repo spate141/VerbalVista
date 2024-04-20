@@ -82,8 +82,8 @@ jobs:
       - name: Fetch Commits Between Releases
         id: commits_between
         run: |
-          # Fetch all commit messages between the last release tag and the latest commit on main
-          COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" ${{ steps.last_release_commit.outputs.SHA }}..HEAD --date=short)
+          # Ensure we're using tag references directly if SHA fetching is unreliable
+          COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" v${{ steps.calc_version.outputs.OLD_VERSION }}..HEAD --date=short)
           echo "::set-output name=COMMIT_DIFF::$COMMIT_DIFF"
 
       - name: Create GitHub Release

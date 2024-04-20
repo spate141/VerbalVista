@@ -1,6 +1,6 @@
 import os
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from utils.rag_utils import MODEL_COST_PER_1K_TOKENS
 from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
 from utils.rag_utils.rag_util import load_index_and_metadata
@@ -12,8 +12,8 @@ class ChatInput(BaseModel):
     llm: Optional[str] = "gpt-3.5-turbo"
     embedding_model: Optional[str] = "text-embedding-3-small"
     temperature: Optional[float] = 0.5
-    max_semantic_retrieval_chunks: Optional[int] = 5
-    max_lexical_retrieval_chunks: Optional[int] = 1
+    max_semantic_retrieval_chunks: Optional[Union[int, None]] = 5
+    max_lexical_retrieval_chunks: Optional[Union[int, None]] = 1
     max_tokens: Optional[int] = 512
 
 
@@ -54,7 +54,8 @@ class ChatUtil:
 
     def generate_text(
         self, query: str = None, temperature: float = None, embedding_model: str = None, llm_model: str = None,
-        max_semantic_retrieval_chunks: int = None, max_lexical_retrieval_chunks: int = None, max_tokens: int = None
+        max_semantic_retrieval_chunks: Union[int, None] = None, max_lexical_retrieval_chunks: Union[int, None] = None,
+        max_tokens: int = None
     ) -> Dict[str, Any]:
         """
         Generates a prediction response based on the input query and the provided parameters.

@@ -2,7 +2,7 @@ import os
 import re
 from pydantic import BaseModel
 from num2words import num2words
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from utils import logger
 from utils.rag_utils import MODEL_COST_PER_1K_TOKENS
 from utils.rag_utils.agent_util import GPTAgent, ClaudeAgent
@@ -15,8 +15,8 @@ class SummaryInput(BaseModel):
     llm: Optional[str] = "gpt-3.5-turbo"
     embedding_model: Optional[str] = "text-embedding-3-small"
     temperature: Optional[float] = 0.5
-    max_semantic_retrieval_chunks: Optional[int] = 5
-    max_lexical_retrieval_chunks: Optional[int] = 1
+    max_semantic_retrieval_chunks: Optional[Union[int, None]] = 5
+    max_lexical_retrieval_chunks: Optional[Union[int, None]] = 1
     max_tokens: Optional[int] = 512
 
 
@@ -70,8 +70,8 @@ class SummaryUtil:
 
     def summarize_text(
         self, summary_sentences_per_topic: int = None, temperature: float = None, embedding_model: str = None,
-        llm_model: str = None, max_semantic_retrieval_chunks: int = None, max_lexical_retrieval_chunks: int = None,
-        max_tokens: int = None
+        llm_model: str = None, max_semantic_retrieval_chunks: Union[int, None] = None,
+        max_lexical_retrieval_chunks: Union[int, None] = None, max_tokens: int = None
     ) -> Dict[str, Any]:
         """
         Generates a summary of text based on high-level topics extracted from the content.
@@ -108,9 +108,7 @@ class SummaryUtil:
             query="Generate a list of high level topics discussed in this text. "
                   "Make sure the generated topics represent entirety of the text and are unique. "
                   "List the topics in chronological order of text.",
-            num_chunks=15,
-            lexical_search_k=0,
-            **common_params
+            num_chunks=None, lexical_search_k=None, **common_params
         )
         topics = self.get_topics(response['answer'])
 
@@ -119,7 +117,8 @@ class SummaryUtil:
         tokens, costs = {"completion": 0, "prompt": 0, "total": 0}, {"completion": 0, "prompt": 0, "total": 0}
         for topic in topics:
             t_result = query_agent(
-                query=f'Generate a very short summary from the text about "{topic}" in {num2words(summary_sentences_per_topic)} sentences.',
+                query=f'Generate a very short summary from the text about "{topic}" in '
+                      f'{num2words(summary_sentences_per_topic)} sentences.',
                 num_chunks=max_semantic_retrieval_chunks,
                 lexical_search_k=max_lexical_retrieval_chunks,
                 **common_params
