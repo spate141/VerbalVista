@@ -62,9 +62,7 @@ jobs:
       - name: Fetch commit SHA for last release tag
         id: last_release_commit
         run: |
-          LAST_RELEASE_TAG_SHA=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/git/ref/tags/${{ steps.calc_version.outputs.OLD_VERSION }} | jq -r '.object.sha')
+          LAST_RELEASE_TAG_SHA=$(git rev-list -n 1 ${{ steps.calc_version.outputs.OLD_VERSION }})
           echo "Last release tag SHA: $LAST_RELEASE_TAG_SHA"
           echo "::set-output name=SHA::$LAST_RELEASE_TAG_SHA"
 
@@ -82,8 +80,10 @@ jobs:
       - name: Fetch Commits Between Releases
         id: commits_between
         run: |
-          COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" ${{ steps.last_release_commit.outputs.SHA }}..${{ steps.latest_commit.outputs.SHA }} --date=short)
+          # Ensure the range is exclusive of the last release tag and inclusive of the latest commit.
+          COMMIT_DIFF=$(git log --pretty=format:"%h - %s by %an on %ad" ${{ steps.last_release_commit.outputs.SHA }}..HEAD --date=short)
           echo "::set-output name=COMMIT_DIFF::$COMMIT_DIFF"
+          echo "Commits between releases: $COMMIT_DIFF"
 
       - name: Create GitHub Release
         if: steps.check_release.outputs.NEED_RELEASE == 'true'
