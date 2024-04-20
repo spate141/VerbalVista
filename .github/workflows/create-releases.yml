@@ -81,7 +81,7 @@ jobs:
         id: commits_between
         run: |
           # Ensure the range is exclusive of the last release tag and inclusive of the latest commit.
-          COMMIT_DIFF=$(git log --pretty=format:"%h - %s by %an on %ad" ${{ steps.last_release_commit.outputs.SHA }}..HEAD --date=short)
+          COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" ${{ steps.last_release_commit.outputs.SHA }}..HEAD --date=short)
           echo "::set-output name=COMMIT_DIFF::$COMMIT_DIFF"
           echo "Commits between releases: $COMMIT_DIFF"
 
