@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: '0'
+          fetch-tags: true
 
       - name: Calculate new version
         id: calc_version
@@ -59,15 +60,21 @@ jobs:
           echo "Latest commit SHA on main: $LATEST_COMMIT_SHA"
           echo "::set-output name=SHA::$LATEST_COMMIT_SHA"
 
-      - name: Fetch commit SHA for last release tag
-        id: last_release_commit
+      - name: Fetch Commits Between Releases
+        id: commits_between
         run: |
-          LAST_RELEASE_TAG_SHA=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/git/ref/tags/${{ steps.calc_version.outputs.OLD_VERSION }} | jq -r '.object.sha')
-          echo "Last release tag SHA: $LAST_RELEASE_TAG_SHA"
-          echo "::set-output name=SHA::$LAST_RELEASE_TAG_SHA"
-        
+          if git rev-parse "v${{ steps.calc_version.outputs.OLD_VERSION }}" >/dev/null 2>&1; then
+            COMMIT_DIFF=$(git log --pretty=format:"%h - %s (%an, %ad)" "v${{ steps.calc_version.outputs.OLD_VERSION }}"..HEAD --date=short)
+            if [ -z "$COMMIT_DIFF" ]; then
+              echo "No new commits found."
+              COMMIT_DIFF="No new commits since last release."
+            fi
+          else
+            echo "Tag v${{ steps.calc_version.outputs.OLD_VERSION }} does not exist."
+            COMMIT_DIFF="Previous version tag not found."
+          fi
+          echo "::set-output name=COMMIT_DIFF::$COMMIT_DIFF"
+
       - name: Check if new release is needed
         id: check_release
         run: |
