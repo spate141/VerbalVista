@@ -1,5 +1,6 @@
 import re
 import os
+import html
 import pandas as pd
 from glob import glob
 import streamlit as st
@@ -12,7 +13,8 @@ def remove_non_english(text):
     """
     Remove non-English characters
     """
-    return re.sub(r'[^\x00-\x7F]+', ' ', text)  # Keeps only ASCII characters
+    text = re.sub(r'[^\x00-\x7F]+', ' ', text)  # Keeps only ASCII characters
+    return html.escape(text)  # Escapes any remaining special HTML characters
 
 def render_document_explore_page(document_dir: Optional[str] = None, indices_dir: Optional[str] = None) -> None:
     """
