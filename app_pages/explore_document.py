@@ -1,3 +1,4 @@
+import re
 import os
 import pandas as pd
 from glob import glob
@@ -6,6 +7,12 @@ from typing import Optional
 from utils.other_utils import generate_wordcloud
 from utils.rag_utils.rag_util import get_available_documents
 
+
+def remove_non_english(text):
+    """
+    Remove non-English characters
+    """
+    return re.sub(r'[^\x00-\x7F]+', ' ', text)  # Keeps only ASCII characters
 
 def render_document_explore_page(document_dir: Optional[str] = None, indices_dir: Optional[str] = None) -> None:
     """
@@ -43,8 +50,9 @@ def render_document_explore_page(document_dir: Optional[str] = None, indices_dir
 
             with st.expander("Text", expanded=False):
                 for doc in data:
+                    clean_text = remove_non_english(doc['text'])
                     st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
-                    st.markdown(f"<p>{' '.join(doc['text'].split())}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p>{' '.join(clean_text.split())}</p>", unsafe_allow_html=True)
             with st.expander("Word Clouds", expanded=False):
                 for doc in data:
                     st.markdown(f"<h6>File: {doc['filename']}</h6>", unsafe_allow_html=True)
